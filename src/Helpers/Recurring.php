@@ -1,0 +1,530 @@
+<php
+
+namespace RM_PagBank\Helpers;
+
+// use DateInterval; // PHP 5.6 compatibility
+// use DateTime; // PHP 5.6 compatibility
+// use DateTimeZone; // PHP 5.6 compatibility
+// use Exception; // PHP 5.6 compatibility
+// use RM_PagBank\Connect; // PHP 5.6 compatibility
+// use stdClass; // PHP 5.6 compatibility
+// use WC_Cart; // PHP 5.6 compatibility
+// use WC_Order; // PHP 5.6 compatibility
+// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+
+class Recurring
+{
+    public static function getFriendlyStatus($status)
+    {
+        switch ($status) {
+            case 'ACTIVE':
+                return __('Ativo', 'pagbank-connect');
+            case 'PAUSED':
+                return __('Pausado', 'pagbank-connect');
+            case 'PENDING_CANCEL':
+                return __('Cancelamento Pendente', 'pagbank-connect');
+            case 'SUSPENDED':
+                return __('Suspenso', 'pagbank-connect');
+            case 'PENDING':
+                return __('Pendente', 'pagbank-connect');
+            case 'CANCELED':
+                return __('Cancelado', 'pagbank-connect');
+            case 'COMPLETED':
+                return __('Finalizado', 'pagbank-connect');
+            default:
+                return __('Desconhecido', 'pagbank-connect');
+        }
+    }
+    
+    public static function getAllStatuses()
+    {
+        return array('ACTIVE' => __('Ativo', 'pagbank-connect'),
+            'PAUSED' => __('Pausado', 'pagbank-connect'),
+            'PENDING_CANCEL' => __('Cancelamento Pendente', 'pagbank-connect'),
+            'SUSPENDED' => __('Suspenso', 'pagbank-connect'),
+            'PENDING' => __('Pendente', 'pagbank-connect'),
+            'CANCELED' => __('Cancelado', 'pagbank-connect'),);
+    }
+
+    public static function getFriendlyType($type)
+    {
+        switch (strtoupper($type)) {
+            case 'DAILY':
+                return __('Diário', 'pagbank-connect');
+            case 'WEEKLY':
+                return __('Semanal', 'pagbank-connect');
+            case 'MONTHLY':
+                return __('Mensal', 'pagbank-connect');
+            case 'YEARLY':
+                return __('Anual', 'pagbank-connect');
+            default:
+                return __('Desconhecido', 'pagbank-connect');
+        }
+    }
+
+    /**
+     * Checks if the $cart or the current cart contains recurring products
+     * @param WC_Cart|null $cart
+     *
+     * @return bool
+     */
+    public function isCartRecurring(WC_Cart $cart = null)
+    {
+        //checks if pagbank recurring is enabled
+        $isRecurringEnabled = Params::getRecurringConfig('recurring_enabled', 'no') == 'yes';
+        if (!$isRecurringEnabled) {
+            return false;
+        }
+        
+        //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
+        if (!did_action('woocommerce_load_cart_from_session')) {
+            return false;
+        }
+        
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+        
+        if (!$cart) {
+            return false;
+        }
+        
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem array('data');
+            //if the product is a variation, we need to check the parent product
+            return $this->isProductRecurring($product);
+        }
+        
+        return false;
+    }
+
+    /**
+     * Checks if the $cart or the current cart contains trial recurring products and returns the trial length
+     * @param WC_Cart|null $cart
+     *
+     * @return bool|int
+     */
+    public function getCartRecurringTrial(WC_Cart $cart = null)
+    {
+        //avoids warnings with plugins like Mercado Pago that calls things before WP is loaded
+        if (!did_action('woocommerce_load_cart_from_session')) {
+            return false;
+        }
+
+        if (!$cart) {
+            $cart = WC()->cart;
+        }
+
+        if (!$cart) {
+            return false;
+        }
+
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem array('data');
+            if ($product->get_meta('_recurring_trial_length') > 0 && $product->get_meta('_recurring_enabled') == 'yes') {
+                return (int) $product->get_meta('_recurring_trial_length');
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Calculates the DateTime for the next billing date
+     *
+     * @param $frequency Accepted values are: 'daily', 'weekly', 'monthly', 'yearly'
+     * @param $cycle
+     * @param null $trialLenght
+     * @return DateTime The next billing date GMT timezone
+     * @throws Exception
+     */
+    public function calculateNextBillingDate($frequency, $cycle, $trialLenght = null)
+    {
+        $date = new DateTime('now', new DateTimeZone('GMT'));
+
+        if ($trialLenght){
+            $interval = new DateInterval('P' . $trialLenght . 'D');
+            return $date->add($interval);
+        }
+
+        switch ($frequency){
+            case 'daily':
+                $frequency = 'D';
+                break;
+            case 'weekly':
+                $frequency = 'W';
+                break;
+            case 'monthly':
+                $frequency = 'M';
+                break;
+            case 'yearly':
+                $frequency = 'Y';
+                break;
+        }
+        $interval = new DateInterval('P' . $cycle . $frequency);
+        return $date->add($interval);
+    }
+
+    public function getStatusFromOrder(WC_Order $order)
+    {
+        switch ($order->get_status()){
+            case 'processing':
+            case 'completed':
+                return 'ACTIVE';
+            case 'cancelled':
+                return 'CANCELED';
+            case 'on-hold':
+            default:
+                return 'PENDING';
+        }
+    }
+    
+    public function translateFrequency($frequency)
+    {
+        $available = array('daily' => __('Diário', 'pagbank-connect'),
+            'weekly' => __('Semanal', 'pagbank-connect'),
+            'monthly' => __('Mensal', 'pagbank-connect'),
+            'yearly' => __('Anual', 'pagbank-connect'),
+            'default' => __('Desconhecido', 'pagbank-connect')
+        );
+        
+        if (in_array($frequency, array_keys($available)))
+            return $available array($frequency);
+            
+        return $available array('default');
+    }
+
+    public function translateFrequencyTermsPlural($frequency)
+    {
+        $available = array('daily' => __('dias', 'pagbank-connect'),
+            'weekly' => __('semanas', 'pagbank-connect'),
+            'monthly' => __('meses', 'pagbank-connect'),
+            'yearly' => __('anos', 'pagbank-connect'),
+            'default' => __('desconhecido', 'pagbank-connect')
+        );
+
+        if (in_array($frequency, array_keys($available)))
+            return $available array($frequency);
+
+        return $available array('default');
+    }
+
+    /**
+     * In case of a subscription for digital content you can check if the user are still eligible to access the content
+     * It will be based on the status of the subscription. In cases where the subscription is pending or paused
+     * this method will see if the next billing date is in the future.
+     *
+     * @param stdClass $subscription
+     *
+     * @return bool
+     */
+    public function areBenefitsActive(\stdClass $subscription)
+    {
+        switch ($subscription->status) {
+            case 'ACTIVE':
+                return true;
+            case 'PAUSED':
+            case 'PENDING_CANCEL':
+                $nextBilling = $subscription->next_bill_at;
+                try {
+                    $now = new DateTime('now', new DateTimeZone('GMT'));
+                } catch (Exception $e) {
+                    return false;
+                }
+                return $nextBilling > $now->format('Y-m-d H:i:s');
+            case 'PENDING':
+            case 'SUSPENDED':
+            case 'CANCELED':
+                default:
+                    return false;
+                
+        }
+    }
+    
+    public function getRecurringTermsFromCart($paymentMethod, WC_Cart $cart = null)
+    {
+        if (!$cart) $cart = WC()->cart;
+        if (!$cart) return '';
+        $msgDefault = __('O valor de %s será cobrado %s.', 'pagbank-connect');
+        $total = $cart->get_total('edit');
+        $frequency = __('mensalmente', 'pagbank-connect');
+        $initialFee = 0;
+        //get cicle and frequency from the first recurring product
+        foreach ($cart->get_cart() as $cartItem) {
+            $product = $cartItem array('data');
+            if ($product->get_meta('_recurring_enabled') == 'yes'){
+                $cycle = $product->get_meta('_frequency_cycle');
+                $frequency = $product->get_meta('_frequency');
+                $initialFee = (float)$product->get_meta('_initial_fee');
+                $total -= $initialFee * $cartItem array('quantity');
+                if ($cycle == 1){
+                    switch ($frequency){
+                        case 'daily':
+                            $frequency = __('diariamente', 'pagbank-connect');
+                            break 2;
+                        case 'weekly':
+                            $frequency = __('semanalmente', 'pagbank-connect');
+                            break 2;
+                        case 'monthly':
+                            $frequency = __('mensalmente', 'pagbank-connect');
+                            break 2;
+                        case 'yearly':
+                            $frequency = __('anualmente', 'pagbank-connect');
+                            break 2;
+                    }
+                }
+                $frequency = sprintf(__('a cada %d %s', 'pagbank-connect'), $cycle, $this->translateFrequencyTermsPlural($frequency));
+                break;       
+            }
+        }
+
+        if (!isset($product)) {
+            return '';
+        }
+
+        $msg = sprintf($msgDefault, wc_price($total), $frequency);
+
+        $hasTrial = $this->getCartRecurringTrial($cart);
+        $hasDiscount = $this->hasDiscount($product);
+        if ($hasTrial || $hasDiscount) {
+            $total = $cart->get_shipping_total('edit') ?? 0;
+            foreach ($cart->get_cart() as $cartItem) {
+                $product = $cartItem array('data');
+                $total += $product->get_data() array('price');
+            }
+            $msg = sprintf($msgDefault, wc_price($total), $frequency);
+        }
+
+        if ($hasTrial){
+            $msgTrial = __('O valor de %s será cobrado %s após o período de testes de %d dias.', 'pagbank-connect');
+            $msg = sprintf($msgTrial, wc_price($total), $frequency, $hasTrial);
+        }
+
+        if ($hasDiscount) {
+            $total -= (float)$product->get_meta('_recurring_discount_amount');
+        }
+
+        if ($hasTrial && $hasDiscount){
+            $msg .= ' ';
+            $msgDiscount = sprintf(
+                __('A próxima cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                wc_price($total)
+            );
+
+            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+                $msgDiscount = sprintf(
+                    __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
+                    $product->get_meta('_recurring_discount_cycles'),
+                    wc_price($total)
+                );
+            }
+
+            $msg .= $msgDiscount;
+        }
+
+        if (!$hasTrial && $hasDiscount) {
+            $msg .= ' ';
+            $msgDiscount = sprintf(
+                __('A primeira cobrança será de %s, aplicado o desconto.', 'pagbank-connect'),
+                wc_price($total)
+            );
+
+            if ($product->get_meta('_recurring_discount_cycles') > 1) {
+                $msgDiscount = sprintf(
+                    __('Durante os %s ciclos com desconto, a cobrança será de %s.', 'pagbank-connect'),
+                    $product->get_meta('_recurring_discount_cycles'),
+                    wc_price($total)
+                );
+            }
+
+            $msg .= $msgDiscount;
+        }
+
+        $initialFee = $product->get_meta('_initial_fee');
+        if ($initialFee > 0){
+            $msg .= '<p> ' . sprintf(__('Uma taxa de %s foi adicionada à primeira cobrança.', 'pagbank-connect'), wc_price($initialFee)) . '</p>';;
+        }
+        
+        $recurringNoticeDays = (int)Params::getRecurringConfig('recurring_notice_days', 0);
+        if ($paymentMethod != 'creditcard' && $recurringNoticeDays > 0){
+            switch ($paymentMethod){
+                case 'pix':
+                    $msg .= '<p>' . sprintf(__('Um código PIX será enviado para seu e-mail %d dias antes de cada vencimento.', 'pagbank-connect'), $recurringNoticeDays) . '</p>';
+                    break;
+                case 'boleto':
+                    $msg .= '<p>' . sprintf(__('Um novo boleto será enviado para seu e-mail %d dias antes de cada vencimento.', 'pagbank-connect'), $recurringNoticeDays) . '</p>';
+                    break;
+            }
+            $msg .= ' ' . __('O não pagamento dentro do prazo causará a suspensão da assinatura.', 'pagbank-connect');
+        }
+
+        $maxCycles = (int)$product->get_meta('_recurring_max_cycles');
+        if ($maxCycles > 0){
+            $msg .= '<p>' . sprintf(__(' Esta assinatura será cobrada %s por %d ciclos.', 'pagbank-connect'),$frequency, $maxCycles) . '</p>';
+        }
+        
+        return $msg;
+    }
+
+    public static function getAdminSubscriptionDetailsUrl($order)
+    {
+        global $wpdb;
+
+        $parentId = $order->get_parent_id('edit');
+        $orderId = $parentId > 0 ? $parentId : $order->get_id();
+        
+        $table = $wpdb->prefix . 'pagbank_recurring';
+        $sql = "SELECT * FROM `$table` WHERE initial_order_id = 0%d";
+        $subscription = $wpdb->get_row($wpdb->prepare($sql, $orderId));
+        if ( ! $subscription) return '#';
+        return admin_url('admin.phppage=rm-pagbank-subscriptions-view&action=view&id=' . $subscription->id);
+
+    }
+
+    public function getRecurringAmountFromOrderItems(WC_Order $order)
+    {
+        $total = 0;
+        $shipping_total = $order->get_shipping_total() ?? 0;
+        foreach ($order->get_items() as $item){
+            $product = $item->get_product();
+            if ($product->get_meta('_recurring_enabled') == 'yes'){
+                $total += $product->get_price();
+            }
+        }
+        return $total + $shipping_total;
+    }
+
+    public function hasSubscriptionChargeRemaining($subscription)
+    {
+        $maxCycles = (int)$subscription->recurring_max_cycles;
+        if (!$maxCycles) {
+            return true;
+        }
+
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        $orders = wc_get_orders( array('parent' => $subscription->initial_order_id,
+        ));
+
+        $ordersNumber = count($orders);
+
+        // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
+        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+            $ordersNumber = $ordersNumber + 1;
+        }
+
+        if ($ordersNumber < $maxCycles){
+            return true;
+        }
+
+        return false;
+    }
+
+    public function hasSubscriptionDiscountRemaining($subscription)
+    {
+        $discount = (float)$subscription->recurring_discount_amount;
+        $discountCycles = (int)$subscription->recurring_discount_cycles;
+        if (!$discount || !$discountCycles) {
+            return false;
+        }
+
+        $initialOrder = wc_get_order($subscription->initial_order_id);
+        $orders = wc_get_orders( array('parent' => $subscription->initial_order_id,
+        ));
+
+        $ordersNumber = count($orders);
+
+        // the first order is the initial order, so we need to discount it from the count of orders if it is not trial
+        if ($initialOrder->get_meta('_pagbank_recurring_trial_length') < 1){
+            $ordersNumber = $ordersNumber + 1;
+        }
+
+        if ($ordersNumber < $discountCycles){
+            return true;
+        }
+
+        return false;
+    }
+
+    public function hasDiscount($product)
+    {
+        return (float)$product->get_meta('_recurring_discount_amount') > 0
+        && (int)$product->get_meta('_recurring_discount_cycles') > 0;
+    }
+    
+
+
+    /**
+     * Checks if the user has access to restricted content
+     *
+     * @param $userId
+     * @param $pageId     
+     * @param $categoriesIds array of categories ids
+     *
+     * @return bool
+     */
+    public function canAccessRestrictedContent($userId, $pageId, $categoriesIds)
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'pagbank_content_restriction';
+        $sql = "SELECT * FROM `$table` WHERE user_id = %d";
+        $restrictions = $wpdb->get_row($wpdb->prepare($sql, $userId));
+        if (!$restrictions) return false;
+        
+        // get pages and categories that the user has access
+        $pages = explode(',', $restrictions->pages ?? '');
+        $categories = explode(',', $restrictions->categories ?? '');
+        
+        //see if $pageId or $categoriesIds are in the user's access list
+        if (in_array($pageId, $pages) || count(array_intersect($categoriesIds, $categories)) > 0){
+            return true;
+        }
+    
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSubscriptionUpdatePage()
+    {
+        global $wp, $wp_rewrite;
+        // Default permalinks: check query string
+        if (! $wp_rewrite->using_permalinks()) {
+            return isset($_GET array('rm-pagbank-subscriptions-update')) && is_account_page();
+        }
+        // Friendly permalinks
+        $endpoint = $wp->request;
+        return stripos($endpoint, 'rm-pagbank-subscriptions-update') !== false;
+    }
+
+    public static function subscriptionActionUrl($endpoint, $subscription)
+    {
+        global $wp_rewrite;
+        $action_param = "?";
+        if (! $wp_rewrite->using_permalinks()) {
+            $action_param = '&';
+        }
+        // Friendly permalinks
+        return WC()->api_request_url('rm-pagbank-subscription-edit') . $action_param . 'action=' . $endpoint . '&id=' . $subscription->id;
+    }
+
+    /**
+     * Checks if a product or its parent is recurring
+     * @param WC_Product|null $product
+     * @return bool
+     */
+    public function isProductRecurring($product)
+    {
+        if(!$product || !is_a($product, 'WC_Product')) {
+            return false;
+        }
+        
+        $is_recurring = $product->get_meta('_recurring_enabled') == 'yes';
+        if ($parentId = $product->get_parent_id()) {
+            //if the product is a variation, we need to check the parent product
+            $product_variable = wc_get_product($parentId);
+            $is_recurring = $product_variable->get_meta('_recurring_enabled') == 'yes';
+        }
+        return $is_recurring;
+    }
+}
