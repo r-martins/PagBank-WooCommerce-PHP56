@@ -326,12 +326,69 @@ class Functions
     }
 
     /**
+     * Check if WooCommerce HPOS is enabled.
+     *
+     * @return bool
+     */
+    public static function isHposEnabled()
+    {
+        if (!function_exists('wc_get_container')) {
+            return false;
+        }
+
+        try {
+            $container = wc_get_container();
+        } catch (Exception $e) {
+            return false;
+        }
+
+        if (!is_object($container)) {
+            return false;
+        }
+
+        $controllerClass = 'Automattic\\WooCommerce\\Internal\\DataStores\\Orders\\CustomOrdersTableController';
+
+        if (!class_exists($controllerClass)) {
+            return false;
+        }
+
+        try {
+            $controller = $container->get($controllerClass);
+        } catch (Exception $e) {
+            return false;
+        }
+
+        if (!is_object($controller) || !method_exists($controller, 'custom_orders_table_usage_is_enabled')) {
+            return false;
+        }
+
+        return (bool) $controller->custom_orders_table_usage_is_enabled();
+    }
+
+    /**
      * Check if the current page is the checkout page and uses Woocommerce Blocks. Also returns false if the page is a CartFlows checkout.
      * @return bool
      */
     public static function isCheckoutBlocks() {
+        if (!class_exists('WC_Blocks_Utils')) {
+            return false;
+        }
+
         $page_id = get_the_ID();
-        return is_checkout() && WC_Blocks_Utils::has_block_in_page($page_id, 'woocommerce/checkout' ) && !Functions::isCartflowCheckout();
+
+        if (!is_checkout()) {
+            return false;
+        }
+
+        if (!function_exists('is_wc_endpoint_url') || is_wc_endpoint_url('order-received')) {
+            return false;
+        }
+
+        if (!WC_Blocks_Utils::has_block_in_page($page_id, 'woocommerce/checkout')) {
+            return false;
+        }
+
+        return !self::isCartflowCheckout();
     }
 
     public static function isCartflowCheckout() {
@@ -351,9 +408,7 @@ class Functions
         Functions::addMetaQueryFilter();
 
         // Check if HPOS is enabled
-        if (wc_get_container()->get(
-            \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
-        )->custom_orders_table_usage_is_enabled()) {
+        if (Functions::isHposEnabled()) {
             $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes * 60;
             return wc_get_orders([
                 'limit'        => -1,
@@ -435,9 +490,7 @@ class Functions
         Functions::addMetaQueryFilter();
 
         // Check if HPOS is enabled
-        if (wc_get_container()->get(
-            \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
-        )->custom_orders_table_usage_is_enabled()) {
+        if (Functions::isHposEnabled()) {
             $createdAtDate = strtotime(gmdate('Y-m-d H:i:s')) - 3600 * 24 * 7;
             return wc_get_orders([
                 'limit'        => -1,

@@ -85,3 +85,18 @@ register_uninstall_hook(__FILE__, [Connect::class, 'uninstall']);
 
 // Upgrading scripts
 add_action('plugins_loaded', [Connect::class, 'upgrade']);
+
+add_action(
+    'init',
+    function () {
+        if (function_exists('wp_robots_no_robots')) {
+            if (has_action('wp_head', 'wp_no_robots')) {
+                remove_action('wp_head', 'wp_no_robots');
+            }
+
+            if ( ! has_filter('wp_robots', 'wp_robots_no_robots') ) {
+                add_filter('wp_robots', 'wp_robots_no_robots');
+            }
+        }
+    }
+);

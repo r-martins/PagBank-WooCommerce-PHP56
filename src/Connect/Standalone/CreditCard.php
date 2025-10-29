@@ -31,7 +31,7 @@ class CreditCard extends WC_Payment_Gateway_CC
 
     public $code = '';
 
-    private $injectedScripts = [];
+    private static $injectedScripts = array();
 
     public function __construct()
     {

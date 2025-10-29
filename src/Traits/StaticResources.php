@@ -11,7 +11,7 @@ trait StaticResources
     /**
      * @var true
      */
-    private $addedScripts = false;
+    private static $addedScripts = false;
 
     /**
      * Add css files for checkout and success page
