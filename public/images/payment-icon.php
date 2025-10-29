@@ -1,20 +1,21 @@
-<php
+<?php
 @ob_start(); // Start output buffering
 
 require __DIR__ . '/../../../../../wp-load.php';
 
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Params;
 
 header('Content-Type: image/svg+xml');
-$allowedMethods = array('cc', 'pix', 'boleto');
+$allowedMethods = ['cc', 'pix', 'boleto'];
 $iconColor = Params::getConfig('icons_color', 'gray');
-$method = sanitize_text_field(isset($_GET array('method')) ? $_GET array('method') : '');
-$method = in_array($_GET array('method'), $allowedMethods) ? $_GET array('method') : 'cc';
+$methodParam = isset($_GET['method']) ? $_GET['method'] : '';
+$method = sanitize_text_field($methodParam);
+$method = in_array($method,$allowedMethods, true) ? $method : 'cc';
 
 if (extension_loaded('DOM') === false) {
     echo file_get_contents(__DIR__ . '/' . $method . '.svg');
     $output = @ob_get_clean(); // Get the buffer content and clean it
-    echo $output !== false trim($output): ''; // Output the cleaned buffer content
+    echo $output !== false ? trim($output): ''; // Output the cleaned buffer content
     exit;
 }
 
@@ -30,17 +31,17 @@ foreach ($paths as $path) {
     // Check if the style attribute contains a fill rule
     if (strpos($style, 'fill:') !== false) {
         // Replace the fill color in the style attribute
-        $newStyle = preg_replace('/fill: # array(0-9a-fA-F)+/', 'fill: ' . $iconColor, $style);
+        $newStyle = preg_replace('/fill: #[0-9a-fA-F]+/', 'fill: ' . $iconColor,$style);
     } else {
         // Add the fill rule to the style attribute
         $newStyle = $style . '; fill: ' . $iconColor;
     }
 
-    $path->setAttribute('style', $newStyle);
+    $path->setAttribute('style',$newStyle);
 }
 
 echo $doc->saveXML();
 
 $output = @ob_get_clean(); // Get the buffer content and clean it
 
-echo $output !== false trim($output): ''; // Output the cleaned buffer content
+echo $output !== false ? trim($output): ''; // Output the cleaned buffer content

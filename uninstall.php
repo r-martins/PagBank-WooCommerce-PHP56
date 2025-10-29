@@ -1,4 +1,4 @@
-<php
+<?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * See https://developer.wordpress.org/plugins/plugin-basics/uninstall-methods/ for details
@@ -12,10 +12,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 //
 //$option_name = 'wporg_option';
 //
-//delete_option( $option_name );
+//delete_option($option_name );
 //
 //// for site options in Multisite
-//delete_site_option( $option_name );
+//delete_site_option($option_name );
 //
 //// drop a custom database table
 //global $wpdb;

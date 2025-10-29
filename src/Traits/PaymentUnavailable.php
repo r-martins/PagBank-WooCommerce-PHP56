@@ -1,10 +1,10 @@
-<php
+<?php
 
 namespace RM_PagBank\Traits;
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
 
 trait PaymentUnavailable
@@ -29,7 +29,7 @@ trait PaymentUnavailable
         if ($this->paymentUnavailable()) {
             foreach ($gateways as $key => $gateway) {
                 if (strpos($key, Connect::DOMAIN) !== false) {
-                    unset($gateways array($key));
+                    unset($gateways[$key]);
                 }
             }
         }
@@ -41,8 +41,7 @@ trait PaymentUnavailable
      * Payment is unavailable if the total is less than R$1.00
      * @return bool
      */
-    public function paymentUnavailable()
-    {
+    public function paymentUnavailable() {
         if (is_admin()) {
             return false;
         }

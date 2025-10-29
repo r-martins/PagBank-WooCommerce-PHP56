@@ -1,12 +1,12 @@
-<php
+<?php
 namespace RM_PagBank;
 
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use WC_Admin_Settings; // PHP 5.6 compatibility
-// use WC_Product; // PHP 5.6 compatibility
-// use WC_Shipping_Method; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Api;
+use WC_Admin_Settings;
+use WC_Product;
+use WC_Shipping_Method;
 
 /**
  * Class EnvioFacil
@@ -17,29 +17,30 @@ namespace RM_PagBank;
  */
 class EnvioFacil extends WC_Shipping_Method
 {
-	public $countries = array('BR');
+	public $countries = ['BR'];
 
 	const CODE = 'rm_enviofacil';
 	/**
 	 * Constructor.
 	 *
-	 * @param $instance_id Instance ID.
+	 * @param int $instance_id Instance ID.
 	 *
 	 * @noinspection PhpUnusedParameterInspection*/
-	public function __construct( $instance_id = 0 ) {
+	public function __construct($instance_id = 0 ) {
 		$this->id                 = self::CODE;
 		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect' );  // Title shown in admin
 		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect' ); // Description shown in admin
 
 		$this->enabled            = $this->get_option('enabled');
 		$this->title              = "PagBank Envio Fácil";
-//		$this->supports           = array(//			'shipping-zones',
+//		$this->supports           = [
+//			'shipping-zones',
 //			'instance-settings',
-//		);
+//		];
 
 		$this->init();
 		/** @noinspection PhpUnusedLocalVariableInspection */
-		parent::__construct( $instance_id = 0 );
+		parent::__construct($instance_id = 0 );
 	}
 
 	public function init() {
@@ -48,24 +49,23 @@ class EnvioFacil extends WC_Shipping_Method
 		$this->init_settings(); // This is part of the settings API. Loads settings you previously init.
 
 		// Save settings in admin if you have any defined
-		add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
+		add_action( 'woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options' ) );
 	}
 
 	/**
 	 * Is this method available?
 	 *
-	 * @param $package Package.
+	 * @param array $package Package.
 	 * @return bool
 	 */
-	public function is_available($package)
-	{
-		if ( ! isset($package array('destination') array('postcode')))
+	public function is_available($package) {
+		if ( ! isset($package['destination']['postcode']))
 		{
 			return false;
 		}
 
 		$connectKey = substr(Params::getConfig('connect_key'), 0, 7);
-		if (!in_array($connectKey, array('CONPS14', 'CONPS30'))){
+		if (!in_array($connectKey, ['CONPS14', 'CONPS30'])){
 			return false;
 		}
 
@@ -75,21 +75,21 @@ class EnvioFacil extends WC_Shipping_Method
 	/**
 	 * Called to calculate shipping rates for this method. Rates can be added using the add_rate() method.
 	 *
-	 * @param $package Package array.
+	 * @param array $package Package array.
 	 */
-    public function calculate_shipping($package = array()): array
+    public function calculate_shipping($package = array())
     {
-        $destinationPostcode = $package array('destination') array('postcode');
-        $destinationPostcode = preg_replace('/ array(^0-9)/', '', $destinationPostcode);
+        $destinationPostcode = $package['destination']['postcode'];
+        $destinationPostcode = preg_replace('/[^0-9]/', '',$destinationPostcode);
 
         $senderPostcode = $this->get_option('origin_postcode', get_option('woocommerce_store_postcode'));
-        $senderPostcode = preg_replace('/ array(^0-9)/', '', $senderPostcode);
+        $senderPostcode = preg_replace('/[^0-9]/', '',$senderPostcode);
 
-        $productValue = $package array('contents_cost');
+        $productValue = $package['contents_cost'];
 
 
 		// Build individual (non-aggregated) items for improved boxing calculation
-		$items = array();
+		$items = [];
 		$dimensionUnit = get_option('woocommerce_dimension_unit', 'cm');
 		switch ($dimensionUnit) {
 			case 'mm': $dimMultiplier = 1; break;
@@ -107,48 +107,50 @@ class EnvioFacil extends WC_Shipping_Method
 			case 'oz': $weightMultiplier = 28.34952; break; // ounces to g
 			default: $weightMultiplier = 1000; // fallback assume kg
 		}
-		foreach ($package array('contents') as $content) {
+		foreach ($package['contents'] as $content) {
 			/** @var WC_Product $product */
-			$product = $content array('data');
-			$qty = (int) $content array('quantity');
+			$product = $content['data'];
+			$qty = (int) $content['quantity'];
 			if ($qty < 1) { continue; }
 
 			$prodDims = $product->get_dimensions(false); // array length|width|height
-			$prodDims = array_map('floatval', $prodDims);
+			$prodDims = array_map('floatval',$prodDims);
 			$prodWeight = (float)$product->get_weight();
 
-			$widthMm  = $prodDims array('width');
-			$heightMm = $prodDims array('height') ?: 1;
-			$lengthMm = $prodDims array('length') ?: 1;
+			$widthMm  = $prodDims['width'];
+			$heightMm = $prodDims['height'] ?: 1;
+			$lengthMm = $prodDims['length'] ?: 1;
 			$weightG  = $prodWeight ?: 0.01;
 
 			$priceUnit = (float) wc_get_price_excluding_tax($product); // valor unitário
 			if ($priceUnit <= 0) {
-				$priceUnit = $productValue / max(1, $qty); // fallback
+				$priceUnit = $productValue / max(1,$qty); // fallback
 			}
 			
-			$items array() = array('reference' => substr($product->get_name(), 0, 40),
+			$items[] = [
+				'reference' => substr($product->get_name(), 0, 40),
 				'width' => round($widthMm * $dimMultiplier),
 				'length' => round($lengthMm * $dimMultiplier),
 				'depth' => round($heightMm * $dimMultiplier),
 				'weight' => round($weightG * $weightMultiplier),
 				'qty' => $qty,
 				'price' => (float) $priceUnit,
-			);
+			];
 		}
 
 		if (empty($items)) {
-			return array();
+			return [];
 		}
 
 		// Retrieve registered boxes (if the Box class exists)
-		   $boxesPayload = array();
+		   $boxesPayload = [];
 		   if (class_exists('\\RM_PagBank\\Connect\\EnvioFacil\\Box')) {
 			   $boxManager = new \RM_PagBank\Connect\EnvioFacil\Box();
 			   $availableBoxes = $boxManager->get_all_available();
 			   foreach ($availableBoxes as $b) {
 				   // Convert decimal columns from DB to int mm/g as required by API (no multiplication, just round)
-				   $boxesPayload array() = array('reference'   => $b->reference,
+				   $boxesPayload[] = [
+					   'reference'   => $b->reference,
 					   'outerWidth'  => (int) $b->outer_width,
 					   'outerLength' => (int) $b->outer_length,
 					   'outerDepth'  => (int) $b->outer_depth,
@@ -157,255 +159,270 @@ class EnvioFacil extends WC_Shipping_Method
 					   'innerLength' => (int) $b->inner_length,
 					   'innerDepth'  => (int) $b->inner_depth,
 					   'maxWeight'   => (int) $b->max_weight,
-				   );
+				   ];
 			   }
 		   }
 
 	   
 	   if (empty($boxesPayload)) {
-		   Functions::log(' array(EnvioFácil) Nenhuma embalagem ativa cadastrada – usando API antiga (fallback)', 'info', array('itens' => count($items),
-		   ));
+		   Functions::log('[EnvioFácil] Nenhuma embalagem ativa cadastrada – usando API antiga (fallback)', 'info', [
+			   'itens' => count($items),
+		   ]);
 		   return $this->calculateShippingLegacy($package);
 	   }
 
-		$params = array('sender' => $senderPostcode,
+		$params = [
+			'sender' => $senderPostcode,
 			'receiver' => $destinationPostcode,
 			'boxes' => $boxesPayload,
 			'items' => $items,
-		);
+		];
         
         if (!$senderPostcode || strlen($senderPostcode) != 8) {
-            Functions::log(' array(EnvioFácil) CEP de origem não configurado ou incorreto', 'error', array('sender_postcode' => $senderPostcode,
+            Functions::log('[EnvioFácil] CEP de origem não configurado ou incorreto', 'error', [
+                'sender_postcode' => $senderPostcode,
                 'configured_postcode' => $this->get_option('origin_postcode'),
                 'store_postcode' => get_option('woocommerce_store_postcode')
-            ));
-            return array();
+            ]);
+            return [];
         }
 
 		try {
 			$api = new Api();
-			$decoded = $api->postEf('boxing', $params, 30);
+			$decoded = $api->postEf('boxing',$params, 30);
 		} catch (\Exception $e) {
-			Functions::log(' array(EnvioFácil) Erro na requisição para API boxing', 'error', array('message' => $e->getMessage(),
+			Functions::log('[EnvioFácil] Erro na requisição para API boxing', 'error', [
+				'message' => $e->getMessage(),
 				'request_data' => $params,
-			));
-			return array();
+			]);
+			return [];
 		}
 
-		if (isset($decoded array('error_messages'))) {
-			$errors = $decoded array('error_messages');
-			$codes = array_map(static function($e){return isset($e array('code')) ? $e array('code') : '';}, $errors);
+		if (isset($decoded['error_messages'])) {
+			$errors = $decoded['error_messages'];
+		$codes = array_map(static function($e){return isset($e['code']) ? $e['code'] : '';},$errors);
 			
 			// Log detailed errors for debugging
-			Functions::log(' array(EnvioFácil) Erro na API de boxing', 'error', array('errors' => $errors,
+			Functions::log('[EnvioFácil] Erro na API de boxing', 'error', [
+				'errors' => $errors,
 				'codes' => $codes,
 				'request_data' => $params,
 				'decoded_response' => $decoded,
-			));
+			]);
 			
 			// Log user-friendly messages for store owners
 			foreach ($errors as $error) {
-				$errorMsg = isset($error array('message')) ? $error array('message') : 'Erro desconhecido';
-				$errorCode = isset($error array('code')) ? $error array('code') : 'UNKNOWN';
-				Functions::log(" array(EnvioFácil) array($errorCode) $errorMsg", 'error');
+			$errorMsg = isset($error['message']) ? $error['message'] : 'Erro desconhecido';
+			$errorCode = isset($error['code']) ? $error['code'] : 'UNKNOWN';
+				Functions::log("[EnvioFácil] [$errorCode] $errorMsg", 'error');
 			}
 			
 			// Optional handling for specific error codes
-			if (in_array('NO_BOXES_AVAILABLE', $codes, true)) {
-				Functions::log(' array(EnvioFácil) Nenhuma caixa disponível para os produtos selecionados', 'error');
-				return array();
+			if (in_array('NO_BOXES_AVAILABLE',$codes, true)) {
+				Functions::log('[EnvioFácil] Nenhuma caixa disponível para os produtos selecionados', 'error');
+				return [];
 			}
-			if (in_array('INVALID_BOX_DIMENSIONS', $codes, true)) {
-				Functions::log(' array(EnvioFácil) Dimensões de caixa inválidas ou não aceitas pela transportadora', 'error');
-				return array();
+			if (in_array('INVALID_BOX_DIMENSIONS',$codes, true)) {
+				Functions::log('[EnvioFácil] Dimensões de caixa inválidas ou não aceitas pela transportadora', 'error');
+				return [];
 			}
-			if (in_array('INVALID_ITEM_DIMENSIONS', $codes, true)) {
-				Functions::log(' array(EnvioFácil) Dimensões de produto inválidas ou incompatíveis com caixas disponíveis', 'error');
-				return array();
+			if (in_array('INVALID_ITEM_DIMENSIONS',$codes, true)) {
+				Functions::log('[EnvioFácil] Dimensões de produto inválidas ou incompatíveis com caixas disponíveis', 'error');
+				return [];
 			}
-			if (in_array('INVALID_POSTCODE', $codes, true)) {
-				Functions::log(' array(EnvioFácil) CEP de origem ou destino inválido', 'error');
-				return array();
+			if (in_array('INVALID_POSTCODE',$codes, true)) {
+				Functions::log('[EnvioFácil] CEP de origem ou destino inválido', 'error');
+				return [];
 			}
-			return array(); // fallback genérico
+			return []; // fallback genérico
 		}
 
-		// Expected structure: boxes array() each box contains shipping array()
-		$aggregated = array();
-		$boxCount = isset($decoded array('boxes')) && is_array($decoded array('boxes')) count($decoded array('boxes')) : 0;
-		$boxes = isset($decoded array('boxes')) ? $decoded array('boxes') : array();
-		$boxReferences = array();
+		// Expected structure: boxes[] each box contains shipping[]
+		$aggregated = [];
+		$boxCount = isset($decoded['boxes']) && is_array($decoded['boxes']) ? count($decoded['boxes']) : 0;
+	$boxes = isset($decoded['boxes']) ? $decoded['boxes'] : array();
+		$boxReferences = [];
 		foreach ($boxes as $box) {
-			if (empty($box array('shipping')) || !is_array($box array('shipping'))) { continue; }
-			$boxReferences array() = $box array('reference');
-			foreach ($box array('shipping') as $option) {
-				if (!isset($option array('provider'), $option array('providerMethod'), $option array('contractValue'))) { continue; }
-				$key = $option array('provider').'|'.$option array('providerMethod');
-				if (!isset($aggregated array($key))) {
-					$aggregated array($key) = array('provider' => $option['provider'),
-						'method' => $option array('providerMethod'),
+			if (empty($box['shipping']) || !is_array($box['shipping'])) { continue; }
+			$boxReferences[] = $box['reference'];
+			foreach ($box['shipping'] as $option) {
+				if (!isset($option['provider'],$option['providerMethod'],$option['contractValue'])) { continue; }
+				$key = $option['provider'].'|'.$option['providerMethod'];
+				if (!isset($aggregated[$key])) {
+					$aggregated[$key] = [
+						'provider' => $option['provider'],
+						'method' => $option['providerMethod'],
 						'contractValue' => 0.0,
-						'estimateDays' => (int) (isset($option array('estimateDays')) ? $option array('estimateDays') : 0),
+				'estimateDays' => (int) (isset($option['estimateDays']) ? $option['estimateDays'] : 0),
 					];
 				}
-				$aggregated array($key) array('contractValue') += (float) $option array('contractValue');
+				$aggregated[$key]['contractValue'] += (float) $option['contractValue'];
 				// total transit time = maximum transit among boxes (assuming consolidated shipment)
-				$aggregated array($key) array('estimateDays') = max($aggregated array($key) array('estimateDays'), (int) (isset($option array('estimateDays')) ? $option array('estimateDays') : 0));
+			$aggregated[$key]['estimateDays'] = max($aggregated[$key]['estimateDays'], (int) (isset($option['estimateDays']) ? $option['estimateDays'] : 0));
 			}
 		}
 
 		if (empty($aggregated)) {
-			Functions::log(' array(EnvioFácil) Nenhuma opção de frete disponível após processamento dos dados da API', 'warning', array('boxes_count' => $boxCount,
+			Functions::log('[EnvioFácil] Nenhuma opção de frete disponível após processamento dos dados da API', 'warning', [
+				'boxes_count' => $boxCount,
 				'boxes_references' => $boxReferences,
 				'decoded_response' => $decoded
-			));
-			return array();
+			]);
+			return [];
 		}
 
 		// Log successful calculation
-		Functions::log(' array(EnvioFácil) Cálculo de frete realizado com sucesso', 'info', array('shipping_options' => count($aggregated),
+		Functions::log('[EnvioFácil] Cálculo de frete realizado com sucesso', 'info', [
+			'shipping_options' => count($aggregated),
 			'boxes_used' => $boxCount,
 			'boxes_references' => $boxReferences
-		));
+		]);
 
 		$addDays = (int) $this->get_option('add_days', 0);
 		$adjustment = $this->get_option('adjustment_fee', 0);
 		foreach ($aggregated as $aggr) {
-			$days = $aggr array('estimateDays') + $addDays;
-			$cost = Functions::applyPriceAdjustment($aggr array('contractValue'), $adjustment);
+			$days = $aggr['estimateDays'] + $addDays;
+			$cost = Functions::applyPriceAdjustment($aggr['contractValue'],$adjustment);
 			if ($cost <= 0) { continue; }
-			$label = sprintf('%s - %s - %d %s', $aggr array('provider'), $aggr array('method'), $days, _n('dia útil', 'dias úteis', $days, 'pagbank-connect'));
+			$label = sprintf('%s - %s - %d %s',$aggr['provider'],$aggr['method'],$days, _n('dia útil', 'dias úteis',$days, 'pagbank-connect'));
 
 			$recommendedBoxes = '';
-			if ( ! empty( $boxReferences ) ) {
-				$boxCounts = array_count_values( $boxReferences );
-				$boxStrings = array();
-				foreach ( $boxCounts as $ref => $count ) {
-					$boxStrings array() = $count . 'x ' . $ref;
+			if ( ! empty($boxReferences ) ) {
+				$boxCounts = array_count_values($boxReferences );
+				$boxStrings = [];
+				foreach ($boxCounts as $ref => $count ) {
+					$boxStrings[] = $count . 'x ' . $ref;
 				}
-				$recommendedBoxes = implode( ', ', $boxStrings );
+				$recommendedBoxes = implode( ', ',$boxStrings );
 			}
 
-			$this->add_rate( array('id' => 'ef-'.$aggr['provider').'-'.$aggr array('method'),
+			$this->add_rate([
+				'id' => 'ef-'.$aggr['provider'].'-'.$aggr['method'],
 				'label' => $label,
 				'cost' => $cost,
 				'calc_tax' => 'per_order',
-				'meta_data' => array(__('Transportadora', 'pagbank-connect') => $aggr['provider'),
-					__('Método de envio', 'pagbank-connect') => $aggr array('method'),
+				'meta_data' => [
+					__('Transportadora', 'pagbank-connect') => $aggr['provider'],
+					__('Método de envio', 'pagbank-connect') => $aggr['method'],
 					__('Entrega estimada (dias)', 'pagbank-connect') => $days,
 					__('Quantidade de caixas', 'pagbank-connect') => $boxCount,
 					__('Caixas recomendadas', 'pagbank-connect') => $recommendedBoxes,
 				]
 			]);
 		}
-        return array();
+        return [];
 	}
 
 	/**
 	 * Calculate shipping using legacy API (fallback when no boxes are configured)
 	 *
-	 * @param $package Package array.
+	 * @param array $package Package array.
 	 * @return array
 	 */
-	private function calculateShippingLegacy($package = array()): array
+    private function calculateShippingLegacy($package = array())
 	{
-		$destinationPostcode = $package array('destination') array('postcode');
-		$destinationPostcode = preg_replace('/ array(^0-9)/', '', $destinationPostcode);
+		$destinationPostcode = $package['destination']['postcode'];
+		$destinationPostcode = preg_replace('/[^0-9]/', '',$destinationPostcode);
 
 		$senderPostcode = $this->get_option('origin_postcode', get_option('woocommerce_store_postcode'));
-		$senderPostcode = preg_replace('/ array(^0-9)/', '', $senderPostcode);
+		$senderPostcode = preg_replace('/[^0-9]/', '',$senderPostcode);
 
-		$productValue = $package array('contents_cost');
+		$productValue = $package['contents_cost'];
 
 		$dimensions = $this->getDimensionsAndWeight($package);
 
 		$isValid = $this->validateDimensions($dimensions);
 
 		if (!$isValid || !$dimensions) {
-            Functions::log(' array(EnvioFácil) Dimensões ou peso inválidos para os produtos no carrinho. Veja mais em https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce#dimensoes.', 'error', array('dimensions' => $dimensions,
+            Functions::log('[EnvioFácil] Dimensões ou peso inválidos para os produtos no carrinho. Veja mais em https://ajuda.pbintegracoes.com/hc/pt-br/articles/19944920673805-Envio-F%C3%A1cil-com-WooCommerce#dimensoes.', 'error', [
+                'dimensions' => $dimensions,
                 'is_valid' => $isValid
-            ));
-			return array();
+            ]);
+			return [];
 		}
 
 		//body
-		$params = array('sender' => $senderPostcode,
+		$params = [
+			'sender' => $senderPostcode,
 			'receiver' => $destinationPostcode,
-			'length' => $dimensions['length'),
-			'height' => $dimensions array('height'),
-			'width' => $dimensions array('width'),
-			'weight' => $dimensions array('weight'),
+			'length' => $dimensions['length'],
+			'height' => $dimensions['height'],
+			'width' => $dimensions['width'],
+			'weight' => $dimensions['weight'],
 			'value' => max($productValue, 0.1)
 		];
 		
 		if (!$senderPostcode || strlen($senderPostcode) != 8) {
-			Functions::log(' array(EnvioFácil) CEP de origem não configurado ou incorreto', 'error', array('sender_postcode' => $senderPostcode,
+			Functions::log('[EnvioFácil] CEP de origem não configurado ou incorreto', 'error', [
+				'sender_postcode' => $senderPostcode,
 				'configured_postcode' => $this->get_option('origin_postcode'),
 				'store_postcode' => get_option('woocommerce_store_postcode')
-			));
-			return array();
+			]);
+			return [];
 		}
 		
 		$api = new Api();
-        $ret = $api->getEf('quote', $params, 30);
+        $ret = $api->getEf('quote',$params, 30);
 		
 		if (is_wp_error($ret)) {
-			Functions::log(' array(EnvioFácil) Erro na requisição para API legacy', 'error', array('error' => $ret->get_error_message(),
+			Functions::log('[EnvioFácil] Erro na requisição para API legacy', 'error', [
+				'error' => $ret->get_error_message(),
 				'params' => $params,
-			));
-			return array();
+			]);
+			return [];
 		}
 		
 		
-		if (isset($ret array('error_messages'))) {
-			Functions::log(' array(EnvioFácil) Erro na API legacy', 'error', array('errors' => $ret['error_messages'),
+		if (isset($ret['error_messages'])) {
+			Functions::log('[EnvioFácil] Erro na API legacy', 'error', [
+				'errors' => $ret['error_messages'],
 				'params' => $params,
-			];
-			return array();
+			]);
+			return [];
 		}
 
 		$addDays = (int) $this->get_option('add_days', 0);
 		$adjustment = $this->get_option('adjustment_fee', 0);
 		
         if (empty($ret) || !is_array($ret)) {
-            Functions::log(' array(EnvioFácil) Resposta da API legacy vazia ou inválida', 'error', array('response' => $ret,
-            ));
-            return array();
+            Functions::log('[EnvioFácil] Resposta da API legacy vazia ou inválida', 'error', [
+                'response' => $ret,
+            ]);
+            return [];
         }
         
 		foreach ($ret as $provider) {
-			if (!isset($provider array('provider')) || !isset($provider array('providerMethod'))
-				|| !isset($provider array('contractValue'))) {
+			if (!isset($provider['provider']) || !isset($provider['providerMethod'])
+				|| !isset($provider['contractValue'])) {
 				continue;
 			}
 
-			$estimateDays = (int) (isset($provider array('estimateDays')) ? $provider array('estimateDays') : 0) + $addDays;
-			$cost = Functions::applyPriceAdjustment($provider array('contractValue'), $adjustment);
+		$estimateDays = (int) (isset($provider['estimateDays']) ? $provider['estimateDays'] : 0) + $addDays;
+			$cost = Functions::applyPriceAdjustment($provider['contractValue'],$adjustment);
 			
 			if ($cost <= 0) {
 				continue;
 			}
 			
-			$label = sprintf('%s - %s - %d %s', 
-				$provider array('provider'), 
-				$provider array('providerMethod'), 
-				$estimateDays, 
-				_n('dia útil', 'dias úteis', $estimateDays, 'pagbank-connect')
+			$label = sprintf('%s - %s - %d %s',$provider['provider'],$provider['providerMethod'],$estimateDays, 
+				_n('dia útil', 'dias úteis',$estimateDays, 'pagbank-connect')
 			);
 
-			$this->add_rate( array('id' => 'ef-'.$provider['provider') . '-' . $provider array('providerMethod'),
+			$this->add_rate([
+				'id' => 'ef-'.$provider['provider'] . '-' . $provider['providerMethod'],
 				'label' => $label,
 				'cost' => $cost,
 				'calc_tax' => 'per_order',
-				'meta_data' => array(__('Transportadora', 'pagbank-connect') => $provider['provider'),
-					__('Método de envio', 'pagbank-connect') => $provider array('providerMethod'),
+				'meta_data' => [
+					__('Transportadora', 'pagbank-connect') => $provider['provider'],
+					__('Método de envio', 'pagbank-connect') => $provider['providerMethod'],
 					__('Entrega estimada (dias)', 'pagbank-connect') => $estimateDays,
 					__('Modo de cálculo', 'pagbank-connect') => __('API Legacy (sem caixas)', 'pagbank-connect'),
 				]
 			]);
 		}
 		
-		return array();
+		return [];
 	}
 
 	/**
@@ -414,29 +431,29 @@ class EnvioFacil extends WC_Shipping_Method
 	 *
 	 * @return array
 	 */
-	private function getDimensionsAndWeight($package)
-	{
-		$return = array('length' => 0,
+	private function getDimensionsAndWeight($package) {
+		$return = [
+			'length' => 0,
 			'height' => 0,
 			'width' => 0,
 			'weight' => 0,
-		);
+		];
 
-		foreach ($package array('contents') as $content)
+		foreach ($package['contents'] as $content)
 		{
 			/** @var WC_Product $product */
-			$product = $content array('data');
+			$product = $content['data'];
 
 			$dimensions = $product->get_dimensions(false);
 			//convert each dimension to float
-			$dimensions = array_map('floatval', $dimensions);
+			$dimensions = array_map('floatval',$dimensions);
 
 			$weight = floatval($product->get_weight());
 			$weight = Functions::convertToKg($weight);
-			$return array('length') += $dimensions array('length') * $content array('quantity');
-			$return array('height') += $dimensions array('height') * $content array('quantity');
-			$return array('width') += $dimensions array('width') * $content array('quantity');
-			$return array('weight') += $weight * $content array('quantity');
+			$return['length'] += $dimensions['length'] * $content['quantity'];
+			$return['height'] += $dimensions['height'] * $content['quantity'];
+			$return['width'] += $dimensions['width'] * $content['quantity'];
+			$return['weight'] += $weight * $content['quantity'];
 		}
 
 		return $return;
@@ -448,24 +465,23 @@ class EnvioFacil extends WC_Shipping_Method
 	 *
 	 * @return bool
 	 */
-	private function validateDimensions($dimensions)
-	{
-		if(($dimensions array('length') < 15 || $dimensions array('length') > 100)){
-			Functions::log(' array(EnvioFácil) Comprimento inválido: ' . $dimensions array('length') . '. Deve ser entre 15 e 100.', 'debug');
+	private function validateDimensions($dimensions) {
+		if(($dimensions['length'] < 15 || $dimensions['length'] > 100)){
+			Functions::log('[EnvioFácil] Comprimento inválido: ' . $dimensions['length'] . '. Deve ser entre 15 e 100.', 'debug');
 			return false;
 		}
-		if(($dimensions array('height') < 1 || $dimensions array('height') > 100)){
-			Functions::log(' array(EnvioFácil) Altura inválida: ' . $dimensions array('height') . '. Deve ser entre 1 e 100.', 'debug');
+		if(($dimensions['height'] < 1 || $dimensions['height'] > 100)){
+			Functions::log('[EnvioFácil] Altura inválida: ' . $dimensions['height'] . '. Deve ser entre 1 e 100.', 'debug');
 			return false;
 		}
-		if(($dimensions array('width') < 10 || $dimensions array('width') > 100)){
-			Functions::log(' array(EnvioFácil) Largura inválida: ' . $dimensions array('width') . '. Deve ser entre 10 e 100.', 'debug');
+		if(($dimensions['width'] < 10 || $dimensions['width'] > 100)){
+			Functions::log('[EnvioFácil] Largura inválida: ' . $dimensions['width'] . '. Deve ser entre 10 e 100.', 'debug');
 			return false;
 		}
 
-		if ($dimensions array('weight') > 10 || $dimensions array('weight') < 0.3)
+		if ($dimensions['weight'] > 10 || $dimensions['weight'] < 0.3)
 		{
-			Functions::log(' array(EnvioFácil) Peso inválido: '.$dimensions array('weight').'. Deve ser menor que 10kg e maior que 0.3.', 'debug');
+			Functions::log('[EnvioFácil] Peso inválido: '.$dimensions['weight'].'. Deve ser menor que 10kg e maior que 0.3.', 'debug');
 			return false;
 		}
 
@@ -479,9 +495,8 @@ class EnvioFacil extends WC_Shipping_Method
 	 *
 	 * @return array
 	 */
-	public static function addMethod($methods)
-	{
-		$methods array('rm_enviofacil') = 'RM_PagBank\EnvioFacil';
+	public static function addMethod($methods) {
+		$methods['rm_enviofacil'] = 'RM_PagBank\EnvioFacil';
 		return $methods;
 	}
 
@@ -491,21 +506,24 @@ class EnvioFacil extends WC_Shipping_Method
 
     public function init_form_fields()
     {
-        $this->form_fields = array('enabled'         => [
+        $this->form_fields = [
+            'enabled'         => [
                 'title'   => __('Habilitar', 'pagbank-connect'),
                 'type'    => 'checkbox',
                 'label'   => __('Habilitar', 'pagbank-connect'),
                 'default' => 'no',
-            ),
-            'boxes_info' => array('title' => __('Embalagens', 'pagbank-connect'),
+            ],
+            'boxes_info' => [
+                'title' => __('Embalagens', 'pagbank-connect'),
                 'type' => 'title',
                 'description' => sprintf(
                     __('📦 <a href="%s">Gerenciar embalagens do Envio Fácil</a> - Configure as caixas/embalagens disponíveis para cálculo de frete.', 'pagbank-connect'),
-                    admin_url('admin.phppage=rm-pagbank-boxes')
+                    admin_url('admin.php?page=rm-pagbank-boxes')
                 ),
                 'desc_tip' => false,
-            ),
-            'origin_postcode' => array('title'       => __('CEP de Origem', 'pagbank-connect'),
+            ],
+            'origin_postcode' => [
+                'title'       => __('CEP de Origem', 'pagbank-connect'),
                 'type'        => 'text',
                 'description' => __(
                     'CEP de onde suas mercadorias serão enviadas. '.'Se não informado, o CEP da loja será utilizado.',
@@ -514,8 +532,9 @@ class EnvioFacil extends WC_Shipping_Method
                 'desc_tip'    => true,
                 'placeholder' => get_option('woocommerce_store_postcode', '00000-000'),
                 'default'     => $this->getBasePostcode(),
-            ),
-            'adjustment_fee'    => array('title'       => __('Ajuste de preço', 'pagbank-connect'),
+            ],
+            'adjustment_fee'    => [
+                'title'       => __('Ajuste de preço', 'pagbank-connect'),
                 'type'        => 'text',
                 'description' => __(
                     'Acrescente ou remova um valor fixo ou percentual do frete. <br/>' .
@@ -524,12 +543,13 @@ class EnvioFacil extends WC_Shipping_Method
                 ),
                 'placeholder' => __('% ou fixo, positivo ou negativo', 'pagbank-connect'),
                 'desc_tip'    => true,
-            ),
-            'add_days' => array('title'       => __('Adicionar', 'pagbank-connect'),
+            ],
+            'add_days' => [
+                'title'       => __('Adicionar', 'pagbank-connect'),
                 'type'        => 'number',
                 'description' => __('dias à estimativa do frete.', 'pagbank-connect'),
                 'desc_tip'    => false,
-            ),
+            ],
         ];
 
     }
@@ -540,8 +560,7 @@ class EnvioFacil extends WC_Shipping_Method
 	 * @since  3.5.1
 	 * @return string
 	 */
-	protected function getBasePostcode()
-	{
+	protected function getBasePostcode() {
 		// WooCommerce 3.1.1+.
 		if ( method_exists( WC()->countries, 'get_base_postcode' ) ) {
 			return WC()->countries->get_base_postcode();
@@ -556,9 +575,9 @@ class EnvioFacil extends WC_Shipping_Method
 	public function admin_options()
 	{
 		if ( ! $this->instance_id ) {
-			echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
+			echo '<h2>' . esc_html($this->get_method_title() ) . '</h2>';
 		}
-		echo wp_kses_post( wpautop( $this->get_method_description() ) );
+		echo wp_kses_post( wpautop($this->get_method_description() ) );
         echo wp_kses(
             __(
                 'Para utilizar o PagBank Envio Fácil, você precisa autorizar nossa aplicação e obter suas '
@@ -589,11 +608,9 @@ class EnvioFacil extends WC_Shipping_Method
 	 * @noinspection PhpUnused
 	 * @noinspection PhpUnusedParameterInspection
 	 */
-    public function validate_enabled_field($value)
-    {
+    public function validate_enabled_field($value) {
 		// We can't rely on the passed $value here, because WordPress always sends 'enabled' as value
-        $value = isset($_POST array('woocommerce_'.$this->id.'_enabled')) htmlspecialchars(
-            $_POST array('woocommerce_'.$this->id.'_enabled'),
+        $value = isset($_POST['woocommerce_'.$this->id.'_enabled']) ? htmlspecialchars($_POST['woocommerce_'.$this->id.'_enabled'],
             ENT_QUOTES,
             'UTF-8'
         ) : '0';
@@ -612,11 +629,11 @@ class EnvioFacil extends WC_Shipping_Method
 		}
 
 		return $value;
-	}    public function validate_adjustment_fee_field($key, $value) {
+	}    public function validate_adjustment_fee_field($key,$value) {
         return Functions::validateDiscountValue($value, true);
     }
     
-    public function validate_add_days_field($key, $value) {
+    public function validate_add_days_field($key,$value) {
         if ($value === '') {
             return '';
         }

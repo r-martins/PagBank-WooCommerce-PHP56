@@ -1,8 +1,8 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Recurring\Admin\Reports\Block;
 
-// use WC_Admin_Report; // PHP 5.6 compatibility
+use WC_Admin_Report;
 
 class RecurringsReport extends WC_Admin_Report
 {
@@ -13,13 +13,13 @@ class RecurringsReport extends WC_Admin_Report
         $table = $wpdb->prefix . 'pagbank_recurring';
 
         // Filter data
-        $current_range = isset($_GET array('range')) sanitize_text_field($_GET array('range')) : '30';
+        $current_range = isset($_GET['range']) ? sanitize_text_field($_GET['range']) : '30';
         $date_filter = gmdate('Y-m-d H:i:s', strtotime("-{$current_range} days"));
-        $status_filter = isset($_GET array('status_filter')) sanitize_text_field($_GET array('status_filter')) : null;
+        $status_filter = isset($_GET['status_filter']) ? sanitize_text_field($_GET['status_filter']) : null;
         
         // Pagination
-        $per_page = isset($_GET array('per_page')) sanitize_text_field($_GET array('per_page')) : '12';
-        $current_page = isset($_GET array('paged')) max(1, intval($_GET array('paged'))) : 1;
+        $per_page = isset($_GET['per_page']) ? sanitize_text_field($_GET['per_page']) : '12';
+        $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
         $offset = ($current_page - 1) * ($per_page === 'all' ? 0 : intval($per_page));
         // Build summary query - Cards show statistics for the selected period, regardless of status filter
         $summary = $wpdb->get_row($wpdb->prepare("
@@ -33,7 +33,7 @@ class RecurringsReport extends WC_Admin_Report
                 SUM(CASE WHEN status = 'ACTIVE' THEN recurring_amount ELSE 0 END) AS active_revenue,
                 AVG(CASE WHEN status = 'ACTIVE' THEN recurring_amount ELSE NULL END) AS avg_ticket
             FROM {$table}
-        ", $date_filter, $date_filter, $date_filter, $date_filter));
+        ",$date_filter,$date_filter,$date_filter,$date_filter));
 
         // Data to graph month
         $monthly_data = $wpdb->get_results($wpdb->prepare("
@@ -67,10 +67,16 @@ class RecurringsReport extends WC_Admin_Report
             GROUP BY p.ID
             ORDER BY subscription_count DESC
             LIMIT 10
-        ", $date_filter));
+        ",$date_filter));
 
         // Detect HPOS
-        $is_hpos = class_exists('WC_Order_Storage') && method_exists('WC_Order_Storage', 'get_order_type') && wc_get_container()->get('order.store')::class === 'Automattic\WooCommerce\Internal\Order\Storage';
+        $is_hpos = false;
+        if (function_exists('wc_get_container') && class_exists('WC_Order_Storage') && method_exists('WC_Order_Storage', 'get_order_type')) {
+            $store = wc_get_container()->get('order.store');
+            if (is_object($store)) {
+                $is_hpos = get_class($store) === 'Automattic\WooCommerce\Internal\Order\Storage';
+            }
+        }
 
         if ($is_hpos) {
             // HPOS: fetch data from wp_wc_orders and wp_wc_order_addresses
@@ -90,7 +96,7 @@ class RecurringsReport extends WC_Admin_Report
             
             if (!is_null($status_filter) && !empty($status_filter)) {
                 $orders_sql .= " AND r.status = %s";
-                $orders_params array() = $status_filter;
+                $orders_params[] = $status_filter;
                 
                 // Filter by the correct date field based on status
                 switch ($status_filter) {
@@ -108,11 +114,11 @@ class RecurringsReport extends WC_Admin_Report
                         $orders_sql .= " AND r.created_at >= %s";
                         break;
                 }
-                $orders_params array() = $date_filter;
+                $orders_params[] = $date_filter;
             } else {
                 // No status filter, just filter by creation date
                 $orders_sql .= " AND r.created_at >= %s";
-                $orders_params array() = $date_filter;
+                $orders_params[] = $date_filter;
             }
             
             // Count total records for pagination (sem JOINs, só filtros)
@@ -120,7 +126,7 @@ class RecurringsReport extends WC_Admin_Report
             $count_params = array();
             if (!is_null($status_filter) && !empty($status_filter)) {
                 $count_sql .= " AND status = %s";
-                $count_params array() = $status_filter;
+                $count_params[] = $status_filter;
                 switch ($status_filter) {
                     case 'CANCELED':
                         $count_sql .= " AND canceled_at >= %s";
@@ -135,23 +141,23 @@ class RecurringsReport extends WC_Admin_Report
                         $count_sql .= " AND created_at >= %s";
                         break;
                 }
-                $count_params array() = $date_filter;
+                $count_params[] = $date_filter;
             } else {
                 $count_sql .= " AND created_at >= %s";
-                $count_params array() = $date_filter;
+                $count_params[] = $date_filter;
             }
-            $total_records = $wpdb->get_var($wpdb->prepare($count_sql, $count_params));
+            $total_records = $wpdb->get_var($wpdb->prepare($count_sql,$count_params));
 
             $orders_sql .= " ORDER BY r.created_at DESC";
 
             // Add pagination
             if ($per_page !== 'all') {
                 $orders_sql .= " LIMIT %d OFFSET %d";
-                $orders_params array() = intval($per_page);
-                $orders_params array() = $offset;
+                $orders_params[] = intval($per_page);
+                $orders_params[] = $offset;
             }
 
-            $orders = $wpdb->get_results($wpdb->prepare($orders_sql, $orders_params));
+            $orders = $wpdb->get_results($wpdb->prepare($orders_sql,$orders_params));
         } else {
             // Classic: fetch data from wp_posts and wp_postmeta
             $sql = "SELECT 
@@ -173,7 +179,7 @@ class RecurringsReport extends WC_Admin_Report
             
             if (!is_null($status_filter) && !empty($status_filter)) {
                 $sql .= " AND r.status = %s";
-                $orders_params array() = $status_filter;
+                $orders_params[] = $status_filter;
                 
                 // Filter by the correct date field based on status
                 switch ($status_filter) {
@@ -191,11 +197,11 @@ class RecurringsReport extends WC_Admin_Report
                         $sql .= " AND r.created_at >= %s";
                         break;
                 }
-                $orders_params array() = $date_filter;
+                $orders_params[] = $date_filter;
             } else {
                 // No status filter, just filter by creation date
                 $sql .= " AND r.created_at >= %s";
-                $orders_params array() = $date_filter;
+                $orders_params[] = $date_filter;
             }
             
             // Count total records for pagination (sem JOINs, só filtros)
@@ -203,7 +209,7 @@ class RecurringsReport extends WC_Admin_Report
             $count_params = array();
             if (!is_null($status_filter) && !empty($status_filter)) {
                 $count_sql .= " AND status = %s";
-                $count_params array() = $status_filter;
+                $count_params[] = $status_filter;
                 switch ($status_filter) {
                     case 'CANCELED':
                         $count_sql .= " AND canceled_at >= %s";
@@ -218,56 +224,56 @@ class RecurringsReport extends WC_Admin_Report
                         $count_sql .= " AND created_at >= %s";
                         break;
                 }
-                $count_params array() = $date_filter;
+                $count_params[] = $date_filter;
             } else {
                 $count_sql .= " AND created_at >= %s";
-                $count_params array() = $date_filter;
+                $count_params[] = $date_filter;
             }
-            $total_records = $wpdb->get_var($wpdb->prepare($count_sql, $count_params));
+            $total_records = $wpdb->get_var($wpdb->prepare($count_sql,$count_params));
 
             $sql .= " ORDER BY r.created_at DESC";
 
             // Add pagination
             if ($per_page !== 'all') {
                 $sql .= " LIMIT %d OFFSET %d";
-                $orders_params array() = intval($per_page);
-                $orders_params array() = $offset;
+                $orders_params[] = intval($per_page);
+                $orders_params[] = $offset;
             }
 
-            $orders = $wpdb->get_results($wpdb->prepare($sql, $orders_params));
+            $orders = $wpdb->get_results($wpdb->prepare($sql,$orders_params));
         }
 
-        self::render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range, $total_records, $per_page, $current_page);
+        self::render_dashboard($summary,$monthly_data,$top_products,$orders,$current_range,$total_records,$per_page,$current_page);
     }
 
-    protected static function render_dashboard($summary, $monthly_data, $top_products, $orders, $current_range, $total_records = 0, $per_page = '12', $current_page = 1)
+    protected static function render_dashboard($summary,$monthly_data,$top_products,$orders,$current_range,$total_records = 0,$per_page = '12',$current_page = 1)
     {
 ?>
         <div class="wrap">
-            <h1><php echo esc_html__('Relatórios - Assinaturas PagBank', 'pagbank-connect'); ?></h1>
+            <h1><?php echo esc_html__('Relatórios - Assinaturas PagBank', 'pagbank-connect'); ?></h1>
 
             <!-- Report Cards -->
             <div class="rm-pagbank-report-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <php
-                self::render_card('Total de Assinaturas', $summary->total ?? 0, 'dashicons-admin-users');
-                self::render_card('Ativas', $summary->active ?? 0, 'dashicons-yes-alt', '#46b450');
-                self::render_card('Novas (' . $current_range . ' dias)', $summary->news ?? 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.phppage=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter#rm-pagbank-subscriptions-table'));
-                self::render_card('Pausadas (' . $current_range . ' dias)', $summary->paused ?? 0, 'dashicons-controls-pause', '#ffb900', admin_url('admin.phppage=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=PAUSED#rm-pagbank-subscriptions-table'));
-                self::render_card('Canceladas (' . $current_range . ' dias)', $summary->canceled ?? 0, 'dashicons-no-alt', '#dc3232', admin_url('admin.phppage=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=CANCELED#rm-pagbank-subscriptions-table'));
+                <?php
+                self::render_card('Total de Assinaturas', isset($summary->total) ? $summary->total : 0, 'dashicons-admin-users');
+                self::render_card('Ativas', isset($summary->active) ? $summary->active : 0, 'dashicons-yes-alt', '#46b450');
+                self::render_card('Novas (' . $current_range . ' dias)', isset($summary->news) ? $summary->news : 0, 'dashicons-plus-alt', '#00a0d2', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter#rm-pagbank-subscriptions-table'));
+                self::render_card('Pausadas (' . $current_range . ' dias)', isset($summary->paused) ? $summary->paused : 0, 'dashicons-controls-pause', '#ffb900', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=PAUSED#rm-pagbank-subscriptions-table'));
+                self::render_card('Canceladas (' . $current_range . ' dias)', isset($summary->canceled) ? $summary->canceled : 0, 'dashicons-no-alt', '#dc3232', admin_url('admin.php?page=wc-reports&tab=pagbank&section&range='.$current_range.'&status_filter=CANCELED#rm-pagbank-subscriptions-table'));
                 ?>
             </div>
 
             <!-- Revenue Cards -->
             <div class="rm-pagbank-revenue-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <php
+                <?php
                 self::render_revenue_card(
                     'Receita Recorrente Ativa',
-                    'R$ ' . number_format($summary->active_revenue ?? 0, 2, ',', '.'),
+                    'R$ ' . number_format(isset($summary->active_revenue) ? $summary->active_revenue : 0, 2, ',', '.'),
                     'Valor total das assinaturas ativas'
                 );
                 self::render_revenue_card(
                     'Ticket Médio',
-                    'R$ ' . number_format($summary->avg_ticket ?? 0, 2, ',', '.'),
+                    'R$ ' . number_format(isset($summary->avg_ticket) ? $summary->avg_ticket : 0, 2, ',', '.'),
                     'Valor médio por assinatura'
                 );
                 ?>
@@ -276,45 +282,45 @@ class RecurringsReport extends WC_Admin_Report
             <!-- Filters-->
             <div class="rm-pagbank-filters" style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4;">
                 <form method="get" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                    <input type="hidden" name="page" value="<php echo esc_attr($_GET array('page')); ?>" />
-                    <input type="hidden" name="tab" value="<php echo esc_attr(isset($_GET array('tab')) ? $_GET array('tab') : ''); ?>" />
-                    <input type="hidden" name="section" value="<php echo esc_attr(isset($_GET array('section')) ? $_GET array('section') : ''); ?>" />
+                    <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page']); ?>" />
+                    <input type="hidden" name="tab" value="<?php echo esc_attr(isset($_GET['tab']) ? $_GET['tab'] : ''); ?>" />
+                    <input type="hidden" name="section" value="<?php echo esc_attr(isset($_GET['section']) ? $_GET['section'] : ''); ?>" />
 
                     <div>
-                        <label for="range"><php esc_html_e('Período:', 'pagbank-connect'); ?></label>
+                        <label for="range"><?php esc_html_e('Período:', 'pagbank-connect'); ?></label>
                         <select name="range" id="range">
-                            <option value="7" <php selected($current_range, '7'); ?>>Últimos 7 dias</option>
-                            <option value="30" <php selected($current_range, '30'); ?>>Últimos 30 dias</option>
-                            <option value="90" <php selected($current_range, '90'); ?>>Últimos 90 dias</option>
-                            <option value="365" <php selected($current_range, '365'); ?>>Último ano</option>
+                            <option value="7" <?php selected($current_range, '7'); ?>>Últimos 7 dias</option>
+                            <option value="30" <?php selected($current_range, '30'); ?>>Últimos 30 dias</option>
+                            <option value="90" <?php selected($current_range, '90'); ?>>Últimos 90 dias</option>
+                            <option value="365" <?php selected($current_range, '365'); ?>>Último ano</option>
                         </select>
                     </div>
 
                     <div>
-                        <label for="status_filter"><php esc_html_e('Status:', 'pagbank-connect'); ?></label>
+                        <label for="status_filter"><?php esc_html_e('Status:', 'pagbank-connect'); ?></label>
                         <select name="status_filter" id="status_filter">
-                            <option value=""><php esc_html_e('Todos', 'pagbank-connect'); ?></option>
-                            <option value="ACTIVE" <php selected(isset($_GET array('status_filter')) ? $_GET array('status_filter') : '', 'ACTIVE'); ?>>Ativas</option>
-                            <option value="PAUSED" <php selected(isset($_GET array('status_filter')) ? $_GET array('status_filter') : '', 'PAUSED'); ?>>Pausadas</option>
-                            <option value="CANCELED" <php selected(isset($_GET array('status_filter')) ? $_GET array('status_filter') : '', 'CANCELED'); ?>>Canceladas</option>
-                            <option value="SUSPENDED" <php selected(isset($_GET array('status_filter')) ? $_GET array('status_filter') : '', 'SUSPENDED'); ?>>Suspensa</option>
-                            <option value="PENDING" <php selected(isset($_GET array('status_filter')) ? $_GET array('status_filter') : '', 'PENDING'); ?>>Pendente</option>
-                            <option value="PENDING_CANCEL" <php selected(isset($_GET array('status_filter')) ? $_GET array('status_filter') : '', 'PENDING_CANCEL'); ?>>Cancelamento Pendente</option>
+                            <option value=""><?php esc_html_e('Todos', 'pagbank-connect'); ?></option>
+                            <option value="ACTIVE" <?php selected(isset($_GET['status_filter']) ? $_GET['status_filter'] : '', 'ACTIVE'); ?>>Ativas</option>
+                            <option value="PAUSED" <?php selected(isset($_GET['status_filter']) ? $_GET['status_filter'] : '', 'PAUSED'); ?>>Pausadas</option>
+                            <option value="CANCELED" <?php selected(isset($_GET['status_filter']) ? $_GET['status_filter'] : '', 'CANCELED'); ?>>Canceladas</option>
+                            <option value="SUSPENDED" <?php selected(isset($_GET['status_filter']) ? $_GET['status_filter'] : '', 'SUSPENDED'); ?>>Suspensa</option>
+                            <option value="PENDING" <?php selected(isset($_GET['status_filter']) ? $_GET['status_filter'] : '', 'PENDING'); ?>>Pendente</option>
+                            <option value="PENDING_CANCEL" <?php selected(isset($_GET['status_filter']) ? $_GET['status_filter'] : '', 'PENDING_CANCEL'); ?>>Cancelamento Pendente</option>
                         </select>
                     </div>
 
                     <div>
-                        <label for="per_page"><php esc_html_e('Exibir:', 'pagbank-connect'); ?></label>
+                        <label for="per_page"><?php esc_html_e('Exibir:', 'pagbank-connect'); ?></label>
                         <select name="per_page" id="per_page">
-                            <option value="12" <php selected($per_page, '12'); ?>>12 registros</option>
-                            <option value="24" <php selected($per_page, '24'); ?>>24 registros</option>
-                            <option value="32" <php selected($per_page, '32'); ?>>32 registros</option>
-                            <option value="all" <php selected($per_page, 'all'); ?>>Todos</option>
+                            <option value="12" <?php selected($per_page, '12'); ?>>12 registros</option>
+                            <option value="24" <?php selected($per_page, '24'); ?>>24 registros</option>
+                            <option value="32" <?php selected($per_page, '32'); ?>>32 registros</option>
+                            <option value="all" <?php selected($per_page, 'all'); ?>>Todos</option>
                         </select>
                     </div>
 
                     <button type="submit" class="button button-primary">
-                        <php esc_html_e('Filtrar', 'pagbank-connect'); ?>
+                        <?php esc_html_e('Filtrar', 'pagbank-connect'); ?>
                     </button>
                 </form>
 
@@ -322,39 +328,41 @@ class RecurringsReport extends WC_Admin_Report
             
             <!-- Table Recurrings -->
             <div id="rm-pagbank-subscriptions-table" class="rm-pagbank-subscriptions-table" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4;">
-                <h3><php esc_html_e('Assinaturas Recentes', 'pagbank-connect'); ?></h3>
+                <h3><?php esc_html_e('Assinaturas Recentes', 'pagbank-connect'); ?></h3>
                 <table class="widefat striped">
                     <thead>
                         <tr>
-                            <th><php esc_html_e('Pedido', 'pagbank-connect'); ?></th>
-                            <th><php esc_html_e('Assinatura ID', 'pagbank-connect'); ?></th>
-                            <th><php esc_html_e('Cliente', 'pagbank-connect'); ?></th>
-                            <th><php esc_html_e('Status', 'pagbank-connect'); ?></th>
-                            <th><php esc_html_e('Valor', 'pagbank-connect'); ?></th>
-                            <th><php esc_html_e('Próxima Cobrança', 'pagbank-connect'); ?></th>
-                            <th><php esc_html_e('Data Criação', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Pedido', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Assinatura ID', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Cliente', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Status', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Valor', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Próxima Cobrança', 'pagbank-connect'); ?></th>
+                            <th><?php esc_html_e('Data Criação', 'pagbank-connect'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <php foreach ($orders as $row): ?>
+                        <?php foreach ($orders as $row): ?>
                             <tr>
                                 <td>
-                                    <a href="<php echo esc_url(admin_url('post.phppost=' . $row->initial_order_id . '&action=edit')); ?>">
-                                        <strong>#<php echo esc_html($row->initial_order_id); ?></strong>
+                                    <a href="<?php echo esc_url(admin_url('post.php?post=' . $row->initial_order_id . '&action=edit')); ?>">
+                                        <strong>#<?php echo esc_html($row->initial_order_id); ?></strong>
                                     </a>
                                 </td>
                                 <td>
-                                    <php if (!empty($row->id)): ?>
-                                        <a href="<php echo esc_url(admin_url('admin.phppage=rm-pagbank-subscriptions-view&action=view&id=' . $row->id)); ?>">
-                                            <code><php echo esc_html($row->id); ?></code>
+                                    <?php if (!empty($row->id)): ?>
+                                        <a href="<?php echo esc_url(admin_url('admin.php?page=rm-pagbank-subscriptions-view&action=view&id=' . $row->id)); ?>">
+                                            <code><?php echo esc_html($row->id); ?></code>
                                         </a>
-                                    <php else: ?>
+                                    <?php else: ?>
                                         <code>-</code>
-                                    <php endif; ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <php
-                                    $customer_name = trim(($row->billing_first_name ?? '') . ' ' . ($row->billing_last_name ?? ''));
+                                    <?php
+                                    $first_name = isset($row->billing_first_name) ? $row->billing_first_name : '';
+                                    $last_name = isset($row->billing_last_name) ? $row->billing_last_name : '';
+                                    $customer_name = trim($first_name . ' ' . $last_name);
                                     if ($customer_name) {
                                         echo esc_html($customer_name);
                                         if ($row->customer_email) {
@@ -367,10 +375,10 @@ class RecurringsReport extends WC_Admin_Report
                                     }
                                     ?>
                                 </td>
-                                <td><php echo self::render_status_badge($row->status ?? 'UNKNOWN'); ?></td>
-                                <td><strong>R$ <php echo number_format($row->recurring_amount ?? 0, 2, ',', '.'); ?></strong></td>
+                                <td><?php echo self::render_status_badge(isset($row->status) ? $row->status : 'UNKNOWN'); ?></td>
+                                <td><strong>R$ <?php echo number_format(isset($row->recurring_amount) ? $row->recurring_amount : 0, 2, ',', '.'); ?></strong></td>
                                 <td>
-                                    <php
+                                    <?php
                                     if ($row->next_bill_at && $row->next_bill_at !== '0000-00-00 00:00:00') {
                                         echo esc_html(date('d/m/Y', strtotime($row->next_bill_at)));
                                     } else {
@@ -378,17 +386,17 @@ class RecurringsReport extends WC_Admin_Report
                                     }
                                     ?>
                                 </td>
-                                <td><php echo esc_html(date('d/m/Y H:i', strtotime($row->created_at))); ?></td>
+                                <td><?php echo esc_html(date('d/m/Y H:i', strtotime($row->created_at))); ?></td>
                             </tr>
-                        <php endforeach; ?>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
                 
-                <php 
+                <?php 
                 // Only show pagination if we have more records than what fits on one page
                 // AND we actually have results to show
                 if ($per_page !== 'all' && $total_records > intval($per_page) && !empty($orders)): ?>
-                    <php
+                    <?php
                     $total_pages = ceil($total_records / intval($per_page));
                     // Only show pagination controls if there are actually multiple pages worth of data
                     if ($total_pages > 1):
@@ -396,101 +404,98 @@ class RecurringsReport extends WC_Admin_Report
                         <div class="rm-pagbank-pagination" style="margin-top: 20px; text-align: center;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <span style="color: #666;">
-                                    <php 
+                                    <?php 
                                     $showing_start = (($current_page - 1) * intval($per_page)) + 1;
-                                    $showing_end = min($current_page * intval($per_page), $total_records);
+                                    $showing_end = min($current_page * intval($per_page),$total_records);
                                     printf(
-                                        esc_html__('Exibindo %d-%d de %d registros', 'pagbank-connect'),
-                                        $showing_start,
-                                        $showing_end,
-                                        $total_records
+                                        esc_html__('Exibindo %d-%d de %d registros', 'pagbank-connect'),$showing_start,$showing_end,$total_records
                                     ); 
                                     ?>
                                 </span>
                                 <span style="color: #666;">
-                                    <php printf(esc_html__('Página %d de %d', 'pagbank-connect'), $current_page, $total_pages); ?>
+                                    <?php printf(esc_html__('Página %d de %d', 'pagbank-connect'),$current_page,$total_pages); ?>
                                 </span>
                             </div>
                             
                             <div class="pagination-links" style="display: flex; justify-content: center; gap: 5px;">
-                                <php
+                                <?php
                                 $current_url = remove_query_arg('paged');
                                 
                                 // Previous page
                                 if ($current_page > 1): ?>
-                                    <a href="<php echo esc_url(add_query_arg('paged', $current_page - 1, $current_url)); ?>" 
-                                       class="button" style="margin: 0 2px;">‹ <php esc_html_e('Anterior', 'pagbank-connect'); ?></a>
-                                <php endif; ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged',$current_page - 1,$current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;">‹ <?php esc_html_e('Anterior', 'pagbank-connect'); ?></a>
+                                <?php endif; ?>
                                 
-                                <php
+                                <?php
                                 // Page numbers
-                                $start_page = max(1, $current_page - 2);
-                                $end_page = min($total_pages, $current_page + 2);
+                                $start_page = max(1,$current_page - 2);
+                                $end_page = min($total_pages,$current_page + 2);
                                 
                                 if ($start_page > 1): ?>
-                                    <a href="<php echo esc_url(add_query_arg('paged', 1, $current_url)); ?>" 
+                                    <a href="<?php echo esc_url(add_query_arg('paged', 1,$current_url)); ?>" 
                                        class="button" style="margin: 0 2px;">1</a>
-                                    <php if ($start_page > 2): ?>
+                                    <?php if ($start_page > 2): ?>
                                         <span style="margin: 0 5px;">...</span>
-                                    <php endif; ?>
-                                <php endif; ?>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                                 
-                                <php for ($i = $start_page; $i <= $end_page; $i++): ?>
-                                    <php if ($i == $current_page): ?>
-                                        <span class="button button-primary" style="margin: 0 2px;"><php echo $i; ?></span>
-                                    <php else: ?>
-                                        <a href="<php echo esc_url(add_query_arg('paged', $i, $current_url)); ?>" 
-                                           class="button" style="margin: 0 2px;"><php echo $i; ?></a>
-                                    <php endif; ?>
-                                <php endfor; ?>
+                                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                                    <?php if ($i == $current_page): ?>
+                                        <span class="button button-primary" style="margin: 0 2px;"><?php echo $i; ?></span>
+                                    <?php else: ?>
+                                        <a href="<?php echo esc_url(add_query_arg('paged',$i,$current_url)); ?>" 
+                                           class="button" style="margin: 0 2px;"><?php echo $i; ?></a>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
                                 
-                                <php if ($end_page < $total_pages): ?>
-                                    <php if ($end_page < $total_pages - 1): ?>
+                                <?php if ($end_page < $total_pages): ?>
+                                    <?php if ($end_page < $total_pages - 1): ?>
                                         <span style="margin: 0 5px;">...</span>
-                                    <php endif; ?>
-                                    <a href="<php echo esc_url(add_query_arg('paged', $total_pages, $current_url)); ?>" 
-                                       class="button" style="margin: 0 2px;"><php echo $total_pages; ?></a>
-                                <php endif; ?>
+                                    <?php endif; ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged',$total_pages,$current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;"><?php echo $total_pages; ?></a>
+                                <?php endif; ?>
                                 
-                                <php
+                                <?php
                                 // Next page
                                 if ($current_page < $total_pages): ?>
-                                    <a href="<php echo esc_url(add_query_arg('paged', $current_page + 1, $current_url)); ?>" 
-                                       class="button" style="margin: 0 2px;"><php esc_html_e('Próxima', 'pagbank-connect'); ?> ›</a>
-                                <php endif; ?>
+                                    <a href="<?php echo esc_url(add_query_arg('paged',$current_page + 1,$current_url)); ?>" 
+                                       class="button" style="margin: 0 2px;"><?php esc_html_e('Próxima', 'pagbank-connect'); ?> ›</a>
+                                <?php endif; ?>
                             </div>
                         </div>
-                    <php endif; ?>
-                <php endif; ?>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
 
 
             <!-- Top Products -->
-            <php if (!empty($top_products)): ?>
+            <?php if (!empty($top_products)): ?>
                 <div class="rm-pagbank-top-products" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; margin-bottom: 30px;">
-                    <h3><php esc_html_e('Produtos Mais Assinados', 'pagbank-connect'); ?></h3>
+                    <h3><?php esc_html_e('Produtos Mais Assinados', 'pagbank-connect'); ?></h3>
                     <table class="widefat striped">
                         <thead>
                             <tr>
-                                <th><php esc_html_e('Produto', 'pagbank-connect'); ?></th>
-                                <th><php esc_html_e('Assinaturas', 'pagbank-connect'); ?></th>
-                                <th><php esc_html_e('Receita Total', 'pagbank-connect'); ?></th>
-                                <th><php esc_html_e('Valor Médio', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Produto', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Assinaturas', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Receita Total', 'pagbank-connect'); ?></th>
+                                <th><?php esc_html_e('Valor Médio', 'pagbank-connect'); ?></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <php foreach ($top_products as $product): ?>
+                            <?php foreach ($top_products as $product): ?>
                                 <tr>
-                                    <td><strong><php echo esc_html($product->product_name ?: 'Produto não encontrado'); ?></strong></td>
-                                    <td><php echo intval($product->subscription_count); ?></td>
-                                    <td>R$ <php echo number_format($product->total_revenue, 2, ',', '.'); ?></td>
-                                    <td>R$ <php echo number_format($product->avg_amount, 2, ',', '.'); ?></td>
+                                    <td><strong><?php echo esc_html($product->product_name ?: 'Produto não encontrado'); ?></strong></td>
+                                    <td><?php echo intval($product->subscription_count); ?></td>
+                                    <td>R$ <?php echo number_format($product->total_revenue, 2, ',', '.'); ?></td>
+                                    <td>R$ <?php echo number_format($product->avg_amount, 2, ',', '.'); ?></td>
                                 </tr>
-                            <php endforeach; ?>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            <php endif; ?>
+            <?php endif; ?>
         </div>
 
         <style>
@@ -590,45 +595,46 @@ class RecurringsReport extends WC_Admin_Report
                 cursor: default;
             }
         </style>
-    <php
+    <?php
     }
 
-    protected static function render_card($label, $value, $icon = 'dashicons-chart-bar', $color = '#0073aa', $href = null, $target = '_self')
+    protected static function render_card($label,$value,$icon = 'dashicons-chart-bar',$color = '#0073aa',$href = null,$target = '_self')
     {
     ?>
-        <div class="card <php echo null !== $href ? 'onclick' : '' ?>" <php echo $href !== null ? 'onclick="window.location.href=\'' . esc_url($href) . '\'"' : ''; ?>>
-            <div class="dashicons <php echo esc_attr($icon); ?>" style="color: <php echo esc_attr($color); ?>;"></div>
-            <div class="number" style="color: <php echo esc_attr($color); ?>;"><php echo intval($value); ?></div>
-            <div class="label"><php echo esc_html($label); ?></div>
+        <div class="card <?php echo null !== $href ? 'onclick' : '' ?>" <?php echo $href !== null ? 'onclick="window.location.href=\'' . esc_url($href) . '\'"' : ''; ?>>
+            <div class="dashicons <?php echo esc_attr($icon); ?>" style="color: <?php echo esc_attr($color); ?>;"></div>
+            <div class="number" style="color: <?php echo esc_attr($color); ?>;"><?php echo intval($value); ?></div>
+            <div class="label"><?php echo esc_html($label); ?></div>
         </div>
-    <php
+    <?php
     }
 
-    protected static function render_revenue_card($title, $value, $description)
+    protected static function render_revenue_card($title,$value,$description)
     {
     ?>
         <div class="card" style="text-align: left;">
-            <h4 style="margin: 0 0 10px 0; color: #23282d;"><php echo esc_html($title); ?></h4>
-            <div style="font-size: 24px; font-weight: bold; color: #46b450; margin: 10px 0;"><php echo esc_html($value); ?></div>
-            <p style="margin: 0; color: #666; font-size: 13px;"><php echo esc_html($description); ?></p>
+            <h4 style="margin: 0 0 10px 0; color: #23282d;"><?php echo esc_html($title); ?></h4>
+            <div style="font-size: 24px; font-weight: bold; color: #46b450; margin: 10px 0;"><?php echo esc_html($value); ?></div>
+            <p style="margin: 0; color: #666; font-size: 13px;"><?php echo esc_html($description); ?></p>
         </div>
-    <php
+    <?php
     }
 
     protected static function render_status_badge($status)
     {
-        $status_map = array('ACTIVE' => ['label' => 'Ativa', 'class' => 'status-active'),
-            'PAUSED' => array('label' => 'Pausada', 'class' => 'status-paused'),
-            'CANCELED' => array('label' => 'Cancelada', 'class' => 'status-canceled'),
-            'PENDING_CANCEL' => array('label' => 'Pend. Cancel.', 'class' => 'status-pending-cancel'),
+        $status_map = [
+            'ACTIVE' => ['label' => 'Ativa', 'class' => 'status-active'],
+            'PAUSED' => ['label' => 'Pausada', 'class' => 'status-paused'],
+            'CANCELED' => ['label' => 'Cancelada', 'class' => 'status-canceled'],
+            'PENDING_CANCEL' => ['label' => 'Pend. Cancel.', 'class' => 'status-pending-cancel'],
         ];
 
-        $status_info = isset($status_map array($status)) ? $status_map array($status) : array('label' => $status, 'class' => 'status-unknown');
+        $status_info = isset($status_map[$status]) ? $status_map[$status] : array('label' => $status, 'class' => 'status-unknown');
 
         return sprintf(
             '<span class="status-badge %s">%s</span>',
-            esc_attr($status_info array('class')),
-            esc_html($status_info array('label'))
+            esc_attr($status_info['class']),
+            esc_html($status_info['label'])
         );
     }
 }

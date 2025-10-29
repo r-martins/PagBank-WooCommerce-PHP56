@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Amount
@@ -16,11 +16,10 @@ class Amount implements JsonSerializable
 {
     private $value;
     private $currency = 'BRL';
-    private Summary $summary;
-	private Fees $fees;
+    private $summary;
+	private $fees;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -28,58 +27,50 @@ class Amount implements JsonSerializable
     /**
      * @return int
      */
-    public function getValue()
-    {
+    public function getValue() {
         return $this->value;
     }
 
     /**
-     * @param $value
+     * @param int $value
      */
-    public function setValue($value)
-    {
+    public function setValue($value) {
         $this->value = $value;
     }
 
     /**
      * @return string
      */
-    public function getCurrency()
-    {
+    public function getCurrency() {
         return $this->currency;
     }
 
     /**
-     * @param $currency
+     * @param string $currency
      */
-    public function setCurrency($currency)
-    {
+    public function setCurrency($currency) {
         $this->currency = substr($currency, 0, 3);
     }
 
     /**
      * @return Summary
      */
-    public function getSummary()
-    {
+    public function getSummary() {
         return $this->summary;
     }
 
     /**
      * @param Summary $summary
      */
-    public function setSummary(Summary $summary)
-    {
+    public function setSummary(Summary $summary) {
         $this->summary = $summary;
     }
 
-	public function getFees()
-	{
+	public function getFees() {
 		return $this->fees;
 	}
 
-	public function setFees(Fees $fees)
-	{
+	public function setFees(Fees $fees) {
 		$this->fees = $fees;
 	}
 

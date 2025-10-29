@@ -1,14 +1,14 @@
-<php
+<?php
 
 namespace RM_PagBank\Helpers;
 
-// use DateTime; // PHP 5.6 compatibility
-// use DateTimeZone; // PHP 5.6 compatibility
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use WC_Admin_Settings; // PHP 5.6 compatibility
-// use WC_Blocks_Utils; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
+use DateTime;
+use DateTimeZone;
+use Exception;
+use RM_PagBank\Connect;
+use WC_Admin_Settings;
+use WC_Blocks_Utils;
+use WC_Order;
 
 /**
  * Class Functions
@@ -29,8 +29,7 @@ class Functions
      *
      * @return string
      */
-    public static function formatDate($date)
-    {
+    public static function formatDate($date) {
         if (empty($date) || !is_string($date)) {
             return '';
         }
@@ -48,13 +47,13 @@ class Functions
 	/**
 	 * Prints(echo) a generic notice in the admin
 	 *
-	 * @param $msg
-	 * @param $type
-	 * @param $isDismissible
+	 * @param string $msg
+	 * @param string $type
+	 * @param bool   $isDismissible
 	 *
 	 * @return void
 	 */
-    public static function generic_notice_pagbank($msg, $type = self::NOTICE_UPDATE, $isDismissible=true)
+    public static function generic_notice_pagbank($msg,$type = self::NOTICE_UPDATE,$isDismissible=true)
     {
         if( !is_admin() ) {
             return;
@@ -70,8 +69,8 @@ class Functions
     }
 
     /**
-     * @param $msg
-     * @param $level  One of the following:
+     * @param string $msg
+     * @param string $level  One of the following:
      *                      'emergency': System is unusable.
      *                      'alert': Action must be taken immediately.
      *                      'critical': Critical conditions.
@@ -80,19 +79,17 @@ class Functions
      *                      'notice': Normal but significant condition.
      *                      'info': Informational messages.
      *                      'debug': Debug-level messages.
-     * @param $additional
+     * @param array  $additional
      *
      * @return void
      */
-    public static function log($msg, $level = 'info', $additional = array())
-    {
+    public static function log($msg,$level = 'info', array $additional = []) {
         $logger = wc_get_logger();
         $msg = $msg . PHP_EOL . var_export($additional, true);
-        $logger->log($level, $msg, array('source' => 'pagbank-connect'));
+        $logger->log($level,$msg, ['source' => 'pagbank-connect']);
     }
 
-	public static function getCcFlagUrl($brand)
-	{
+	public static function getCcFlagUrl($brand) {
 		if (file_exists(WC_PAGSEGURO_CONNECT_BASE_DIR . '/public/images/credit-cards/' . $brand . '.svg')) {
 			return plugins_url('public/images/credit-cards/' . $brand . '.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
 		}
@@ -100,8 +97,7 @@ class Functions
 		return '';
 	}
 
-    public static function getFriendlyPaymentMethodName($method)
-    {
+    public static function getFriendlyPaymentMethodName($method) {
         switch ($method) {
             case 'boleto':
                 return __('Boleto', 'pagbank-connect');
@@ -121,8 +117,7 @@ class Functions
      *
      * @return float
      */
-    public static function convertToKg(float $weight)
-    {
+    public static function convertToKg($weight) {
         $currentUnit = get_option('woocommerce_weight_unit');
 
         switch ($currentUnit) {
@@ -150,24 +145,24 @@ class Functions
      *
      * @return float|int|string
      */
-    public static function validateDiscountValue($value, $allowNegative = false)
+    public static function validateDiscountValue($value,$allowNegative = false)
     {
         if (empty($value)) {
             return $value;
         }
 
         //remove spaces
-        $value = str_replace(' ', '', $value);
+        $value = str_replace(' ', '',$value);
         //replace comma with dot
-        $value = str_replace(',', '.', $value);
+        $value = str_replace(',', '.',$value);
 
         if (strpos($value, '%')) {
-            $value = str_replace('%', '', $value);
+            $value = str_replace('%', '',$value);
 
             if (!is_numeric($value) || $value > 100 || (!$allowNegative && $value < 0)) {
                 $positive = $allowNegative ? '' : __('positivo', 'pagbank-connect');
                 WC_Admin_Settings::add_error(
-                    __(sprintf('O desconto deve ser um número %s ou percentual de 0 a 100.', $positive), 'pagbank-connect')
+                    __(sprintf('O desconto deve ser um número %s ou percentual de 0 a 100.',$positive), 'pagbank-connect')
                 );
 
                 return '';
@@ -187,14 +182,14 @@ class Functions
         return $value;
     }
 
-    public static function applyPriceAdjustment($price, $adjustment)
+    public static function applyPriceAdjustment($price,$adjustment)
     {
         if (empty($adjustment) || $adjustment === 0) {
             return $price;
         }
 
         if (strpos($adjustment, '%')) {
-            $adjustment = str_replace('%', '', $adjustment);
+            $adjustment = str_replace('%', '',$adjustment);
             if ($adjustment < 0) {
                 $price = $price - ($price * (abs($adjustment) / 100));
             } else {
@@ -217,14 +212,14 @@ class Functions
      *
      * @return array|mixed|string|null
      */
-    public static function getParamFromOrderMetaOrPost(WC_Order $order, $metaParam, $postParam, $default = '')
+    public static function getParamFromOrderMetaOrPost(WC_Order $order,$metaParam,$postParam,$default = '')
     {
         if ($order->get_meta($metaParam)) {
             return $order->get_meta($metaParam);
         }
 
-        if (isset($_POST array($postParam))) {
-            return sanitize_text_field(wp_unslash(($_POST array($postParam))));
+        if (isset($_POST[$postParam])) {
+            return sanitize_text_field(wp_unslash(($_POST[$postParam])));
         }
 
         return $default;
@@ -236,13 +231,12 @@ class Functions
      *
      * @return string
      */
-    public static function encrypt($data)
-    {
+    public static function encrypt($data) {
         $key = Params::getConfig('connect_key');
 
         if (extension_loaded('openssl')) {
             $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
-            $encrypted = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
+            $encrypted = openssl_encrypt($data, 'aes-256-cbc',$key, 0,$iv);
             return base64_encode($encrypted . '::' . $iv);
         }
 
@@ -260,8 +254,8 @@ class Functions
         $key = Params::getConfig('connect_key');
         if (extension_loaded('openssl')) {
             if (!empty($data)) {
-                list($encrypted_data, $iv) = explode('::', base64_decode($data), 2);
-                return openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, 0, $iv);
+                list($encrypted_data,$iv) = explode('::', base64_decode($data), 2);
+                return openssl_decrypt($encrypted_data, 'aes-256-cbc',$key, 0,$iv);
             }
         }
         
@@ -273,13 +267,12 @@ class Functions
      * Check if the block checkout is in use
      * @return bool
      */
-    public static function isBlockCheckoutInUse()
-    {
+    public static function isBlockCheckoutInUse() {
         // Get the ID of the checkout page.
         $checkout_page_id = wc_get_page_id('checkout');
 
         // Get the content of the checkout page.
-        $checkout_page_content = get_post_field('post_content', $checkout_page_id);
+        $checkout_page_content = get_post_field('post_content',$checkout_page_id);
 
         // Check if the content contains the `woocommerce_checkout` block.
         return strpos($checkout_page_content, '<!-- wp:woocommerce/checkout ') !== false;
@@ -289,13 +282,12 @@ class Functions
      * Check if the current call was made using by do_shortcode function
      * @return bool
      */
-    public static function isCalledByDoShortcode()
-    {
+    public static function isCalledByDoShortcode() {
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
         $calledByDoShortcode = false;
 
         foreach ($backtrace as $trace) {
-            if (isset($trace array('function')) && $trace array('function') === 'do_shortcode_tag') {
+            if (isset($trace['function']) && $trace['function'] === 'do_shortcode_tag') {
                 $calledByDoShortcode = true;
                 break;
             }
@@ -310,8 +302,7 @@ class Functions
      *
      * @return bool
      */
-    public static function isValidPixCode($pixCode)
-    {
+    public static function isValidPixCode($pixCode) {
         if (strpos($pixCode, 'br.gov.bcb.pix') !== false && strpos($pixCode, 'pagseguro.com') !== false) {
             return true;
         }
@@ -323,12 +314,11 @@ class Functions
      * Adds a meta query filter to the main query
      * @return void
      */
-    public static function addMetaQueryFilter()
-    {
-        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args, $query_vars) {
-            if (isset($query_vars array('meta_query'))) {
-                $meta_query = isset($wp_query_args array('meta_query')) ? $wp_query_args array('meta_query') : array();
-                $wp_query_args array('meta_query') = array_merge($meta_query, $query_vars array('meta_query'));
+    public static function addMetaQueryFilter() {
+        add_filter('woocommerce_get_wp_query_args', function ($wp_query_args,$query_vars) {
+            if (isset($query_vars['meta_query'])) {
+                $meta_query = isset($wp_query_args['meta_query']) ? $wp_query_args['meta_query'] : array();
+                $wp_query_args['meta_query'] = array_merge($meta_query,$query_vars['meta_query']);
             }
 
             return $wp_query_args;
@@ -339,10 +329,9 @@ class Functions
      * Check if the current page is the checkout page and uses Woocommerce Blocks. Also returns false if the page is a CartFlows checkout.
      * @return bool
      */
-    public static function isCheckoutBlocks()
-    {
+    public static function isCheckoutBlocks() {
         $page_id = get_the_ID();
-        return is_checkout() && WC_Blocks_Utils::has_block_in_page( $page_id, 'woocommerce/checkout' ) && !Functions::isCartflowCheckout();
+        return is_checkout() && WC_Blocks_Utils::has_block_in_page($page_id, 'woocommerce/checkout' ) && !Functions::isCartflowCheckout();
     }
 
     public static function isCartflowCheckout() {
@@ -356,8 +345,7 @@ class Functions
     /**
      * @return array
      */
-    public static function getExpiredPixOrders()
-    {
+    public static function getExpiredPixOrders() {
         $expiryMinutes = Params::getPixConfig('pix_expiry_minutes');
 
         Functions::addMetaQueryFilter();
@@ -367,7 +355,8 @@ class Functions
             \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
         )->custom_orders_table_usage_is_enabled()) {
             $expiredDate = strtotime(gmdate('Y-m-d H:i:s')) - $expiryMinutes * 60;
-            return wc_get_orders( array('limit'        => -1,
+            return wc_get_orders([
+                'limit'        => -1,
                 'status'       => 'pending',
                 'date_created' => '<'.$expiredDate,
                 'meta_query'   => [
@@ -375,7 +364,7 @@ class Functions
                         'key'     => 'pagbank_payment_method',
                         'value'   => 'pix',
                         'compare' => '='
-                    )
+                    ]
                 ]
             ]);
         }
@@ -387,26 +376,28 @@ class Functions
             'post_status'    => 'any',
             'orderby'        => 'date',
             'post_status'    => 'wc-pending',
-            'date_query'     => array('before' => date('Y-m-d H:i:s', $expiredDate),
-            ),
-            'meta_query'     => array('relation' => 'AND',
+            'date_query'     => [
+                'before' => date('Y-m-d H:i:s',$expiredDate),
+            ],
+            'meta_query'     => [
+                'relation' => 'AND',
                 [
                     'key'     => 'pagbank_payment_method',
                     'value'   => 'pix',
                     'compare' => '='
-                )
+                ]
             ],
         );
 
         $query = new \WP_Query($args);
 
-        $expiringOrders = array();
+        $expiringOrders = [];
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
                 $order_id = get_the_ID();
                 $order = wc_get_order($order_id);
-                $expiringOrders array() = $order;
+                $expiringOrders[] = $order;
             }
             wp_reset_postdata();
         }
@@ -420,18 +411,19 @@ class Functions
      *
      * @return mixed|null
      */
-    public static function applyOrderPlaceholders($string, $order)
+    public static function applyOrderPlaceholders($string,$order)
     {
         if(!$order instanceof WC_Order){
             return $string;
         }
-        $placeholders = array('{paymentMethod}' => $order->get_payment_method(),
+        $placeholders = [
+            '{paymentMethod}' => $order->get_payment_method(),
             '{orderTotal}' => $order->get_total(),
             '{orderId}' => $order->get_id(),
             '{customerName}' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
             '{customerEmail}' => $order->get_billing_email(),
-        );
-        return apply_filters('pagbank_connect_order_placeholders', strtr($string, $placeholders), $order->get_id());
+        ];
+        return apply_filters('pagbank_connect_order_placeholders', strtr($string,$placeholders),$order->get_id());
     }
 
     /**
@@ -439,8 +431,7 @@ class Functions
      * @return array
      * @throws \Automattic\WooCommerce\Internal\DependencyManagement\ContainerException
      */
-    public static function getPagBankPendingOrders()
-    {
+    public static function getPagBankPendingOrders() {
         Functions::addMetaQueryFilter();
 
         // Check if HPOS is enabled
@@ -448,16 +439,18 @@ class Functions
             \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class
         )->custom_orders_table_usage_is_enabled()) {
             $createdAtDate = strtotime(gmdate('Y-m-d H:i:s')) - 3600 * 24 * 7;
-            return wc_get_orders( array('limit'        => -1,
-                'status'       => ['wc-pending', 'wc-on-hold'),
+            return wc_get_orders([
+                'limit'        => -1,
+                'status'       => ['wc-pending', 'wc-on-hold'],
                 'date_created' => '>'.$createdAtDate,
                 'orderby'      => 'date',
                 'order'        => 'ASC',
-                'meta_query'   => array([
+                'meta_query'   => [
+                    [
                         'key'     => 'pagbank_payment_method',
                         'value'   => '',
                         'compare' => '!='
-                    )
+                    ]
                 ]
             ]);
         }
@@ -469,27 +462,29 @@ class Functions
             'post_status'    => 'any',
             'orderby'        => 'date',
             'order'          => 'ASC',
-            'post_status'    => array('wc-pending', 'wc-on-hold'),
-            'date_query'     => array('after' => date('Y-m-d H:i:s', $createdAtDate),
-            ),
-            'meta_query'     => array('relation' => 'AND',
+            'post_status'    => ['wc-pending', 'wc-on-hold'],
+            'date_query'     => [
+                'after' => date('Y-m-d H:i:s',$createdAtDate),
+            ],
+            'meta_query'     => [
+                'relation' => 'AND',
                 [
                     'key'     => 'pagbank_payment_method',
                     'value'   => '',
                     'compare' => '!='
-                )
+                ]
             ],
         );
 
         $query = new \WP_Query($args);
 
-        $expiringOrders = array();
+        $expiringOrders = [];
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
                 $order_id = get_the_ID();
                 $order = wc_get_order($order_id);
-                $expiringOrders array() = $order;
+                $expiringOrders[] = $order;
             }
             wp_reset_postdata();
         }
@@ -500,11 +495,12 @@ class Functions
      * Removes special characters from a string and convert accents to their base characters
      * @param $string
      *
-     * @return array|string|string array()|null
+     * @return array|string|string[]|null
      */
     public static function stringClear($string)
     {
-        $table = array('Š' => 'S',
+        $table = [
+            'Š' => 'S',
             'š' => 's',
             'Ð' => 'D',
             'd' => 'd',
@@ -572,17 +568,17 @@ class Functions
             'ý' => 'y',
             'þ' => 'b',
             'ÿ' => 'y',
-        );
+        ];
 
-        $result = strtr($string, $table);
-        $result = preg_replace('/ array(^A-Za-z0-9\ )/', '', $result);
+        $result = strtr($string,$table);
+        $result = preg_replace('/[^A-Za-z0-9\ ]/', '',$result);
         return $result;
     }
 
     /**
      * Get the template file path for a given template name
      *
-     * @param $template_name
+     * @param string $template_name
      * @return string
      */
     public static function getTemplate($template_name) 
@@ -595,16 +591,17 @@ class Functions
 
         // Verify version
         $default_version = self::getTemplateVersion($default_template);
-        $theme_version   = $theme_template self::getTemplateVersion($theme_template) : null;
+        $theme_version   = $theme_template ? self::getTemplateVersion($theme_template) : null;
 
-        if ($theme_version && version_compare($theme_version, $default_version, '<')) {
+        if ($theme_version && version_compare($theme_version,$default_version, '<')) {
             // Log, warning in admin, version mismatch
-            Functions::log("O template sobrescrito '$template_name' está desatualizado (versão $theme_version, esperado $default_version).", 'warning', array('context' => 'pagbank-connect',
+            Functions::log("O template sobrescrito '$template_name' está desatualizado (versão $theme_version, esperado $default_version).", 'warning', [
+                'context' => 'pagbank-connect',
                 'type'    => 'template_version_mismatch',
                 'template' => $template_name,
                 'version'  => $theme_version,
                 'expected' => $default_version,
-            ));
+            ]);
         }
 
         return $template_path;
@@ -613,13 +610,14 @@ class Functions
     /**
      * Get the version of a template file based on its header
      *
-     * @param $file_path
+     * @param string $file_path
      * @return string|null
      */
     public static function getTemplateVersion($file_path) {
-        $default_headers = array('Template Version' => 'Template Version',
-        );
-        $file_data = get_file_data($file_path, $default_headers);
-        return $file_data array('Template Version') ?null;
+        $default_headers = [
+            'Template Version' => 'Template Version',
+        ];
+        $file_data = get_file_data($file_path,$default_headers);
+        return isset($file_data['Template Version']) ? $file_data['Template Version'] : null;
     }
 }

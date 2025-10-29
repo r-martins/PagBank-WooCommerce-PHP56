@@ -1,8 +1,8 @@
-<php
+<?php
 
 namespace RM_PagBank\Traits;
 
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Params;
 
 trait PaymentMethodIcon
 {
@@ -17,9 +17,9 @@ trait PaymentMethodIcon
         if ($isDynamicIcoAccessible) {
             $this->icon = apply_filters(
                 'wc_pagseguro_connect_icon',
-                plugins_url('public/images/payment-icon.phpmethod=' . $this->code, WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
+                plugins_url('public/images/payment-icon.php?method=' . $this->code, WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
             );
-            return '<img src="' . esc_url( \WC_HTTPS::force_https_url( $this->icon ) ) . '" alt="' . esc_attr( $this->get_title() ) . '" />';
+            return '<img src="' . esc_url( \WC_HTTPS::force_https_url($this->icon ) ) . '" alt="' . esc_attr($this->get_title() ) . '" />';
         }
 
         return $icon;

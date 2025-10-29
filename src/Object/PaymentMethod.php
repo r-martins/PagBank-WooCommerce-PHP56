@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class PaymentMethod
@@ -18,12 +18,11 @@ class PaymentMethod implements JsonSerializable
     private $installments;
     private $capture;
     private $soft_descriptor;
-    private Card $card;
-    private Boleto $boleto;
-    private AuthenticationMethod $authentication_method;
+    private $card;
+    private $boleto;
+    private $authentication_method;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -31,106 +30,92 @@ class PaymentMethod implements JsonSerializable
     /**
      * @return string
      */
-    public function getType()
-    {
+    public function getType() {
         return $this->type;
     }
 
     /**
-     * @param $type
+     * @param string $type
      */
-    public function setType($type)
-    {
+    public function setType($type) {
         $this->type = $type;
     }
 
     /**
      * @return int
      */
-    public function getInstallments()
-    {
+    public function getInstallments() {
         return $this->installments;
     }
 
     /**
-     * @param $installments
+     * @param int $installments
      */
-    public function setInstallments($installments)
-    {
+    public function setInstallments($installments) {
         $this->installments = $installments;
     }
 
     /**
      * @return bool
      */
-    public function isCapture()
-    {
+    public function isCapture() {
         return $this->capture;
     }
 
     /**
-     * @param $capture
+     * @param bool $capture
      */
-    public function setCapture($capture)
-    {
+    public function setCapture($capture) {
         $this->capture = $capture;
     }
 
     /**
      * @return string
      */
-    public function getSoftDescriptor()
-    {
+    public function getSoftDescriptor() {
         return $this->soft_descriptor;
     }
 
     /**
-     * @param $soft_descriptor
+     * @param string $soft_descriptor
      */
-    public function setSoftDescriptor($soft_descriptor)
-    {
+    public function setSoftDescriptor($soft_descriptor) {
         $this->soft_descriptor = $soft_descriptor;
     }
 
     /**
      * @return Card
      */
-    public function getCard()
-    {
+    public function getCard() {
         return $this->card;
     }
 
     /**
      * @param Card $card
      */
-    public function setCard(Card $card)
-    {
+    public function setCard(Card $card) {
         $this->card = $card;
     }
 
     /**
      * @return Boleto
      */
-    public function getBoleto()
-    {
+    public function getBoleto() {
         return $this->boleto;
     }
 
     /**
      * @param Boleto $boleto
      */
-    public function setBoleto(Boleto $boleto)
-    {
+    public function setBoleto(Boleto $boleto) {
         $this->boleto = $boleto;
     }
 
-    public function getAuthenticationMethod()
-    {
+    public function getAuthenticationMethod() {
         return $this->authentication_method;
     }
 
-    public function setAuthenticationMethod(AuthenticationMethod $authentication_method)
-    {
+    public function setAuthenticationMethod(AuthenticationMethod $authentication_method) {
         $this->authentication_method = $authentication_method;
     }
 

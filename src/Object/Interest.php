@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Amount
@@ -18,29 +18,24 @@ class Interest implements JsonSerializable
     private $installments;
 
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
 
-	public function getInstallments()
-	{
+	public function getInstallments() {
 		return $this->installments;
 	}
 
-	public function setInstallments($installments)
-	{
+	public function setInstallments($installments) {
 		$this->installments = $installments;
 	}
 
-	public function getTotal()
-	{
+	public function getTotal() {
 		return $this->total;
 	}
 
-	public function setTotal($total)
-	{
+	public function setTotal($total) {
 		$this->total = $total;
 	}
 

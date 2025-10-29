@@ -1,11 +1,11 @@
-<php
+<?php
 
 namespace RM_PagBank\Traits;
 
-// use RM_PagBank\Connect\Payments\Boleto; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Payments\Pix; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Payments\CreditCard; // PHP 5.6 compatibility
+use RM_PagBank\Connect\Payments\Boleto;
+use RM_PagBank\Connect\Payments\Pix;
+use RM_PagBank\Connect\Recurring;
+use RM_PagBank\Connect\Payments\CreditCard;
 
 trait ThankyouInstructions
 {

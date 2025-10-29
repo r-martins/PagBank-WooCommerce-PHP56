@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Phone
@@ -19,8 +19,7 @@ class Phone implements JsonSerializable
     private $number;
     private $type = 'MOBILE';
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -28,65 +27,57 @@ class Phone implements JsonSerializable
     /**
      * @return int
      */
-    public function getCountry()
-    {
+    public function getCountry() {
         return $this->country;
     }
 
     /**
-     * @param $country
+     * @param int $country
      */
-    public function setCountry($country)
-    {
+    public function setCountry($country) {
         $this->country = $country;
     }
 
     /**
      * @return int
      */
-    public function getArea()
-    {
+    public function getArea() {
         return $this->area;
     }
 
     /**
-     * @param $area
+     * @param int $area
      */
-    public function setArea($area)
-    {
+    public function setArea($area) {
         $this->area = $area;
     }
 
     /**
      * @return int
      */
-    public function getNumber()
-    {
+    public function getNumber() {
         return $this->number;
     }
 
     /**
-     * @param $number
+     * @param int $number
      */
-    public function setNumber($number)
-    {
+    public function setNumber($number) {
         $this->number = $number;
     }
 
     /**
      * @return string
      */
-    public function getType()
-    {
+    public function getType() {
         return $this->type;
     }
 
     /**
 	 * Type can be MOBILE, BUSINESS or HOME
-     * @param $type
+     * @param string $type
      */
-    public function setType($type)
-    {
+    public function setType($type) {
         $this->type = $type;
     }
 

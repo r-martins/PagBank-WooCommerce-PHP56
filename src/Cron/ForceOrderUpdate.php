@@ -1,12 +1,12 @@
-<php
+<?php
 namespace RM_PagBank\Cron;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-// use RM_PagBank\Connect\Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\OrderProcessor; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
+use RM_PagBank\Connect\Exception;
+use RM_PagBank\Connect\OrderProcessor;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
 
 /**
  * Class ForceOrderUpdate
@@ -23,8 +23,7 @@ class ForceOrderUpdate
      * @return void
      * @throws \Automattic\WooCommerce\Internal\DependencyManagement\ContainerException
      */
-    public static function execute()
-    {
+    public static function execute() {
         $orders = Functions::getPagBankPendingOrders();
 
         foreach ($orders as $order) {
@@ -40,31 +39,29 @@ class ForceOrderUpdate
             $createdAt = $order->get_date_created()->getTimestamp();
 
             // Check if it's time to update based on payment method
-            if (!self::shouldUpdateOrder($order, $lastCheck, $createdAt, $now)) {
+            if (!self::shouldUpdateOrder($order,$lastCheck,$createdAt,$now)) {
                 continue;
             }
 
-            $order->update_meta_data('_pagbank_last_check', $now);
+            $order->update_meta_data('_pagbank_last_check',$now);
             $order->save();
 
             try {
                 $orderData = Api::getOrderData($pagbankOrderId);
                 if ($orderData) {
                     $orderProcessor = new OrderProcessor();
-                    $orderProcessor->updateTransaction($order, $orderData);
+                    $orderProcessor->updateTransaction($order,$orderData);
                 }
             } catch (Exception $e) {
                 Functions::log(
                     'Cron: ' . __('Erro ao atualizar pedido', 'pagbank-connect') . ' ' . $order->get_id() . ' ' . __('no PagBank:', 'pagbank-connect') . ' ' . $e->getMessage(),
-                    'error',
-                    $e->getTrace()
+                    'error',$e->getTrace()
                 );
             }
         }
     }
     
-    private static function shouldUpdateOrder($order, $lastCheck, $createdAt, $now)
-    {
+    private static function shouldUpdateOrder($order,$lastCheck,$createdAt,$now) {
         $paymentMethod = $order->get_meta('pagbank_payment_method');
         $hoursFromCreation = ($now - $createdAt) / 3600;
     

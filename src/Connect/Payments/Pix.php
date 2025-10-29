@@ -1,13 +1,13 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Payments;
 
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Amount; // PHP 5.6 compatibility
-// use RM_PagBank\Object\QrCode; // PHP 5.6 compatibility
-// use WC_Data_Exception; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\QrCode;
+use WC_Data_Exception;
+use WC_Order;
 
 /**
  * Class Pix
@@ -26,8 +26,7 @@ class Pix extends Common
 	 * @return array
 	 * @throws WC_Data_Exception
 	 */
-    public function prepare()
-    {
+    public function prepare() {
         $return = $this->getDefaultParameters();
         $qr_code = new QrCode();
 
@@ -36,7 +35,7 @@ class Pix extends Common
         $discountExcludesShipping = Params::getPixConfig('pix_discount_excludes_shipping', false) == 'yes';
 
         if (($discountConfig = Params::getPixConfig('pix_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
-            $discount = Params::getDiscountValue($discountConfig, $this->order, $discountExcludesShipping);
+            $discount = Params::getDiscountValue($discountConfig,$this->order,$discountExcludesShipping);
             $orderTotal = $orderTotal - $discount;
 
             $fee = new \WC_Order_Item_Fee();
@@ -62,7 +61,7 @@ class Pix extends Common
         //calculate expiry date based on current time + expiry days using ISO 8601 format
         $qr_code->setExpirationDate(gmdate('c', strtotime('+' . Params::getPixConfig('pix_expiry_minutes', 1440) . 'minute')));
 
-        $return array('qr_codes') = array($qr_code);
+        $return['qr_codes'] = [$qr_code];
         return $return;
     }
 
@@ -91,7 +90,7 @@ class Pix extends Common
     * @param mixed $price
     * @param mixed $product
     */
-    public static function showPriceDiscountPixProduct($price, $product) {
+    public static function showPriceDiscountPixProduct($price,$product) {
         
         // Check if the product is a subscription or if the user is in the admin area
         if(!$product || is_admin()){
@@ -112,7 +111,7 @@ class Pix extends Common
 
         $page = is_product() ? 'product' : (is_shop() || is_product_category() ? 'category' : '');
         $where = Params::getPixConfig('pix_show_price_locations');
-        $showPage = is_array($where) && in_array($page, $where);
+        $showPage = is_array($where) && in_array($page,$where);
 
         if (!$enable_show_discount || !$discount || !$showPage) {
             return $price;
@@ -130,13 +129,12 @@ class Pix extends Common
         $css_file_path = locate_template('pagbank-connect/' . $css_file);
         $css_file_default = plugins_url('public/css/' . $css_file, WC_PAGSEGURO_CONNECT_PLUGIN_FILE);
         // If the css doesn't exist in the theme, use the default template from the plugin
-        $css_file_path = $css_file_path && file_exists($css_file_path) get_stylesheet_directory_uri() . '/pagbank-connect/' . $css_file
+        $css_file_path = $css_file_path && file_exists($css_file_path) ? get_stylesheet_directory_uri() . '/pagbank-connect/' . $css_file
             : $css_file_default;
 
         // Add the CSS for the discount
         wp_enqueue_style(
-            'pagseguro-connect-product-discount-pix', 
-            $css_file_path,
+            'pagseguro-connect-product-discount-pix',$css_file_path,
             false, 
             WC_PAGSEGURO_CONNECT_VERSION
         );
@@ -155,10 +153,11 @@ class Pix extends Common
         }
 
         ob_start();
-        load_template($template_path, false, array('discount' => $discount,
+        load_template($template_path, false, [
+            'discount' => $discount,
             'discount_type' => $discountType,
             'product' => $product,
-        ));
+        ]);
 
         $pix_discount_html = ob_get_clean();
 

@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Holder
@@ -17,10 +17,9 @@ class Holder implements JsonSerializable
     private $name;
     private $tax_id;
     private $email;
-    private Address $address;
+    private $address;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -28,48 +27,42 @@ class Holder implements JsonSerializable
     /**
      * @return string
      */
-    public function getName()
-    {
+    public function getName() {
         return $this->name;
     }
 
     /**
-     * @param $name
+     * @param string $name
      */
-    public function setName($name)
-    {
+    public function setName($name) {
         $this->name = substr($name, 0, 30);
     }
 
     /**
      * @return string
      */
-    public function getTaxId()
-    {
+    public function getTaxId() {
         return $this->tax_id;
     }
 
     /**
-     * @param $tax_id
+     * @param string $tax_id
      */
-    public function setTaxId($tax_id)
-    {
+    public function setTaxId($tax_id) {
         $this->tax_id = substr($tax_id, 0, 14);
     }
 
     /**
      * @return string
      */
-    public function getEmail()
-    {
+    public function getEmail() {
         return $this->email;
     }
 
     /**
-     * @param $email
+     * @param string $email
      */
-    public function setEmail($email)
-    {
+    public function setEmail($email) {
         $email = strtolower($email);
         $this->email = substr($email, 0, 255);
     }
@@ -77,16 +70,14 @@ class Holder implements JsonSerializable
     /**
      * @return Address
      */
-    public function getAddress()
-    {
+    public function getAddress() {
         return $this->address;
     }
 
     /**
      * @param Address $address
      */
-    public function setAddress(Address $address)
-    {
+    public function setAddress(Address $address) {
         $this->address = $address;
     }
 

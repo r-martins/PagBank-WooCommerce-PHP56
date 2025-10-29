@@ -1,9 +1,9 @@
-<php
+<?php
 
 namespace RM_PagBank\Test\Connect\Payments;
 
-// use RM_PagBank\Connect\Payments\CreditCard; // PHP 5.6 compatibility
-// use WC_Helper_Order; // PHP 5.6 compatibility
+use RM_PagBank\Connect\Payments\CreditCard;
+use WC_Helper_Order;
 
 class CreditCardTest extends \WP_UnitTestCase
 {

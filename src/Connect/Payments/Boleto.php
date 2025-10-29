@@ -1,19 +1,19 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Payments;
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Address; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Amount; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Object\Address;
+use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\Boleto as BoletoObj;
-// use RM_PagBank\Object\Charge; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Holder; // PHP 5.6 compatibility
-// use RM_PagBank\Object\InstructionLines; // PHP 5.6 compatibility
-// use RM_PagBank\Object\PaymentMethod; // PHP 5.6 compatibility
-// use WC_Data_Exception; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
+use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Holder;
+use RM_PagBank\Object\InstructionLines;
+use RM_PagBank\Object\PaymentMethod;
+use WC_Data_Exception;
+use WC_Order;
 
 /**
  * Class Boleto
@@ -33,8 +33,7 @@ class Boleto extends Common
 	 * @return array
 	 * @throws WC_Data_Exception
 	 */
-    public function prepare()
-    {
+    public function prepare() {
         $return = $this->getDefaultParameters();
 
         $charge = new Charge();
@@ -45,7 +44,7 @@ class Boleto extends Common
         $discountExcludesShipping = Params::getBoletoConfig('boleto_discount_excludes_shipping', false) == 'yes';
 
         if (($discountConfig = Params::getBoletoConfig('boleto_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
-            $discount = floatval(Params::getDiscountValue($discountConfig, $this->order, $discountExcludesShipping));
+            $discount = floatval(Params::getDiscountValue($discountConfig,$this->order,$discountExcludesShipping));
             $orderTotal = $orderTotal - $discount;
 
             $fee = new \WC_Order_Item_Fee();
@@ -76,14 +75,12 @@ class Boleto extends Common
         $instruction_lines = new InstructionLines();
         $instruction_lines->setLine1(
             Functions::applyOrderPlaceholders(
-                Params::getBoletoConfig('boleto_line_1', 'Não aceitar após vencimento'),
-                $this->order,
+                Params::getBoletoConfig('boleto_line_1', 'Não aceitar após vencimento'),$this->order
             )
         );
         $instruction_lines->setLine2(
             Functions::applyOrderPlaceholders(
-                Params::getBoletoConfig('boleto_line_2', 'Obrigado por sua compra.'),
-                $this->order,
+                Params::getBoletoConfig('boleto_line_2', 'Obrigado por sua compra.'),$this->order
             )
         );
         $boleto->setInstructionLines($instruction_lines);
@@ -127,9 +124,9 @@ class Boleto extends Common
         $paymentMethod->setBoleto($boleto);
         $charge->setPaymentMethod($paymentMethod);
 
-        $charges = array('charges' => [$charge)];
+        $charges = ['charges' => [$charge]];
 
-        return array_merge($return, $charges);
+        return array_merge($return,$charges);
 
     }
 

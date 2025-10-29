@@ -1,10 +1,10 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect;
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use Throwable; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Functions;
+use Throwable;
 
 /**
  * Class Exception
@@ -16,55 +16,59 @@ namespace RM_PagBank\Connect;
  */
 class Exception extends \Exception
 {
-    public $errors = array('40001' =>	'Parâmetro obrigatório. Algum dado obrigatório não foi informado.',
+    public $errors = [
+        '40001' =>	'Parâmetro obrigatório. Algum dado obrigatório não foi informado.',
         '40002' =>	'Parâmetro inválido. Algum dado foi informado com formato inválido ou o conjunto de dados não cumpriu todos os requisitos de negócio.',
         '42001' =>	'Falha na criação de conta. A conta já existe no PagBank. Para ter acesso aos dados dessa conta ou criar pagamentos em nome do dono da conta, é necessário solicitar permissão via API Connect.',
         '42002' =>	'Falha na criação de conta. O processo de criação foi iniciado por outro canal diferente da API. O usuário precisa acessar o email para finalizar a criação de conta.',
 		'UNAUTHORIZED' => 'Não autorizado. Lojista: verifique se a sua Connect Key está correta e é válida.',
-    );
+    ];
 
 	/**
-	 * @param $error_messages
+	 * @param array          $error_messages
 	 * @param 	             $code
 	 * @param Throwable|null $previous
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 * */
-	public function __construct($error_messages, $code = 0, Throwable $previous = null)
+	public function __construct(array $error_messages,$code = 0, Throwable $previous = null)
     {
-        $message = array();
-        $original_error_messages = array();
+        $message = [];
+        $original_error_messages = [];
         foreach ($error_messages as $error) {
-            $original_error_messages array() = (isset($error array('code')) ? $error array('code') : '').' - '.(isset($error array('description')) ? $error array('description') : '' ).' ('.(isset($error array('parameter_name')) ? $error array('parameter_name') : '')
+            $code = isset($error['code']) ? $error['code'] : '';
+            $description = isset($error['description']) ? $error['description'] : '';
+            $parameterName = isset($error['parameter_name']) ? $error['parameter_name'] : '';
+
+            $original_error_messages[] = $code . ' - ' . $description . ' (' . $parameterName
                 .')';
-            $msg = array_key_exists((isset($error array('code')) ? $error array('code') : ''), $this->errors) 
+            $msg = array_key_exists($code,$this->errors) 
                 ? $this->getFriendlyMsgWithErrorCode($error) 
                 : $this->getFriendlyMessageWithoutErrorCode($error);
 
-            if (isset($error array('parameter_name'))){
-                $friendlyParamName = $this->getFriendlyParameterName($error array('parameter_name'));
+            if ($parameterName !== '') {
+                $friendlyParamName = $this->getFriendlyParameterName($parameterName);
                 $msg .= ' (' . $friendlyParamName . ')';
             }
 
-            $message array() = $msg;
+            $message[] = $msg;
         }
 
-        Functions::log('Erro Connect: ' . implode(', ', $original_error_messages), 'error');
-        $message = implode("<br/>\n", $message);
-        parent::__construct($message, $code, $previous);
+        Functions::log('Erro Connect: ' . implode(', ',$original_error_messages), 'error');
+        $message = implode("<br/>\n",$message);
+        parent::__construct($message,$code,$previous);
     }
 
     /**
      * Returns a friendly name for the parameter that is missing or invalid
-     * @param $parameterName
+     * @param string $parameterName
      *
      * @return string
      */
-    public function getFriendlyParameterName($parameterName)
-    {
+    public function getFriendlyParameterName($parameterName) {
         if ($parameterName === 'customer.tax_id') {
             return $parameterName . ' - ' . esc_html(__('CPF/CNPJ', 'pagbank-connect'));
-        } elseif ($parameterName === 'charges array(0).payment_method.boleto.due_date') {
+        } elseif ($parameterName === 'charges[0].payment_method.boleto.due_date') {
             return $parameterName . ' - ' . esc_html(__('Data de vencimento do boleto', 'pagbank-connect'));
         } elseif (strpos($parameterName, 'locality') !== false) {
             return $parameterName . ' - ' . esc_html(__('Bairro', 'pagbank-connect'));
@@ -74,13 +78,13 @@ class Exception extends \Exception
             return $parameterName . ' - ' . esc_html(__('Cidade do Endereço', 'pagbank-connect'));
         } elseif (strpos($parameterName, 'address.region') !== false) {
             return $parameterName . ' - ' . esc_html(__('Estado do Endereço', 'pagbank-connect'));
-        } elseif ($parameterName === 'charges array(0).payment_method.authentication_method.id') {
+        } elseif ($parameterName === 'charges[0].payment_method.authentication_method.id') {
             return esc_html(__('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect'));
-        } elseif ($parameterName === 'charges array(0).payment_method.card.encrypted') {
+        } elseif ($parameterName === 'charges[0].payment_method.card.encrypted') {
             return esc_html(__('Criptografia do cartão', 'pagbank-connect'));
         } elseif ($parameterName === 'customer.name') {
             return esc_html(__('Nome do Cliente', 'pagbank-connect'));
-        } elseif ($parameterName === 'customer.phones array(0).number') {
+        } elseif ($parameterName === 'customer.phones[0].number') {
             return esc_html(__('Telefone', 'pagbank-connect'));
         } elseif ($parameterName === 'customer.email') {
             return esc_html(__('E-mail do Cliente', 'pagbank-connect'));
@@ -100,17 +104,17 @@ class Exception extends \Exception
      */
     public function getFriendlyMsgWithErrorCode($error)
     {
-        if (isset($this->errors array($error['code')]) {
+        if (isset($this->errors[$error['code']])) {
             $msg = $this->getFriendlyMsg($error);
-            return $error array('code') . ' - ' . $msg;
+            return $error['code'] . ' - ' . $msg;
         }
     }
     public function getFriendlyMessageWithoutErrorCode($error)
     {
-        if (!isset($error array('message')) && isset($error array('description'))) {
+        if (!isset($error['message']) && isset($error['description'])) {
             return $this->getFriendlyMsg($error);
         }
-        switch ($error array('message')) {
+        switch ($error['message']) {
             case 'CARD_CANNOT_BE_STORED':
                 return __(
                     'Cartão não pode ser armazenado. Tente novamente com outro cartão ou verifique se as informações '
@@ -126,14 +130,14 @@ class Exception extends \Exception
                 );
                 break;
             default:
-                return isset($error array('message')) ? $error array('message') : 'Erro desconhecido.';
+                return isset($error['message']) ? $error['message'] : 'Erro desconhecido.';
         }    
     }
     
     public function getFriendlyMsg($error)
     {
-        if(isset($error array('description'))){
-            switch ($error array('description')) {
+        if(isset($error['description'])){
+            switch ($error['description']) {
                 case 'CARD_CANNOT_BE_STORED':
                     return __(
                         'Cartão não pode ser armazenado. Tente novamente com outro cartão ou verifique se as informações '
@@ -165,7 +169,7 @@ class Exception extends \Exception
                         'pagbank-connect'
                     );
                     break;
-                case 'must not contains any of the characters array(!, @, #, $, %, ¨, *, (, ), ", ”, \, |, {, }, [, ), <, >, ;]':
+                case 'must not contains any of the characters [!, @, #, $, %, ¨, *, (, ), ", ”, \, |, {, }, [, ], <, >, ;]':
                     return __(
                         'Valor não pode conter caracteres especiais.',
                         'pagbank-connect'
@@ -220,7 +224,7 @@ class Exception extends \Exception
                         'pagbank-connect'
                     );
                 default:
-                    return $this->errors array($error['code')] ?? $error array('description');
+                    return isset($this->errors[$error['code']]) ? $this->errors[$error['code']] : $error['description'];
             }
             return __(
                 'Erro desconhecido.',

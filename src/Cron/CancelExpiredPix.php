@@ -1,11 +1,11 @@
-<php
+<?php
 namespace RM_PagBank\Cron;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
+use Exception;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
 
 /**
  * Class responsible to cancel order with expired PIX payment
@@ -50,8 +50,7 @@ class CancelExpiredPix
      *
      * @return bool
      */
-    private static function wasPixOrderPaid($order)
-    {
+    private static function wasPixOrderPaid($order) {
         $pagBankOrderId = $order->get_meta('pagbank_order_id');
         if (!$pagBankOrderId) {
             return false;
@@ -64,8 +63,8 @@ class CancelExpiredPix
         }
         if ($orderData) {
             $status = '';
-            if (isset($orderData array('charges') array(0) array('status'))) {
-                $status = $orderData array('charges') array(0) array('status');
+            if (isset($orderData['charges'][0]['status'])) {
+                $status = $orderData['charges'][0]['status'];
             }
             if ($status == 'PAID') {
                 return true;

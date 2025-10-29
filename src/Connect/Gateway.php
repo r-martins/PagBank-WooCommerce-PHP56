@@ -1,17 +1,17 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect;
 
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Traits\PaymentUnavailable; // PHP 5.6 compatibility
-// use RM_PagBank\Traits\ProcessPayment; // PHP 5.6 compatibility
-// use RM_PagBank\Traits\StaticResources; // PHP 5.6 compatibility
-// use RM_PagBank\Traits\ThankyouInstructions; // PHP 5.6 compatibility
-// use WC_Admin_Settings; // PHP 5.6 compatibility
-// use WC_Payment_Gateway_CC; // PHP 5.6 compatibility
+use Exception;
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Traits\PaymentUnavailable;
+use RM_PagBank\Traits\ProcessPayment;
+use RM_PagBank\Traits\StaticResources;
+use RM_PagBank\Traits\ThankyouInstructions;
+use WC_Admin_Settings;
+use WC_Payment_Gateway_CC;
 
 /**
  * Class Gateway
@@ -21,10 +21,10 @@ namespace RM_PagBank\Connect;
  */
 class Gateway extends WC_Payment_Gateway_CC
 {
-    // use PaymentUnavailable; // PHP 5.6 compatibility
-    // use ProcessPayment; // PHP 5.6 compatibility
-    // use StaticResources; // PHP 5.6 compatibility
-    // use ThankyouInstructions; // PHP 5.6 compatibility
+    use PaymentUnavailable;
+    use ProcessPayment;
+    use StaticResources;
+    use ThankyouInstructions;
 
     public function __construct()
     {
@@ -45,21 +45,21 @@ class Gateway extends WC_Payment_Gateway_CC
         $this->init_form_fields();
         $this->init_settings();
 
-        add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
 
-        add_action('wp_enqueue_styles', array($this, 'addStyles'));
-        add_action('wp_enqueue_scripts', array($this, 'addScripts'));
-        add_action('admin_enqueue_scripts', array($this, 'addAdminStyles'), 10, 1);
-        add_action('admin_enqueue_scripts', array($this, 'addAdminScripts'), 10, 1);
+        add_action('wp_enqueue_styles', [$this, 'addStyles']);
+        add_action('wp_enqueue_scripts', [$this, 'addScripts']);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminStyles'], 10, 1);
+        add_action('admin_enqueue_scripts', [$this, 'addAdminScripts'], 10, 1);
 
-        add_filter('woocommerce_available_payment_gateways', array($this, 'disableIfOrderLessThanOneReal'), 10, 1);
-        add_action('woocommerce_thankyou_' . Connect::DOMAIN, array($this, 'addThankyouInstructions'));
+        add_filter('woocommerce_available_payment_gateways', [$this, 'disableIfOrderLessThanOneReal'], 10, 1);
+        add_action('woocommerce_thankyou_' . Connect::DOMAIN, [$this, 'addThankyouInstructions']);
     }
 
     public function init_form_fields()
     {
-        $fields = array();
-        $fields array() = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
+        $fields = [];
+        $fields[] = include WC_PAGSEGURO_CONNECT_BASE_DIR.'/admin/views/settings/general-fields.php';
         $this->form_fields = array_merge(...$fields);
     }
 
@@ -81,8 +81,7 @@ class Gateway extends WC_Payment_Gateway_CC
      * @noinspection PhpUnused
      * @noinspection PhpUnusedParameterInspection
      */
-    public function validate_recurring_enabled_field($key, $recurring_enabled)
-    {
+    public function validate_recurring_enabled_field($key,$recurring_enabled) {
         $connect_key = $this->get_option('connect_key');
         if (substr($connect_key, 0, 9) == 'CONPSFLEX' && $recurring_enabled) {
             WC_Admin_Settings::add_message(__('A recorrência foi desativada pois'
@@ -105,10 +104,10 @@ class Gateway extends WC_Payment_Gateway_CC
 	 * @noinspection PhpUnused
 	 * @noinspection PhpUnusedParameterInspection
 	 */
-	public function validate_connect_key_field($key, $connect_key)
+	public function validate_connect_key_field($key,$connect_key)
     {
         //check if it looks like a token (contains lower case and dashes)
-        if (preg_match('/ array(a-z-)/', $connect_key)) {
+        if (preg_match('/[a-z-]/',$connect_key)) {
             WC_Admin_Settings::add_error(__('Parece que você informou o Token PagBank no lugar da Connect Key. Clique em Obter Connect Key para obter a sua gratuitamente e ainda economizar nas taxas oficiais.', 'pagbank-connect'));
             return '';
         }
@@ -117,20 +116,20 @@ class Gateway extends WC_Payment_Gateway_CC
         $api->setConnectKey($connect_key);
         
         try {
-            $ret = $api->post('ws/public-keys', array('type' => 'card'));
-            if (isset($ret array('public_key'))) {
-                $this->update_option('public_key', $ret array('public_key'));
-                $this->update_option('public_key_created_at', $ret array('created_at'));
+            $ret = $api->post('ws/public-keys', ['type' => 'card']);
+            if (isset($ret['public_key'])) {
+                $this->update_option('public_key',$ret['public_key']);
+                $this->update_option('public_key_created_at',$ret['created_at']);
 				$isSandbox = strpos($connect_key, 'CONSANDBOX') !== false;
-				$this->update_option('is_sandbox', $isSandbox);
+				$this->update_option('is_sandbox',$isSandbox);
             }
 
-            if (isset($ret array('error_messages'))){
+            if (isset($ret['error_messages'])){
                 //implode error_messages showing code and description
                 $error_messages = array_map(function($error){
-                    return $error array('code') . ' - ' . $error array('description');
-                }, $ret array('error_messages'));
-                WC_Admin_Settings::add_error(implode('<br/>', $error_messages));
+                    return $error['code'] . ' - ' . $error['description'];
+                },$ret['error_messages']);
+                WC_Admin_Settings::add_error(implode('<br/>',$error_messages));
                 $connect_key = '';
             }
         } catch (Exception $e) {
@@ -142,7 +141,7 @@ class Gateway extends WC_Payment_Gateway_CC
 
     }
     
-    public function validate_icons_color_field($key, $icon_color)
+    public function validate_icons_color_field($key,$icon_color)
     {
         //Validate if dynamic icon is accessible
         delete_transient('rm_pagbank_dynamic_ico_accessible');
@@ -160,8 +159,7 @@ class Gateway extends WC_Payment_Gateway_CC
      *
      * @return bool
      */
-    public function validate_fields()
-    {
+    public function validate_fields() {
         return true; //@TODO validate_fields
     }
 
@@ -169,12 +167,13 @@ class Gateway extends WC_Payment_Gateway_CC
     {
         if ( Recurring::isRecurringEndpoint() )
         {
-            $styles array('rm-pagbank-recurring') = array('src'     => plugins_url('public/css/recurring.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                'deps'    => array(),
+            $styles['rm-pagbank-recurring'] = [
+                'src'     => plugins_url('public/css/recurring.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
                 'version' => WC_PAGSEGURO_CONNECT_VERSION,
                 'media'   => 'all',
                 'has_rtl' => false,
-            );
+            ];
         }
         return $styles;
     }
@@ -182,10 +181,10 @@ class Gateway extends WC_Payment_Gateway_CC
     /**
      * Retrieves cached Connect info or fetches fresh data from the API.
      *
-     * @param $force_refresh Whether to force refresh the cached data.
+     * @param bool $force_refresh Whether to force refresh the cached data.
      * @return array|null The connect information or null if unavailable.
      */
-    public function getCachedConnectInfo($transient_key, $force_refresh = false)
+    public function getCachedConnectInfo($transient_key,$force_refresh = false)
     {
         // Return cached data if not forcing refresh
         if (! $force_refresh ) {
@@ -200,8 +199,8 @@ class Gateway extends WC_Payment_Gateway_CC
         $info = $api->getConnectInfo();
 
         // Cache the result if it's valid
-        if (! empty($info) && empty($info array('error_messages'))) {
-            set_transient($transient_key, $info, DAY_IN_SECONDS);
+        if (! empty($info) && empty($info['error_messages'])) {
+            set_transient($transient_key,$info, DAY_IN_SECONDS);
         }
 
         return $info;
@@ -216,23 +215,23 @@ class Gateway extends WC_Payment_Gateway_CC
     {
         // Retrieve plugin settings
         $settings = get_option('woocommerce_' . $this->id . '_settings');
-        $connect_key = isset($settings array('connect_key')) ? $settings array('connect_key') : '';
-        $last_four = strlen($connect_key) == 40 substr($connect_key, -4) : null;
+        $connect_key = isset($settings['connect_key']) ? $settings['connect_key'] : '';
+        $last_four = strlen($connect_key) == 40 ? substr($connect_key, -4) : null;
 
         if (empty($connect_key) || !$last_four) {
             return null;
         }
 
-        $transient_key = sprintf('pagbank_connect_key_info_%s', $last_four);
+        $transient_key = sprintf('pagbank_connect_key_info_%s',$last_four);
    
-        $force_refresh = isset($_GET array('refresh_connect_info'));
+        $force_refresh = isset($_GET['refresh_connect_info']);
         // Force refresh if requested via URL
         if ($force_refresh) {
             delete_transient($transient_key);
         }
 
         // Get cached or fresh Connect info
-        $info = $this->getCachedConnectInfo($transient_key, $force_refresh);
+        $info = $this->getCachedConnectInfo($transient_key,$force_refresh);
 
         if (!$info) {
             return null;
@@ -240,12 +239,12 @@ class Gateway extends WC_Payment_Gateway_CC
 
         // Extract and sanitize connect status info
         $dateFormat = get_option('date_format');
-        $status   = strtoupper(isset($info array('status')) ? $info array('status') : 'UNKNOWN');
-        $email    = esc_html(isset($info array('authorizerEmail')) ? $info array('authorizerEmail') : 'N/A');
-        $expires  = esc_html(isset($info array('expiresAt')) && $info array('expiresAt') date_i18n($dateFormat, strtotime($info array('expiresAt'))) : '-');
-        $isSandbox = !empty($info array('isSandbox'));
+        $status   = strtoupper(isset($info['status']) ? $info['status'] : 'UNKNOWN');
+        $email    = esc_html(isset($info['authorizerEmail']) ? $info['authorizerEmail'] : 'N/A');
+        $expires  = esc_html(isset($info['expiresAt']) && $info['expiresAt'] ? date_i18n($dateFormat, strtotime($info['expiresAt'])) : '-');
+        $isSandbox = !empty($info['isSandbox']);
         $sandbox  = $isSandbox ? 'Sim' : 'Não';
-        $sandbox = !isset($info array('isSandbox')) ? 'Desconhecido' : $sandbox;
+        $sandbox = !isset($info['isSandbox']) ? 'Desconhecido' : $sandbox;
         $message  = "Conta PagBank: $email <br>";
         $message .= !$isSandbox ? "Expira em: $expires <br>" : null;
         $message .= "Sandbox: $sandbox <br>";
@@ -318,12 +317,12 @@ class Gateway extends WC_Payment_Gateway_CC
     /**
      * Helper to build a styled status badge.
      *
-     * @param $color       Background color of the badge.
-     * @param $icon_class  Dashicon class to use.
-     * @param $label       Text label of the badge.
+     * @param string $color       Background color of the badge.
+     * @param string $icon_class  Dashicon class to use.
+     * @param string $label       Text label of the badge.
      * @return string             HTML of the badge.
      */
-    private function buildStatusBadge($color, $icon_class, $label)
+    private function buildStatusBadge($color,$icon_class,$label)
     {
         return sprintf(
             '<div class="rm-pagbank-status-badge learn-more">

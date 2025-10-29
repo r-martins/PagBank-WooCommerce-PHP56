@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Summary
@@ -18,8 +18,7 @@ class Summary implements JsonSerializable
     private $paid;
     private $refunded;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -27,48 +26,42 @@ class Summary implements JsonSerializable
     /**
      * @return int
      */
-    public function getTotal()
-    {
+    public function getTotal() {
         return $this->total;
     }
 
     /**
-     * @param $total
+     * @param int $total
      */
-    public function setTotal($total)
-    {
+    public function setTotal($total) {
         $this->total = $total;
     }
 
     /**
      * @return int
      */
-    public function getPaid()
-    {
+    public function getPaid() {
         return $this->paid;
     }
 
     /**
-     * @param $paid
+     * @param int $paid
      */
-    public function setPaid($paid)
-    {
+    public function setPaid($paid) {
         $this->paid = $paid;
     }
 
     /**
      * @return int
      */
-    public function getRefunded()
-    {
+    public function getRefunded() {
         return $this->refunded;
     }
 
     /**
-     * @param $refunded
+     * @param int $refunded
      */
-    public function setRefunded($refunded)
-    {
+    public function setRefunded($refunded) {
         $this->refunded = $refunded;
     }
 

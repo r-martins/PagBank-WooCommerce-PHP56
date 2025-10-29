@@ -1,23 +1,23 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Payments;
 
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Amount; // PHP 5.6 compatibility
-// use RM_PagBank\Object\AuthenticationMethod; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Buyer; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Card; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Charge; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Fees; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Holder; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Interest; // PHP 5.6 compatibility
-// use RM_PagBank\Object\PaymentMethod; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Recurring; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
-// use WC_Payment_Tokens; // PHP 5.6 compatibility
+use Exception;
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Amount;
+use RM_PagBank\Object\AuthenticationMethod;
+use RM_PagBank\Object\Buyer;
+use RM_PagBank\Object\Card;
+use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Fees;
+use RM_PagBank\Object\Holder;
+use RM_PagBank\Object\Interest;
+use RM_PagBank\Object\PaymentMethod;
+use RM_PagBank\Object\Recurring;
+use WC_Order;
+use WC_Payment_Tokens;
 
 /**
  * Class CreditCard
@@ -43,8 +43,7 @@ class CreditCard extends Common
      *
      * @return array
      */
-    public function prepare()
-    {
+    public function prepare() {
         $return = $this->getDefaultParameters();
         $charge = new Charge();
         $amount = new Amount();
@@ -75,21 +74,19 @@ class CreditCard extends Common
 
         if ($paymentMethod->getInstallments() > 1) {
             $selectedInstallments = $paymentMethod->getInstallments();
-            $installments = Params::getInstallments(
-                $this->order->get_total(),
-                $this->order->get_meta('_pagbank_card_first_digits')
+            $installments = Params::getInstallments($this->order->get_total(),$this->order->get_meta('_pagbank_card_first_digits')
             );
-            $installment = Params::extractInstallment($installments, $selectedInstallments);
-            if ($installment array('fees')) {
+            $installment = Params::extractInstallment($installments,$selectedInstallments);
+            if ($installment['fees']) {
                 $interest = new Interest();
-                $interest->setInstallments($installment array('fees') array('buyer') array('interest') array('installments'));
-                $interest->setTotal($installment array('fees') array('buyer') array('interest') array('total'));
+                $interest->setInstallments($installment['fees']['buyer']['interest']['installments']);
+                $interest->setTotal($installment['fees']['buyer']['interest']['total']);
                 $buyer = new Buyer();
                 $buyer->setInterest($interest);
                 $fees = new Fees();
                 $fees->setBuyer($buyer);
                 $amount->setFees($fees);
-                $amount->setValue($installment array('total_amount_raw'));
+                $amount->setValue($installment['total_amount_raw']);
             }
         }
 
@@ -115,7 +112,7 @@ class CreditCard extends Common
         }
         //endregion
 
-        $return array('charges') = array($charge);
+        $return['charges'] = [$charge];
         return $return;
     }
 
@@ -133,23 +130,25 @@ class CreditCard extends Common
             return;
         }
 
-        if (!isset($_REQUEST array('nonce')) || !wp_verify_nonce($_REQUEST array('nonce'), 'rm_pagbank_nonce')) {
-            wp_send_json_error( array('error' => __(
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+            wp_send_json_error(
+                [
+                    'error' => __(
                         'Não foi possível obter as parcelas. Chave de formulário inválida. '
                         .'Recarregue a página e tente novamente.',
                         'pagbank-connect'
                     ),
-                ),
+                ],
                 400
             );
         }
 
-        $ccBin = isset($_REQUEST array('cc_bin')) intval($_REQUEST array('cc_bin')) : 0;
+        $ccBin = isset($_REQUEST['cc_bin']) ? intval($_REQUEST['cc_bin']) : 0;
         $ccBin = Params::getConfig('is_sandbox', false) ? 555566 : $ccBin; // always use 555566 for sandbox
 
         //order id provided when  in order-pay page
-        $orderId = !empty($_POST array('order_id')) Functions::decrypt(
-            sanitize_text_field($_POST array('order_id'))
+        $orderId = !empty($_POST['order_id']) ? Functions::decrypt(
+            sanitize_text_field($_POST['order_id'])
         ) : 0;
         
         $orderTotal = 0;
@@ -167,15 +166,17 @@ class CreditCard extends Common
         }
         
         if ($orderTotal <= 0) {
-            wp_send_json( array('error' => __('Não foi possível obter as parcelas. Total do pedido inválido.', 'pagbank-connect')),
+            wp_send_json(
+                ['error' => __('Não foi possível obter as parcelas. Total do pedido inválido.', 'pagbank-connect')],
                 400
             );
         }
 
-        $installments = Params::getInstallments($orderTotal, $ccBin);
-        if (isset($installments array('error'))) {
-            $error = $installments array('error');
-            wp_send_json( array('error' => sprintf(__('Não foi possível obter as parcelas. %s', 'pagbank-connect'), $error)),
+        $installments = Params::getInstallments($orderTotal,$ccBin);
+        if (isset($installments['error'])) {
+            $error = $installments['error'];
+            wp_send_json(
+                ['error' => sprintf(__('Não foi possível obter as parcelas. %s', 'pagbank-connect'),$error)],
                 400
             );
         }
@@ -186,8 +187,7 @@ class CreditCard extends Common
      * Populates the Card object considering with data from order or subscription
      * @return Card
      */
-    protected function getCardDetails()
-    {
+    protected function getCardDetails() {
         $card = new Card();
         //if subsequent recurring order...
         if ($this->order->get_meta('_pagbank_is_recurring') === true)
@@ -196,7 +196,7 @@ class CreditCard extends Common
             global $wpdb;
             $initialSubOrderId = $this->order->get_parent_id('edit');
             $sql = "SELECT * from {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = 0%d;";
-            $recurring = $wpdb->get_row( $wpdb->prepare( $sql, $initialSubOrderId ) );
+            $recurring = $wpdb->get_row($wpdb->prepare($sql,$initialSubOrderId ) );
             $paymentInfo = json_decode($recurring->payment_info);
             $card->setId($paymentInfo->card->id ?: '');
             $holder = new Holder();
@@ -213,11 +213,10 @@ class CreditCard extends Common
         if($token_id && !empty($token_id) && 'new' !== $token_id){
             $tokenCc = self::getCcToken($token_id);
             $this->order->add_meta_data(
-                'pagbank_card_last4',
-                $tokenCc->get_last4(),
+                'pagbank_card_last4',$tokenCc->get_last4(),
                 true
             );
-            $this->order->add_meta_data('_pagbank_card_first_digits', $tokenCc->get_meta( 'cc_bin' ), true);
+            $this->order->add_meta_data('_pagbank_card_first_digits',$tokenCc->get_meta( 'cc_bin' ), true);
             $card->setId($tokenCc->get_token() ?: '');
             return $card;
         }
@@ -233,18 +232,19 @@ class CreditCard extends Common
      */
     public static function getCartTotal()
     {
-        if (!isset($_REQUEST array('nonce')) || !wp_verify_nonce($_REQUEST array('nonce'), 'rm_pagbank_nonce')) {
-            wp_send_json_error( array('error' => __(
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'rm_pagbank_nonce')) {
+            wp_send_json_error([
+                'error' => __(
                     'Não foi possível obter o total. Chave de formulário inválida. '
                     .'Recarregue a página e tente novamente.',
                     'pagbank-connect'
                 ),
-            ),
+            ],
                 400);
         }
         global $woocommerce;
-        Params::getInstallments(floatval($woocommerce->cart->get_total('edit')), intval($_POST array('ccBin')));
-        echo esc_html( $woocommerce->cart->get_total('edit') );
+        Params::getInstallments(floatval($woocommerce->cart->get_total('edit')), intval($_POST['ccBin']));
+        echo esc_html($woocommerce->cart->get_total('edit') );
         wp_die();
     }
 
@@ -260,7 +260,7 @@ class CreditCard extends Common
             return;
         }
 
-        $orderId = isset($GLOBALS array('order-pay')) intval($GLOBALS array('order-pay')) : false;
+        $orderId = isset($GLOBALS['order-pay']) ? intval($GLOBALS['order-pay']) : false;
         $order = wc_get_order($orderId);
         
         if (!$order) {
@@ -275,7 +275,8 @@ class CreditCard extends Common
             '_billing_neighborhood'
         ) : 'n/d';
         $phone = !empty($order->get_meta('billing_cellphone')) ? $order->get_meta('billing_cellphone') : $order->get_billing_phone();
-        $orderDetails = array('data' => [
+        $orderDetails = [
+            'data' => [
                 'customer' => [
                     'name'           => $order->get_billing_first_name().' '.$order->get_billing_last_name(),
                     'email'          => strtolower($order->get_billing_email()),
@@ -285,20 +286,22 @@ class CreditCard extends Common
                             'area'    => substr(Params::removeNonNumeric($phone), 0, 2),
                             'number'  => substr(Params::removeNonNumeric($phone), 2),
                             'type'    => 'MOBILE'
-                        )
+                        ]
                     ],
                 ],
-                'amount'         => array('currency' => 'BRL',
+                'amount'         => [
+                    'currency' => 'BRL',
                     'value'    => intval(round($order->get_total('edit') * 100)),
-                ),
-                'billingAddress' => array('street'     => preg_replace('/\s+/', ' ', $order->get_billing_address_1()),
+                ],
+                'billingAddress' => [
+                    'street'     => preg_replace('/\s+/', ' ',$order->get_billing_address_1()),
                     'number'     => $billingNumber,
                     'complement' => $billingNeighborhood,
                     'regionCode' => preg_replace('/\s+/', ' ', strtoupper($order->get_billing_state())),
                     'country'    => 'BRA',
-                    'city'       => preg_replace('/\s+/', ' ', $order->get_billing_city()),
+                    'city'       => preg_replace('/\s+/', ' ',$order->get_billing_city()),
                     'postalCode' => Params::removeNonNumeric($order->get_billing_postcode()),
-                ),
+                ],
             ],
             'encryptedOrderId' => Functions::encrypt($orderId),
         ];
@@ -308,12 +311,12 @@ class CreditCard extends Common
 
     /**
      * Function to update the transient when the product is updated
-     * @param $product_id The ID of the product being updated
+     * @param int $product_id The ID of the product being updated
      * @return void
      */
-    public static function updateProductInstallmentsTransient($product, $updatedProps)
+    public static function updateProductInstallmentsTransient($product,$updatedProps)
     {
-        if (!array_intersect( array('regular_price', 'sale_price', 'product_page'), $updatedProps)) {
+        if (!array_intersect(['regular_price', 'sale_price', 'product_page'],$updatedProps)) {
             return;
         }
         
@@ -327,13 +330,13 @@ class CreditCard extends Common
 
         // If the product is a variation, we need to create a cache key for the parent product
         if ($parent_id) {
-            $variation_cache_key = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $parent_id, $product_id);
-            self::buildTransactionData($variation_cache_key, $price);
+            $variation_cache_key = sprintf("rm_pagbank_product_installment_info_%d_variation_%d",$parent_id,$product_id);
+            self::buildTransactionData($variation_cache_key,$price);
             return; // break
         }
         // Permanent cache key for the product
-        $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d", $parent_id ?: $product_id);
-        self::buildTransactionData($main_cache_key, $price);
+        $main_cache_key = sprintf("rm_pagbank_product_installment_info_%d",$parent_id ?: $product_id);
+        self::buildTransactionData($main_cache_key,$price);
     }
 
     /**
@@ -342,7 +345,7 @@ class CreditCard extends Common
      * @param  $updated_props 
      * @return void
      */
-    public static function updateProductTransient($product, $updatedProps)
+    public static function updateProductTransient($product,$updatedProps)
     {
         if($product->get_type() == "variable"){
             // configurable products do not have a price,
@@ -350,23 +353,23 @@ class CreditCard extends Common
             return; 
         }
 
-        self::updateProductInstallmentsTransient($product, $updatedProps);
+        self::updateProductInstallmentsTransient($product,$updatedProps);
     }
     /**
      * Function to update the transient when the product variation is updated or created
-     * @param $product_id
-     * @param $product
+     * @param int $product_id
+     * @param object $product
      * @return void
      */
-    public static function updateProductVariationTransient($product_id, $product)
+    public static function updateProductVariationTransient($product_id,$product)
     {
         if (!$product_id || !$product) {
             return;
         }
-        self::updateProductInstallmentsTransient($product, $product->get_changes());
+        self::updateProductInstallmentsTransient($product,$product->get_changes());
     }
 
-    public static function buildTransactionData($transientId, $price)
+    public static function buildTransactionData($transientId,$price)
     {
         delete_transient($transientId);
 
@@ -376,15 +379,16 @@ class CreditCard extends Common
         if ($ccInstallmentProductPage === 'yes' || $ccShortcodeInUse === 'yes') {
             $default_installments = Params::getInstallments($price, '555566');
 
-            if ($default_installments && !isset($default_installments array('error'))) {
-                $installments = array();
+            if ($default_installments && !isset($default_installments['error'])) {
+                $installments = [];
 
                 foreach ($default_installments as $installment) {
-                    $amount = number_format($installment array('installment_amount'), 2, ',', '.');
-                    $total_amount = number_format($installment array('total_amount'), 2, ',', '.');
-                    $installments array() = array('installments' => $installment['installments'),
+                    $amount = number_format($installment['installment_amount'], 2, ',', '.');
+                    $total_amount = number_format($installment['total_amount'], 2, ',', '.');
+                    $installments[] = [
+                        'installments' => $installment['installments'],
                         'amount' => $amount,
-                        'interest_free' => $installment array('interest_free'),
+                        'interest_free' => $installment['interest_free'],
                         'total_amount' => $total_amount
                     ];
                 }
@@ -393,9 +397,7 @@ class CreditCard extends Common
             }
 
             if (!empty($installmentsData)) {
-                set_transient(
-                    $transientId,
-                    $installmentsData,
+                set_transient($transientId,$installmentsData,
                     YEAR_IN_SECONDS
                 );
             }
@@ -426,13 +428,13 @@ class CreditCard extends Common
             $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);
 
             if (!$installment_info) {
-                self::updateProductInstallmentsTransient($product, array('product_page'));
+                self::updateProductInstallmentsTransient($product, ['product_page']);
                 $installment_info = get_transient('rm_pagbank_product_installment_info_' . $product_id);
             }
 
             if ($installment_info) {
                 $type = Params::getCcConfig('cc_installment_product_page_type', 'table');
-                $type = preg_replace("/ array(^a-z\-)/", "", $type); //safety is paramount
+                $type = preg_replace("/[^a-z\-]/", "",$type); //safety is paramount
                 $template_name = "product-installments-$type.php";
                 $template_path = locate_template('pagbank-connect/' . $template_name);
                 $args = json_decode($installment_info);
@@ -455,7 +457,7 @@ class CreditCard extends Common
                 if ($calledByDoShortcode)
                     ob_start();
                 
-                load_template($template_path, false, $args);
+                load_template($template_path, false,$args);
                 
                 if ($calledByDoShortcode)
                     return ob_get_clean();
@@ -467,7 +469,7 @@ class CreditCard extends Common
     /**
      * Add the script to the product variable page
      * 
-     * @param $type
+     * @param string $type
      * @return void
      */
     public static function addScriptProductVariableInstallments()
@@ -481,20 +483,24 @@ class CreditCard extends Common
         
         wp_enqueue_script(
             'pagseguro-connect-product-variable',
-            plugins_url('public/js/product-variable.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array('jquery', $payment_handle),
-            WC_PAGSEGURO_CONNECT_VERSION, array('strategy' => 'defer', 'in_footer' => true)
+            plugins_url('public/js/product-variable.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['jquery',$payment_handle],
+            WC_PAGSEGURO_CONNECT_VERSION,
+            ['strategy' => 'defer', 'in_footer' => true]
         );
 
         wp_localize_script(
             'pagseguro-connect-product-variable',
-            'ajax_object', array('rest_installments' => get_rest_url(null, 'pagbank/installments/event/'))
+            'ajax_object',
+            ['rest_installments' => get_rest_url(null, 'pagbank/installments/event/')]
         );
     }
 
     public static function restApiInstallments()
     {
-        register_rest_route('pagbank/installments', '/event/', array('methods'  => 'GET',
-            'callback' => [static::class, 'getProductVariableInstallmentsAjax'),
+        register_rest_route('pagbank/installments', '/event/', [
+            'methods'  => 'GET',
+            'callback' => [static::class, 'getProductVariableInstallmentsAjax'],
             'permission_callback' => '__return_true' // ou lógica de permissão
         ]);
     }
@@ -506,29 +512,30 @@ class CreditCard extends Common
      */
     public static function getProductVariableInstallmentsAjax(){
 
-        $_productId = (int) isset($_GET array('_product_id')) ? $_GET array('_product_id') : 0;
-        $_variationId = (int) isset($_GET array('_variation_id')) ? $_GET array('_variation_id') : 0;
-        $_price = (float) isset($_GET array('_price')) ? $_GET array('_price') : 0;
+        $_productId = isset($_GET['_product_id']) ? (int) $_GET['_product_id'] : 0;
+        $_variationId = isset($_GET['_variation_id']) ? (int) $_GET['_variation_id'] : 0;
+        $_price = isset($_GET['_price']) ? (float) $_GET['_price'] : 0;
         
         if(!$_productId || !$_variationId || !$_price) {
-            return rest_ensure_response( array('status' => 'error',
+            return rest_ensure_response([
+                'status' => 'error',
                 'html' => __('Invalid product or variation ID', 'pagbank-connect'),
-            ));
+            ]);
         }
      
         $ccEnabledInstallments = Params::getCcConfig('cc_installment_product_page');
         $ccShortcodeInUse = Params::getCcConfig('cc_installment_shortcode_enabled');
 
         if ($ccEnabledInstallments === 'yes' || $ccShortcodeInUse === 'yes') {
-            $transient_id = sprintf("rm_pagbank_product_installment_info_%d_variation_%d", $_productId, $_variationId);
+            $transient_id = sprintf("rm_pagbank_product_installment_info_%d_variation_%d",$_productId,$_variationId);
             $installment_info = get_transient($transient_id);
             if (!$installment_info) {
-                self::buildTransactionData($transient_id, $_price);
+                self::buildTransactionData($transient_id,$_price);
                 $installment_info = get_transient($transient_id);
             }
             if ($installment_info) {
                 $type = Params::getCcConfig('cc_installment_product_page_type', 'table');
-                $type = preg_replace("/ array(^a-z\-)/", "", $type); //safety is paramount
+                $type = preg_replace("/[^a-z\-]/", "",$type); //safety is paramount
                 $template_name = "product-installments-$type.php";
                 $template_path = locate_template('pagbank-connect/' . $template_name);
                 $args = json_decode($installment_info);
@@ -538,39 +545,41 @@ class CreditCard extends Common
                 }
         
                 ob_start();
-                    load_template($template_path, false, $args); 
+                    load_template($template_path, false,$args); 
                 $html = ob_get_clean();
 
             }  
         }
 
-        return rest_ensure_response( array('status' => 'ok',
+        return rest_ensure_response([
+            'status' => 'ok',
             'html' => isset($html) ? $html : '',
             'installments' => isset($installment_info) ? $installment_info : array(),
-        ));
+        ]);
     }
     /**
      * Function to delete the installment transients if the configuration has changed
      * @return void
      */
-    public static function deleteInstallmentsTransientIfConfigHasChanged($option_name, $old_value, $value)
+    public static function deleteInstallmentsTransientIfConfigHasChanged($option_name,$old_value,$value)
     {
         if (strpos($option_name, 'rm-pagbank-cc_settings') === false) {
             return;
         }
         
-        $isDisablingInstallmentsOnPdpNow = (isset($old_value array('cc_installment_product_page')) && $old_value array('cc_installment_product_page') === 'yes')
-            && (isset($value array('cc_installment_product_page')) && $value array('cc_installment_product_page') === 'no');
+        $isDisablingInstallmentsOnPdpNow = (isset($old_value['cc_installment_product_page']) && $old_value['cc_installment_product_page'] === 'yes')
+            && (isset($value['cc_installment_product_page']) && $value['cc_installment_product_page'] === 'no');
 
-        $optionsToCheck = array('cc_installment_options',
+        $optionsToCheck = [
+            'cc_installment_options',
             'cc_installment_options_fixed',
             'cc_installments_options_min_total',
             'cc_installments_options_limit_installments',
             'cc_installments_options_max_installments'
-        );
+        ];
         $optionsChanged = false;
         foreach ($optionsToCheck as $option) {
-            if (isset($old_value array($option)) && isset($value array($option)) && $old_value array($option) !== $value array($option)) {
+            if (isset($old_value[$option]) && isset($value[$option]) && $old_value[$option] !== $value[$option]) {
                 $optionsChanged = true;
                 break;
             }
@@ -582,25 +591,24 @@ class CreditCard extends Common
             // Delete transients in bulk
             $transient_prefix = '_transient_rm_pagbank_product_installment_info_';
             $transient_timeout_prefix = '_transient_timeout_rm_pagbank_product_installment_info_';
-            $wpdb->query(
-                $wpdb->prepare(
+            $wpdb->query($wpdb->prepare(
                     "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
                     $wpdb->esc_like($transient_prefix) . '%',
-                    $wpdb->esc_like($transient_timeout_prefix) . '%',
+                    $wpdb->esc_like($transient_timeout_prefix) . '%'
                 )
             );
 
         }
 
         $installment_options = array(
-            'installments' => isset($value array('cc_installment_options')) ? $value array('cc_installment_options') : '',
-            'installments_fixed' => isset($value array('cc_installment_options_fixed')) ? $value array('cc_installment_options_fixed') : '',
-            'min_total' => isset($value array('cc_installments_options_min_total')) ? $value array('cc_installments_options_min_total') : '',
-            'limit_installments' => isset($value array('cc_installments_options_limit_installments')) ? $value array('cc_installments_options_limit_installments') : '',
-            'max_installments' => isset($value array('cc_installments_options_max_installments')) ? $value array('cc_installments_options_max_installments') : '',
+            'installments' => isset($value['cc_installment_options']) ? $value['cc_installment_options'] : '',
+            'installments_fixed' => isset($value['cc_installment_options_fixed']) ? $value['cc_installment_options_fixed'] : '',
+            'min_total' => isset($value['cc_installments_options_min_total']) ? $value['cc_installments_options_min_total'] : '',
+            'limit_installments' => isset($value['cc_installments_options_limit_installments']) ? $value['cc_installments_options_limit_installments'] : '',
+            'max_installments' => isset($value['cc_installments_options_max_installments']) ? $value['cc_installments_options_max_installments'] : '',
         );
         
-        set_transient('pagbank_product_installment_options', $installment_options, YEAR_IN_SECONDS);
+        set_transient('pagbank_product_installment_options',$installment_options, YEAR_IN_SECONDS);
     }
 
     /**

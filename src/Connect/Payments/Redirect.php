@@ -1,22 +1,22 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Payments;
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Address; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Amount; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Address;
+use RM_PagBank\Object\Amount;
 use RM_PagBank\Object\Boleto as BoletoObj;
-// use RM_PagBank\Object\Charge; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Customer; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Holder; // PHP 5.6 compatibility
-// use RM_PagBank\Object\InstructionLines; // PHP 5.6 compatibility
-// use RM_PagBank\Object\PaymentMethod; // PHP 5.6 compatibility
-// use RM_PagBank\Object\PaymentMethodConfigOptions; // PHP 5.6 compatibility
-// use RM_PagBank\Object\PaymentMethodsConfigs; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Shipping; // PHP 5.6 compatibility
-// use WC_Data_Exception; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
+use RM_PagBank\Object\Charge;
+use RM_PagBank\Object\Customer;
+use RM_PagBank\Object\Holder;
+use RM_PagBank\Object\InstructionLines;
+use RM_PagBank\Object\PaymentMethod;
+use RM_PagBank\Object\PaymentMethodConfigOptions;
+use RM_PagBank\Object\PaymentMethodsConfigs;
+use RM_PagBank\Object\Shipping;
+use WC_Data_Exception;
+use WC_Order;
 
 /**
  * Class Redirect
@@ -36,15 +36,14 @@ class Redirect extends Common
 	 * @return array
 	 * @throws WC_Data_Exception
 	 */
-    public function prepare()
-    {
+    public function prepare() {
         $return = $this->getDefaultParameters();
 
         // in checkout, phone is just an object not an array
-        if (isset($return array('customer')->getPhone() array(0))){
-            $return array('customer')->setPhone($return array('customer')->getPhone() array(0));
+        if (isset($return['customer']->getPhone()[0])){
+            $return['customer']->setPhone($return['customer']->getPhone()[0]);
         }
-        unset($return array('shipping')); //its different for checkout pagbank
+        unset($return['shipping']); //its different for checkout pagbank
         if ($this->order->has_shipping_address() && $this->order->get_shipping_method()) {
             $shipping = new Shipping();
             $shipping->setType(Shipping::TYPE_FREE);
@@ -61,16 +60,16 @@ class Redirect extends Common
                 
             $shipping->setAddress($this->getShippingAddress());
             $shipping->setAddressModifiable(false);
-            $return array('shipping') = $shipping;
+            $return['shipping'] = $shipping;
         }
         
         
         $orderTotal = $this->order->get_total();
         $discountExcludesShipping = Params::getRedirectConfig('redirect_discount_excludes_shipping', false) == 'yes';
 
-        $discountAmount = array();
+        $discountAmount = [];
         if (($discountConfig = Params::getRedirectConfig('redirect_discount', 0)) && ! is_wc_endpoint_url('order-pay')) {
-            $discount = floatval(Params::getDiscountValue($discountConfig, $this->order, $discountExcludesShipping));
+            $discount = floatval(Params::getDiscountValue($discountConfig,$this->order,$discountExcludesShipping));
             $orderTotal = $orderTotal - $discount;
 
             $fee = new \WC_Order_Item_Fee();
@@ -90,58 +89,61 @@ class Redirect extends Common
             // Recalculate the order
             $this->order->calculate_totals();
             
-            $discountAmount = array('discount_amount' => $discount * 100);
+            $discountAmount = ['discount_amount' => $discount * 100];
         }
         
         //coupon discount
         if ($this->order->get_total_discount() > 0) {
             $discountToAdd = (int)$this->order->get_total_discount()*100;
             //add to existing discount if any
-            if (isset($discountAmount array('discount_amount'))) {
-                $discountToAdd += $discountAmount array('discount_amount');
+            if (isset($discountAmount['discount_amount'])) {
+                $discountToAdd += $discountAmount['discount_amount'];
             }
-            $discountAmount = array('discount_amount' => $discountToAdd);
+            $discountAmount = ['discount_amount' => $discountToAdd];
         }
         
-        $paymentMethodCfg = Params::getRedirectConfig('redirect_payment_methods') ?? array('CREDIT_CARD', 'PIX');
+        $paymentMethodCfg = Params::getRedirectConfig('redirect_payment_methods');
+        if ($paymentMethodCfg === null) {
+            $paymentMethodCfg = array('CREDIT_CARD', 'PIX');
+        }
         foreach ($paymentMethodCfg as $paymentMethod) {
             $paymentMethodObj = new PaymentMethod();
             $paymentMethodObj->setType($paymentMethod);
-            $return array('payment_methods') array() = $paymentMethodObj;
+            $return['payment_methods'][] = $paymentMethodObj;
         }
 
-        if (in_array('CREDIT_CARD', $paymentMethodCfg)){
+        if (in_array('CREDIT_CARD',$paymentMethodCfg)){
             $paymentMethodCfg = new PaymentMethodsConfigs();
             $paymentMethodCfg->setType('CREDIT_CARD');
             $installmentsLimit = Params::getMaxInstallments();
             $interestFreeInstallments = Params::getMaxInstallmentsNoInterest($orderTotal);
-            $configOptions = array();
+            $configOptions = [];
             if ($installmentsLimit) {
                 $configOption = new PaymentMethodConfigOptions();
                 $configOption->setOption(PaymentMethodConfigOptions::OPTION_INSTALLMENTS_LIMIT);
                 $configOption->setValue(max($installmentsLimit, 1));
-                $configOptions array() = $configOption;
+                $configOptions[] = $configOption;
             }
             if ($interestFreeInstallments > 1) {
                 $configOption = new PaymentMethodConfigOptions();
                 $configOption->setOption(PaymentMethodConfigOptions::OPTION_INTEREST_FREE_INSTALLMENTS);
-                $configOption->setValue(max(1, $interestFreeInstallments));
-                $configOptions array() = $configOption;
+                $configOption->setValue(max(1,$interestFreeInstallments));
+                $configOptions[] = $configOption;
             }
             
             if ($configOptions) {
                 $paymentMethodCfg->setConfigOptions($configOptions);
-                $return array('payment_methods_configs') = array($paymentMethodCfg);
+                $return['payment_methods_configs'] = [$paymentMethodCfg];
             }
         }
 
-        $customerModifiable = array('customer_modifiable' => true);
+        $customerModifiable = ['customer_modifiable' => true];
         $expireInMinutes = Params::getRedirectConfig('redirect_expiry_minutes', "120");
         //date iso-8601 + expiry minutes
-        $expirationDate = array('expiration_date' => date('c', strtotime('+' . $expireInMinutes . ' minutes')));
-        $redirectUrl = array('redirect_url' => $this->order->get_checkout_order_received_url());
+        $expirationDate = ['expiration_date' => date('c', strtotime('+' . $expireInMinutes . ' minutes'))];
+        $redirectUrl = ['redirect_url' => $this->order->get_checkout_order_received_url()];
         
-        return array_merge($return, $customerModifiable, $redirectUrl, $discountAmount, $expirationDate);
+        return array_merge($return,$customerModifiable,$redirectUrl,$discountAmount,$expirationDate);
     }
 
 	/**
@@ -157,8 +159,7 @@ class Redirect extends Common
         require_once dirname(__FILE__) . '/../../templates/redirect-instructions.php';
     }
     
-    public function getCustomerData()
-    {
+    public function getCustomerData() {
         return parent::getCustomerData();
     }
 

@@ -1,4 +1,4 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Recurring\Admin\Subscriptions;
 
@@ -18,21 +18,18 @@ class SubscriptionReportingSummary
                     SUM(CASE WHEN status = 'PENDING_CANCEL' AND canceled_at >= %s THEN 1 ELSE 0 END) AS pending_cancel,
                     SUM(CASE WHEN status = 'PAUSED' AND paused_at >= %s THEN 1 ELSE 0 END) AS pause,
                     SUM(CASE WHEN status = 'CANCELED' AND canceled_at >= %s THEN 1 ELSE 0 END) AS canceleds
-            FROM $table",
-            $date_30_days,
-            $date_30_days,
-            $date_30_days,
-            $date_30_days
+            FROM $table",$date_30_days,$date_30_days,$date_30_days,$date_30_days
         );
 
         $result = $wpdb->get_row($query);
 
-        return array("enables"   => (int) $result->enables ?? 0,
-            "news"      => (int) $result->news ?? 0,
-            "canceleds" => (int) $result->canceleds ?? 0,
-            "pending_cancel"  => (int) $result->pending_cancel ?? 0,
-            "pause"     => (int) $result->pause ?? 0,
-        );
+        return [
+            "enables"   => isset($result->enables) ? (int) $result->enables : 0,
+            "news"      => isset($result->news) ? (int) $result->news : 0,
+            "canceleds" => isset($result->canceleds) ? (int) $result->canceleds : 0,
+            "pending_cancel"  => isset($result->pending_cancel) ? (int) $result->pending_cancel : 0,
+            "pause"     => isset($result->pause) ? (int) $result->pause : 0,
+        ];
     }
 
     public static function styleReportingBasic()
@@ -51,30 +48,30 @@ class SubscriptionReportingSummary
         $data = $this->basic(); 
         $this->styleReportingBasic(); ?>
         <div class="wrap">
-            <h1><php echo esc_html(__('Relatórios de Assinaturas - PagBank', 'rm-pagbank')); ?></h1>
+            <h1><?php echo esc_html(__('Relatórios de Assinaturas - PagBank', 'rm-pagbank')); ?></h1>
             <div class="report-cards">
                 <div class="report-card">
-                    <strong><php echo esc_html(__('Assinaturas Ativas', 'rm-pagbank')); ?></strong>
-                    <div class="value"><php echo esc_html(isset($data array('enables')) ? $data array('enables') : 0); ?></div>
+                    <strong><?php echo esc_html(__('Assinaturas Ativas', 'rm-pagbank')); ?></strong>
+                    <div class="value"><?php echo esc_html(isset($data['enables']) ? $data['enables'] : 0); ?></div>
                 </div>
                 <div class="report-card">
-                    <strong><php echo esc_html(__('Novas (últimos 30 dias)', 'rm-pagbank')); ?></strong>
-                    <div class="value"><php echo esc_html(isset($data array('news')) ? $data array('news') : 0); ?></div>
+                    <strong><?php echo esc_html(__('Novas (últimos 30 dias)', 'rm-pagbank')); ?></strong>
+                    <div class="value"><?php echo esc_html(isset($data['news']) ? $data['news'] : 0); ?></div>
                 </div>
                 <div class="report-card">
-                    <strong><php echo esc_html(__('Pausada (últimos 30 dias)', 'rm-pagbank')); ?></strong>
-                    <div class="value"><php echo esc_html(isset($data array('pause')) ? $data array('pause') : 0); ?></div>
+                    <strong><?php echo esc_html(__('Pausada (últimos 30 dias)', 'rm-pagbank')); ?></strong>
+                    <div class="value"><?php echo esc_html(isset($data['pause']) ? $data['pause'] : 0); ?></div>
                 </div>
                 <div class="report-card">
-                    <strong><php echo esc_html(__('Cancelamento Pendente (últimos 30 dias)', 'rm-pagbank')); ?></strong>
-                    <div class="value"><php echo esc_html(isset($data array('pending_cancel')) ? $data array('pending_cancel') : 0); ?></div>
+                    <strong><?php echo esc_html(__('Cancelamento Pendente (últimos 30 dias)', 'rm-pagbank')); ?></strong>
+                    <div class="value"><?php echo esc_html(isset($data['pending_cancel']) ? $data['pending_cancel'] : 0); ?></div>
                 </div>
                 <div class="report-card">
-                    <strong><php echo esc_html(__('Canceladas (últimos 30 dias)', 'rm-pagbank')); ?></strong>
-                    <div class="value"><php echo esc_html(isset($data array('canceleds')) ? $data array('canceleds') : 0); ?></div>
+                    <strong><?php echo esc_html(__('Canceladas (últimos 30 dias)', 'rm-pagbank')); ?></strong>
+                    <div class="value"><?php echo esc_html(isset($data['canceleds']) ? $data['canceleds'] : 0); ?></div>
                 </div>
             </div>
         </div>
-<php
+<?php
     }
 }

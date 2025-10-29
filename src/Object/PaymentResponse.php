@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class PaymentResponse
@@ -18,8 +18,7 @@ class PaymentResponse implements JsonSerializable
     protected $message;
     protected $reference;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -27,48 +26,42 @@ class PaymentResponse implements JsonSerializable
     /**
      * @return int
      */
-    public function getCode()
-    {
+    public function getCode() {
         return $this->code;
     }
 
     /**
-     * @param $code
+     * @param int $code
      */
-    public function setCode($code)
-    {
+    public function setCode($code) {
         $this->code = $code;
     }
 
     /**
      * @return string
      */
-    public function getMessage()
-    {
+    public function getMessage() {
         return $this->message;
     }
 
     /**
-     * @param $message
+     * @param string $message
      */
-    public function setMessage($message)
-    {
+    public function setMessage($message) {
         $this->message = substr($message, 0, 100);
     }
 
     /**
      * @return string
      */
-    public function getReference()
-    {
+    public function getReference() {
         return $this->reference;
     }
 
     /**
-     * @param $reference
+     * @param string $reference
      */
-    public function setReference($reference)
-    {
+    public function setReference($reference) {
         $this->reference = substr($reference, 0, 20);
     }
 

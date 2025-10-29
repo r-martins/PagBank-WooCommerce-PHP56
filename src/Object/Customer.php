@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Customer
@@ -19,8 +19,7 @@ class Customer implements JsonSerializable
     private $tax_id;
     private $phone; //type not declared because it can be an array or a Phone object and mixed types are not allowed in PHP 7.4
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -28,32 +27,28 @@ class Customer implements JsonSerializable
     /**
      * @return string
      */
-    public function getName()
-    {
+    public function getName() {
         return $this->name;
     }
 
     /**
-     * @param $name
+     * @param string $name
      */
-    public function setName($name)
-    {
+    public function setName($name) {
         $this->name = $name;
     }
 
     /**
      * @return string
      */
-    public function getEmail()
-    {
+    public function getEmail() {
         return $this->email;
     }
 
     /**
-     * @param $email
+     * @param string $email
      */
-    public function setEmail($email)
-    {
+    public function setEmail($email) {
         $email = strtolower($email);
         $this->email = $email;
     }
@@ -61,16 +56,14 @@ class Customer implements JsonSerializable
     /**
      * @return string
      */
-    public function getTaxId()
-    {
+    public function getTaxId() {
         return $this->tax_id;
     }
 
     /**
-     * @param $tax_id
+     * @param string $tax_id
      */
-    public function setTaxId($tax_id)
-    {
+    public function setTaxId($tax_id) {
         $this->tax_id = $tax_id;
     }
 
@@ -79,14 +72,13 @@ class Customer implements JsonSerializable
      */
     public function getPhone()
     {
-        return $this->phone ?null;
+        return $this->phone;
     }
 
     /**
      * @param array|Phone $phone When in Redirect mode, it receives the phone object directly
      */
-    public function setPhone($phone)
-    {
+    public function setPhone($phone) {
         $this->phone = $phone;
     }
 

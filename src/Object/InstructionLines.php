@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class InstructionLines
@@ -17,8 +17,7 @@ class InstructionLines implements JsonSerializable
     private $line_1;
     private $line_2;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -26,32 +25,28 @@ class InstructionLines implements JsonSerializable
     /**
      * @return string
      */
-    public function getLine1()
-    {
+    public function getLine1() {
         return $this->line_1;
     }
 
     /**
-     * @param $line_1
+     * @param string $line_1
      */
-    public function setLine1($line_1)
-    {
+    public function setLine1($line_1) {
         $this->line_1 = substr($line_1, 0, 75);
     }
 
     /**
      * @return string
      */
-    public function getLine2()
-    {
+    public function getLine2() {
         return $this->line_2;
     }
 
     /**
-     * @param $line_2
+     * @param string $line_2
      */
-    public function setLine2($line_2)
-    {
+    public function setLine2($line_2) {
         $this->line_2 = substr($line_2, 0, 75);
     }
 

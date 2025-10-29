@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class PaymentMethodsConfigs
@@ -25,29 +25,24 @@ class PaymentMethodsConfigs implements JsonSerializable
     private $config_options;
 
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
 
-	public function getType()
-	{
+	public function getType() {
 		return $this->type;
 	}
 
-	public function setType($type)
-	{
+	public function setType($type) {
 		$this->type = $type;
 	}
 
-    public function getConfigOptions()
-    {
+    public function getConfigOptions() {
         return $this->config_options;
     }
 
-    public function setConfigOptions($configOptions)
-    {
+    public function setConfigOptions(array $configOptions) {
         $this->config_options = $configOptions;
     }
 

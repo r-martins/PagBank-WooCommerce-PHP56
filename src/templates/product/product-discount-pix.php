@@ -1,4 +1,4 @@
-<php
+<?php
 
 /**
  * DO NOT modify this file. If you want to make changes, copy it to wp-content/YOUR_THEME/pagbank-connect/
@@ -14,9 +14,9 @@ if (!defined('ABSPATH')) {
 
 $data = $args;
 
-$product = $data array('product') ?null;
-$discount_config = isset($data array('discount')) ? $data array('discount') : 0;
-$discount_type = $data array('discount_type') ?null;
+$product = isset($data['product']) ? $data['product'] : null;
+$discount_config = isset($data['discount']) ? $data['discount'] : 0;
+$discount_type = isset($data['discount_type']) ? $data['discount_type'] : null;
 
 if (!$product || !$discount_config || !$discount_type) {
     return;
@@ -27,10 +27,10 @@ $original_price = (float) $product->get_price();
 $discountTotal = $discount_type == 'PERCENT' ? $original_price * (floatval($discount_config) / 100) : floatval($discount_config);
 $price_with_discount = $original_price - $discountTotal;
 $price_with_discount_formatted = '<b>' . wc_price($price_with_discount) . '</b>';
-$html_discount = sprintf(__('À vista no Pix: %s', 'pagbank-connect'), $price_with_discount_formatted);
+$html_discount = sprintf(__('À vista no Pix: %s', 'pagbank-connect'),$price_with_discount_formatted);
 ?>
 <span class="rm-pagbank-price">
    <span class="icon-pix"></span>
-   <php echo $html_discount ?>
+   <?php echo $html_discount ?>
 </span>
 <br />

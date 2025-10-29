@@ -1,4 +1,4 @@
-<php
+<?php
 /**
  * PagBank Subscription was Canceled (E-mail de cancelamento de assinatura) 
  *
@@ -22,12 +22,12 @@
  */
 
 /** @var stdClass $subscription */
-/** @var $email_heading */
-/** @var $account_link */
+/** @var string $email_heading */
+/** @var string $account_link */
 /** @var SuspendedSubscription $email */
 /** @var WC_Order $order */
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -36,45 +36,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 /*
  * @hooked WC_Emails::email_header() Output the email header
  */
-do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
+do_action( 'woocommerce_email_header',$email_heading,$email ); ?>
 
-<php /* translators: %s: Customer first name */ ?>
-    <p><php printf(esc_html__('Olá %s,', 'pagbank-connect'), esc_html($order->get_billing_first_name())); ?></p>
-    <p><php echo sprintf(
+<?php /* translators: %s: Customer first name */ ?>
+    <p><?php printf(esc_html__('Olá %s,', 'pagbank-connect'), esc_html($order->get_billing_first_name())); ?></p>
+    <p><?php echo sprintf(
             esc_html(
                 'Sua assinatura #%d foi suspensa.',
                 'pagbank-connect'
-            ),
-            $subscription->id
+            ),$subscription->id
         ); ?></p>
 
-    <php if($subscription->suspended_reason):?>
+    <?php if($subscription->suspended_reason):?>
     <p>
-        <php
+        <?php
         echo sprintf(
             esc_html(
                 'Razão: %s.',
                 'pagbank-connect'
-            ),
-            $subscription->suspended_reason
+            ),$subscription->suspended_reason
         ); ?></p>
-    <php endif;?>
+    <?php endif;?>
 
-    <p><php echo sprintf(
+    <p><?php echo sprintf(
             esc_html(
                 'Uma nova tentativa de cobrança será feita no dia %s.',
                 'pagbank-connect'
             ),
-            mysql2date('d/m/Y', $subscription->next_bill_at));
+            mysql2date('d/m/Y',$subscription->next_bill_at));
     ?></p>
     <p>
-        <php echo __('Recomendamos que atualize o cartão utilizado no pagamento da assinatura.','pagbank-connect'); ?>
+        <?php echo __('Recomendamos que atualize o cartão utilizado no pagamento da assinatura.','pagbank-connect'); ?>
     <br>
-        <a href="<php echo esc_url( $account_link ); ?>" class="button button-primary" target="_blank">
-            <php esc_html_e( 'Atualizar cartão', 'pagbank-connect' ); ?>
+        <a href="<?php echo esc_url($account_link ); ?>" class="button button-primary" target="_blank">
+            <?php esc_html_e( 'Atualizar cartão', 'pagbank-connect' ); ?>
         </a>
     </p>
-<php
+<?php
 
 /*
  * @hooked WC_Emails::order_details() Shows the order details table.
@@ -82,27 +80,27 @@ do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
  * @hooked WC_Structured_Data::output_structured_data() Outputs structured data.
  * @since 2.5.0
  */
-do_action( 'woocommerce_email_order_details', $order, $sent_to_admin, $plain_text, $email );
+do_action( 'woocommerce_email_order_details',$order,$sent_to_admin,$plain_text,$email );
 
 /*
  * @hooked WC_Emails::order_meta() Shows order meta data.
  */
-do_action( 'woocommerce_email_order_meta', $order, $sent_to_admin, $plain_text, $email );
+do_action( 'woocommerce_email_order_meta',$order,$sent_to_admin,$plain_text,$email );
 
 /*
  * @hooked WC_Emails::customer_details() Shows customer details
  * @hooked WC_Emails::email_address() Shows email address
  */
-do_action( 'woocommerce_email_customer_details', $order, $sent_to_admin, $plain_text, $email );
+do_action( 'woocommerce_email_customer_details',$order,$sent_to_admin,$plain_text,$email );
 
 /**
  * Show user-defined additional content - this is set in each email's settings.
  */
-if ( $additional_content ) {
-	echo wp_kses_post( wpautop( wptexturize( $additional_content ) ) );
+if ($additional_content ) {
+	echo wp_kses_post( wpautop( wptexturize($additional_content ) ) );
 }
 
 /*
  * @hooked WC_Emails::email_footer() Output the email footer
  */
-do_action( 'woocommerce_email_footer', $email );
+do_action( 'woocommerce_email_footer',$email );

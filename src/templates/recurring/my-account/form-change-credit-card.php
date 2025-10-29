@@ -1,9 +1,9 @@
-<php
+<?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var stdClass $subscription */
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Helpers\Params;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,7 +17,7 @@ wp_add_inline_style(
     )
 );
 
-do_action('rm_pagbank_before_account_recurring_view_subscription_payment_rows', $subscription);
+do_action('rm_pagbank_before_account_recurring_view_subscription_payment_rows',$subscription);
 
 if ( ! isset($subscription->id) || ! $subscription->id ) {
     return;
@@ -28,13 +28,14 @@ $fields = array();
 wp_enqueue_script( 'wc-credit-card-form' );
 
 $available_gateways = WC()->payment_gateways->get_available_payment_gateways();
-$gateway = array_key_exists('rm-pagbank-cc',$available_gateways) ? $available_gateways array('rm-pagbank-cc') : null;
+$gateway = array_key_exists('rm-pagbank-cc',$available_gateways) ? $available_gateways['rm-pagbank-cc'] : null;
 ?>
-<php if ( $payment->method == 'credit_card' && $gateway) :?>
-    <form id="order_update" class="wc-credit-card-form payment_methods" action="<php echo \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('changePaymentMethod', $subscription); ?>" method="post">
-        <div class="payment_box wc_payment_method payment_method_<php echo esc_attr( $gateway->id ); ?>">
-            <php
-            $default_fields = array('card-holer-name' => '<p class="form-row form-row-wide">
+<?php if ($payment->method == 'credit_card' && $gateway) :?>
+    <form id="order_update" class="wc-credit-card-form payment_methods" action="<?php echo \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('changePaymentMethod',$subscription); ?>" method="post">
+        <div class="payment_box wc_payment_method payment_method_<?php echo esc_attr($gateway->id ); ?>">
+            <?php
+            $default_fields = [
+                'card-holer-name' => '<p class="form-row form-row-wide">
 				<label for="' . esc_attr( Connect::DOMAIN ) . '-card-holder">' . esc_html__( 'Titular do Cartão', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
 				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-holder-name" class="input-text wc-credit-card-form-holder-name" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" type="text" placeholder="' . esc_html__( 'como gravado no cartão', 'pagbank-connect' ) . '" ' . $gateway->field_name( 'card-holder-name' ) . ' />
 			</p>',
@@ -50,28 +51,28 @@ $gateway = array_key_exists('rm-pagbank-cc',$available_gateways) ? $available_ga
                 <label for="' . esc_attr( Connect::DOMAIN ) . '-card-cvc">' . esc_html__( 'Card code', 'woocommerce' ) . '&nbsp;<span class="required">*</span></label>
                 <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'woocommerce' ) . '" ' . $gateway->field_name( 'card-cvc' ) . ' style="width:100px" />
             </p>',
-            );
+            ];
 
-            $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_fields', $default_fields, Connect::DOMAIN ) );
+            $fields = wp_parse_args($fields, apply_filters( 'woocommerce_credit_card_form_fields',$default_fields, Connect::DOMAIN ) );
             ?>
-            <fieldset id="wc-<php echo esc_attr( Connect::DOMAIN ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
-                <input id="payment_method_<php echo esc_attr( $gateway->id ); ?>" type="radio" class="input-radio" name="payment_method" value="<php echo esc_attr( $gateway->id ); ?>" checked="checked"/>
-                <php do_action( 'woocommerce_credit_card_form_start', Connect::DOMAIN ); ?>
-                <php
-                foreach ( $fields as $field ) {
+            <fieldset id="wc-<?php echo esc_attr( Connect::DOMAIN ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
+                <input id="payment_method_<?php echo esc_attr($gateway->id ); ?>" type="radio" class="input-radio" name="payment_method" value="<?php echo esc_attr($gateway->id ); ?>" checked="checked"/>
+                <?php do_action( 'woocommerce_credit_card_form_start', Connect::DOMAIN ); ?>
+                <?php
+                foreach ($fields as $field ) {
                     echo $field; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
                 }
                 ?>
-                <input type="hidden" <php echo $gateway->field_name('card-encrypted');?> id="<php echo esc_attr( Connect::DOMAIN )?>-card-encrypted" />
-                <input type="hidden" <php echo $gateway->field_name('card-3d');?> id="<php echo esc_attr( Connect::DOMAIN )?>-card-3d" />
+                <input type="hidden" <?php echo $gateway->field_name('card-encrypted');?> id="<?php echo esc_attr( Connect::DOMAIN )?>-card-encrypted" />
+                <input type="hidden" <?php echo $gateway->field_name('card-3d');?> id="<?php echo esc_attr( Connect::DOMAIN )?>-card-3d" />
                 <div class="clear"></div>
             </fieldset>
             <input type="hidden" name="ps_connect_method" value="cc"/>
         </div>
         <button type="submit" class="button alt" id="place_order">
-            <php _e('Alterar cartão', 'pagbank-connect');?>
+            <?php _e('Alterar cartão', 'pagbank-connect');?>
         </button>
     </form>
-<php endif;
+<?php endif;
 
 

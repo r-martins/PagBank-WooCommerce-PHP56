@@ -1,4 +1,4 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Recurring\Admin\Reports;
 
@@ -9,13 +9,14 @@ class RecurringsReport
 
     public static function reportsFilter($reports)
     {
-        $reports array('pagbank') = array('title' => __('Assinaturas PagBank', 'pagbank-connect'),
+        $reports['pagbank'] = [
+            'title' => __('Assinaturas PagBank', 'pagbank-connect'),
             'reports' => [
                 'recorrencias' => [
                     'title'       => __('Pedidos Recorrentes', 'pagbank-connect'),
                     'description' => __('Pedidos com cobrança recorrente via PagBank.', 'pagbank-connect'),
                     'hide_title'  => true,
-                    'callback'    => [BlockRecurrings::class, 'output')
+                    'callback'    => [BlockRecurrings::class, 'output']
                 ]
             ]
         ];

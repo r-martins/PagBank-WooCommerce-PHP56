@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class AuthenticationMethod
@@ -41,8 +41,7 @@ class AuthenticationMethod implements JsonSerializable
     /*ID da transação gerada pelo servidor de diretório durante uma autenticação - Recomendado para a bandeira MASTERCARD. ⚠️ Condicional para 3DS. ⚠️*/
     protected $dstrans_id;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -50,112 +49,98 @@ class AuthenticationMethod implements JsonSerializable
     /**
      * @return string
      */
-    public function getType()
-    {
+    public function getType() {
         return $this->type;
     }
 
     /**
-     * @param $type
+     * @param string $type
      */
-    public function setType($type)
-    {
+    public function setType($type) {
         $this->type = $type;
     }
 
     /**
      * @return string
      */
-    public function getId()
-    {
+    public function getId() {
         return $this->id;
     }
 
     /**
-     * @param $id
+     * @param string $id
      */
-    public function setId($id)
-    {
+    public function setId($id) {
         $this->id = $id;
     }
 
     /**
      * @return string
      */
-    public function getCavv()
-    {
+    public function getCavv() {
         return $this->cavv;
     }
 
     /**
-     * @param $cavv
+     * @param string $cavv
      */
-    public function setCavv($cavv)
-    {
+    public function setCavv($cavv) {
         $this->cavv = $cavv;
     }
 
     /**
      * @return string
      */
-    public function getEci()
-    {
+    public function getEci() {
         return $this->eci;
     }
 
     /**
-     * @param $eci
+     * @param string $eci
      */
-    public function setEci($eci)
-    {
+    public function setEci($eci) {
         $this->eci = $eci;
     }
 
     /**
      * @return string
      */
-    public function getXid()
-    {
+    public function getXid() {
         return $this->xid;
     }
 
     /**
-     * @param $xid
+     * @param string $xid
      */
-    public function setXid($xid)
-    {
+    public function setXid($xid) {
         $this->xid = $xid;
     }
 
     /**
      * @return string
      */
-    public function getVersion()
-    {
+    public function getVersion() {
         return $this->version;
     }
 
     /**
-     * @param $version
+     * @param string $version
      */
-    public function setVersion($version)
-    {
+    public function setVersion($version) {
         $this->version = $version;
     }
 
     /**
      * @return string
      */
-    public function getDstransId()
-    {
+    public function getDstransId() {
         return $this->dstrans_id;
     }
 
     /**
-     * @param $dstrans_id
+     * @param string $dstrans_id
      */
-    public function setDstransId($dstrans_id)
-    {
+    public function setDstransId($dstrans_id) {
         $this->dstrans_id = $dstrans_id;
     }
 

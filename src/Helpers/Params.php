@@ -1,12 +1,12 @@
-<php
+<?php
 
 namespace RM_PagBank\Helpers;
 
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Address; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
-// use WP_Error; // PHP 5.6 compatibility
+use Exception;
+use RM_PagBank\Connect;
+use RM_PagBank\Object\Address;
+use WC_Order;
+use WP_Error;
 
 /**
  * Helper Params - used to extract information from order to build api requests
@@ -26,28 +26,28 @@ class Params
      *
      * @return array
      */
-    public static function extractPhone(WC_Order $order)
-    {
+    public static function extractPhone(WC_Order $order) {
         $full_phone = $order->get_billing_phone();
-        $clean_phone = preg_replace('/ array(^0-9)/', '', $full_phone);
+        $clean_phone = preg_replace('/[^0-9]/', '',$full_phone);
         $ddd = substr($clean_phone, 0, 2);
         $number = substr($clean_phone, 2);
 
-        return array('country' => '55',
+        return [
+            'country' => '55',
             'area' => $ddd,
             'number' => $number,
             'type' => (strlen($number) == 9) ? 'MOBILE' : 'HOME'
-		);
+		];
     }
 
     /**
      * @param $string
      *
-     * @return array|string|string array()|null
+     * @return array|string|string[]|null
      */
     public static function removeNonNumeric($string)
     {
-        return preg_replace('/ array(^0-9)/', '', $string);
+        return preg_replace('/[^0-9]/', '',$string);
     }
 
     /**
@@ -56,8 +56,7 @@ class Params
      *
      * @return int
      */
-    public static function convertToCents($amount)
-	{
+    public static function convertToCents($amount) {
         if ( ! is_numeric($amount) )
             return 0;
 
@@ -70,80 +69,80 @@ class Params
 
     /**
      * @param $key
-     * @param $default
+     * @param string $default
      *
      * @return mixed|string
      */
-    public static function getConfig($key, $default = '')
+    public static function getConfig($key,$default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank_settings');
-        if (isset($settings array($key))){
-            return $settings array($key);
+        if (isset($settings[$key])){
+            return $settings[$key];
         }
         return $default;
     }
 
     /**
      * @param $key
-     * @param $default
+     * @param string $default
      *
      * @return mixed|string
      */
-    public static function getCcConfig($key, $default = '')
+    public static function getCcConfig($key,$default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank-cc_settings');
-        if (isset($settings array($key))){
-            return $settings array($key);
+        if (isset($settings[$key])){
+            return $settings[$key];
         }
         return $default;
     }
 
     /**
      * @param $key
-     * @param $default
+     * @param string $default
      *
      * @return mixed|string
      */
-    public static function getPixConfig($key, $default = '')
+    public static function getPixConfig($key,$default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank-pix_settings');
-        if (isset($settings array($key))){
-            return $settings array($key);
+        if (isset($settings[$key])){
+            return $settings[$key];
         }
         return $default;
     }
 
     /**
      * @param $key
-     * @param $default
+     * @param string $default
      *
      * @return mixed|string
      */
-    public static function getBoletoConfig($key, $default = '')
+    public static function getBoletoConfig($key,$default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank-boleto_settings');
-        if (isset($settings array($key))){
-            return $settings array($key);
+        if (isset($settings[$key])){
+            return $settings[$key];
         }
         return $default;
     }
 
     /**
      * @param $key
-     * @param $default
+     * @param string $default
      *
      * @return mixed|string
      */
-    public static function getRecurringConfig($key, $default = '')
+    public static function getRecurringConfig($key,$default = '')
     {
-        return get_option('woocommerce_rm-pagbank-' . $key, $default);
+        return get_option('woocommerce_rm-pagbank-' . $key,$default);
     }
 
-    public static function getRedirectConfig($key, $default = '')
+    public static function getRedirectConfig($key,$default = '')
     {
         $settings = get_option('woocommerce_rm-pagbank-redirect_settings');
-        if (isset($settings array($key))){
-            return $settings array($key);
+        if (isset($settings[$key])){
+            return $settings[$key];
         }
         return $default;
     }
@@ -192,7 +191,7 @@ class Params
 
 //        if ('min_total' == $installment_option) {
             $min_total = (int)self::getCcConfig('cc_installments_options_min_total', 50);
-            $min_total = max(5, $min_total); //avoiding blanks
+            $min_total = max(5,$min_total); //avoiding blanks
             $orderTotal = floatval($orderTotal);
             $installments = floor($orderTotal / $min_total);
             $installments = $installments == 1 ? 0 : $installments; //1 is not acceptable as a value by the api
@@ -207,74 +206,76 @@ class Params
      *
      * @return array
      */
-    public static function getInstallments($orderTotal, $bin)
-    {
-        $return = array();
+    public static function getInstallments($orderTotal,$bin) {
+        $return = [];
         $api = new Api();
         $url = 'ws/charges/fees/calculate';
-        $params array('payment_methods') = 'CREDIT_CARD';
-        $params array('value')  = self::convertToCents($orderTotal);
-        $params array('credit_card_bin') = $bin;
+        $params['payment_methods'] = 'CREDIT_CARD';
+        $params['value']  = self::convertToCents($orderTotal);
+        $params['credit_card_bin'] = $bin;
         
         if (Params::getConfig('is_sandbox') == 'yes') {
-            $params array('credit_card_bin') = '555566'; //Because test credit card numbers are not accepted by the API
+            $params['credit_card_bin'] = '555566'; //Because test credit card numbers are not accepted by the API
         }
 
         if(!$orderTotal || $orderTotal <= 0) {
-            return array();
+            return [];
         }
 
         if ($mi = self::getMaxInstallments()) {
-            $params array('max_installments') = $mi;
+            $params['max_installments'] = $mi;
         }
 
-        $params array('max_installments_no_interest') = self::getMaxInstallmentsNoInterest($orderTotal);
+        $params['max_installments_no_interest'] = self::getMaxInstallmentsNoInterest($orderTotal);
 
         try {
-            $installments = $api->get($url, $params, 30);
+            $installments = $api->get($url,$params, 30);
         } catch (Exception $e) {
-            return array();
+            return [];
         }
 
-        if (isset($installments array('error_messages'))){
-			$return array('error') = isset($installments array('error_messages') array(0) array('description')) ? $installments array('error_messages') array(0) array('description') : 'Erro ao calcular as parcelas';
-            Functions::log('Erro ao calcular as parcelas' . \print_r( array($installments['error_messages'), $params], true), 'debug');
+        if (isset($installments['error_messages'])) {
+		$return['error'] = isset($installments['error_messages'][0]['description'])
+			? $installments['error_messages'][0]['description']
+			: 'Erro ao calcular as parcelas';
+            Functions::log('Erro ao calcular as parcelas' . \print_r([$installments['error_messages'],$params], true), 'debug');
         }
 
-        if (isset($installments array('payment_methods') array('credit_card'))){
-            $installments = reset($installments array('payment_methods') array('credit_card'));
-            if ( ! isset($installments array('installment_plans'))) {
-                return array();
+        if (isset($installments['payment_methods']['credit_card'])){
+            $installments = reset($installments['payment_methods']['credit_card']);
+            if ( ! isset($installments['installment_plans'])) {
+                return [];
             }
 
 
-            foreach ($installments array('installment_plans') as $installment){
+            foreach ($installments['installment_plans'] as $installment){
                 //convert values from cents to float with 2 decimals
-                $total_amount = number_format($installment array('amount') array('value') / 100, 2, '.', '');
-                $installment_value = number_format($installment array('installment_value') / 100, 2, '.', '');
+                $total_amount = number_format($installment['amount']['value'] / 100, 2, '.', '');
+                $installment_value = number_format($installment['installment_value'] / 100, 2, '.', '');
                 $interest_amount = 0;
-				if (isset($installment array('amount') array('fees') array('buyer') array('interest') array('total'))) {
-					$interest_amount = number_format(
-						isset($installment array('amount') array('fees') array('buyer') array('interest') array('total')) ? $installment array('amount') array('fees') array('buyer') array('interest') array('total') : 0 / 100,
+			if (isset($installment['amount']['fees']['buyer']['interest']['total'])) {
+				$interest_base = $installment['amount']['fees']['buyer']['interest']['total'];
+				$interest_amount = number_format($interest_base / 100,
 						2,
 						'.',
 						''
 					);
                 }
 
-                $return array() = array('installments' => $installment['installments'),
+                $return[] = [
+					'installments' => $installment['installments'],
 					'total_amount' => $total_amount,
-					'total_amount_raw' => $installment array('amount') array('value'),
+					'total_amount_raw' => $installment['amount']['value'],
 					'installment_amount' => $installment_value,
-					'interest_free' => $installment array('interest_free'),
+					'interest_free' => $installment['interest_free'],
 					'interest_amount' => $interest_amount,
-//					'interest_amount_raw' => isset($installment array('amount') array('fees') array('buyer') array('interest') array('total')) ? $installment array('amount') array('fees') array('buyer') array('interest') array('total') : 0
-					'fees' => isset($installment array('amount') array('fees')) ? $installment array('amount') array('fees') : array()
+//					'interest_amount_raw' => $installment['amount']['fees']['buyer']['interest']['total'] ?? 0
+				'fees' => isset($installment['amount']['fees']) ? $installment['amount']['fees'] : array()
                 ];
             }
         }
         if (function_exists('apply_filters')) {
-            $return = apply_filters('pagbank_get_installments', $return, $orderTotal, $bin);
+            $return = apply_filters('pagbank_get_installments',$return,$orderTotal,$bin);
         }
         return $return;
     }
@@ -286,10 +287,10 @@ class Params
 	 *
 	 * @return false|mixed
 	 */
-	public static function extractInstallment($installments, $installmentNumber)
+	public static function extractInstallment($installments,$installmentNumber)
 	{
 		foreach ($installments as $installment) {
-			if ($installment array('installments') == $installmentNumber) {
+			if ($installment['installments'] == $installmentNumber) {
 				return $installment;
 			}
 		}
@@ -322,14 +323,13 @@ class Params
     /**
      * Return the total discount amount value for the order based on the discount config value (% or fixed)
      *
-     * @param $configValue
+     * @param string $configValue
      * @param WC_Order $order
-     * @param $excludesShipping
+     * @param bool $excludesShipping
      *
      * @return float
      */
-    public static function getDiscountValue($configValue, $order, $excludesShipping)
-    {
+    public static function getDiscountValue($configValue,$order,$excludesShipping) {
         $orderTotal = $order->get_total();
         if ($excludesShipping) {
             $orderTotal -= $order->get_shipping_total();
@@ -357,8 +357,7 @@ class Params
 	 *
 	 * @return string
 	 */
-	public static function getDiscountText($method)
-	{
+	public static function getDiscountText($method) {
         $discountConfig = 0;
         switch ($method){
             case 'pix':
@@ -401,8 +400,7 @@ class Params
      * Saves the response in cache for a day
      * @return bool
      */
-    public static function getIsDynamicIcoAccessible()
-    {
+    public static function getIsDynamicIcoAccessible() {
         $transient_key = 'rm_pagbank_dynamic_ico_accessible';
         $cached_result = get_transient($transient_key);
 
@@ -411,13 +409,14 @@ class Params
         }
 
         $isDynamicIcoAccessible = wp_remote_get(
-            plugins_url('public/images/payment-icon.phpmethod=pix', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array('timeout' => 10, 'sslverify' => false, 'reject_unsafe_urls' => false)
+            plugins_url('public/images/payment-icon.php?method=pix', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['timeout' => 10, 'sslverify' => false, 'reject_unsafe_urls' => false]
         );
 
         $result = (wp_remote_retrieve_response_code($isDynamicIcoAccessible) !== 200) ? 0 : 1;
 
         // Cache the result in a transient for 1 day (24 hours)
-        set_transient($transient_key, $result, DAY_IN_SECONDS);
+        set_transient($transient_key,$result, DAY_IN_SECONDS);
 
         return $result === 1;
     }
@@ -428,16 +427,16 @@ class Params
      *
      * @return bool
      */
-    public function isAddressValid(Address $address)
-    {
-        $required = array('street',
+    public function isAddressValid(Address $address) {
+        $required = [
+            'street',
             'number',
             'locality',
             'city',
             'regionCode',
             'country',
             'postalCode',
-        );
+        ];
         foreach ($required as $field){
             if (empty($address->{'get' . ucfirst($field)}())){
                 return false;
@@ -448,8 +447,7 @@ class Params
     }
 
 
-    public static function isPaymentMethodEnabled($method)
-    {
+    public static function isPaymentMethodEnabled($method) {
         $recurringHelper = new Recurring();
         $recurring = $recurringHelper->isCartRecurring();
         
@@ -462,16 +460,16 @@ class Params
 
     public static function convertMinutesToHumanTime($minutes) {
         if ($minutes < 60) {
-            return sprintf(_n('%d minuto', '%d minutos', intval($minutes), 'pagbank-connect'), $minutes);
+            return sprintf(_n('%d minuto', '%d minutos', intval($minutes), 'pagbank-connect'),$minutes);
         } elseif ($minutes < 1440) {
             $hours = floor($minutes / 60);
-            return sprintf(_n('%d hora', '%d horas', intval($hours), 'pagbank-connect'), $hours);
+            return sprintf(_n('%d hora', '%d horas', intval($hours), 'pagbank-connect'),$hours);
         } elseif ($minutes < 43200) {
             $days = floor($minutes / 1440);
-            return sprintf(_n('%d dia', '%d dias', intval($days), 'pagbank-connect'), $days);
+            return sprintf(_n('%d dia', '%d dias', intval($days), 'pagbank-connect'),$days);
         } elseif ($minutes < 259200) {
             $months = floor($minutes / 43200);
-            return sprintf(_n('%d mês', '%d meses', intval($months), 'pagbank-connect'), $months);
+            return sprintf(_n('%d mês', '%d meses', intval($months), 'pagbank-connect'),$months);
         } else {
             return sprintf(_n('%d mês', '%d meses', 6, 'pagbank-connect'), 6);
         }

@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Amount
@@ -14,22 +14,19 @@ namespace RM_PagBank\Object;
  */
 class Fees implements JsonSerializable
 {
-    private Buyer $buyer;
+    private $buyer;
 
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
 
-	public function getBuyer()
-	{
+	public function getBuyer() {
 		return $this->buyer;
 	}
 
-	public function setBuyer(Buyer $buyer)
-	{
+	public function setBuyer(Buyer $buyer) {
 		$this->buyer = $buyer;
 	}
 

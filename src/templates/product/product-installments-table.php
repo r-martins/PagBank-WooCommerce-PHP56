@@ -1,4 +1,4 @@
-<php
+<?php
 /**
  * DO NOT modify this file. If you want to make changes, copy it to wp-content/YOUR_THEME/pagbank-connect/
  * and edit it there.
@@ -20,9 +20,9 @@ foreach ($installments as $installment) {
         $installmentInfo .= '<tr>';
     }
 
-    $amount = number_format((float) str_replace(',', '.', str_replace('.', '', $installment->amount)), 2, ',', '.');
+    $amount = number_format((float) str_replace(',', '.', str_replace('.', '',$installment->amount)), 2, ',', '.');
     $total_amount = number_format(
-        (float)str_replace(',', '.', str_replace('.', '', $installment->total_amount)),
+        (float)str_replace(',', '.', str_replace('.', '',$installment->total_amount)),
         2,
         ',',
         '.'
@@ -42,10 +42,10 @@ foreach ($installments as $installment) {
 ?>
 
 <div class="woocommerce pagbank-connect-installments">
-    <h2><php echo esc_html(__('Parcelamento PagBank', 'pagbank-connect'));?></h2>
+    <h2><?php echo esc_html(__('Parcelamento PagBank', 'pagbank-connect'));?></h2>
     <table class="shop_table shop_table_responsive">
         <tbody>
-            <php if ($installmentInfo) {
+            <?php if ($installmentInfo) {
                 echo wp_kses_post($installmentInfo);
             } ?>
         </tbody>

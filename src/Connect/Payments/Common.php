@@ -1,17 +1,17 @@
-<php
+<?php
 
 namespace RM_PagBank\Connect\Payments;
 
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Address; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Customer; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Item; // PHP 5.6 compatibility
-// use RM_PagBank\Object\Phone; // PHP 5.6 compatibility
-// use WC_Customer; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
-// use WC_Order_Item_Product; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Object\Address;
+use RM_PagBank\Object\Customer;
+use RM_PagBank\Object\Item;
+use RM_PagBank\Object\Phone;
+use WC_Customer;
+use WC_Order;
+use WC_Order_Item_Product;
 
 /**
  * Common methods shared between payment methods
@@ -24,7 +24,7 @@ class Common
     /**
      * @var WC_Order $order
      */
-    protected WC_Order $order;
+    protected $order;
 
     /**
      * @param WC_Order $order
@@ -39,26 +39,26 @@ class Common
      * to be used in the /orders request
      * @return array
      */
-    public function getDefaultParameters()
-    {
-        $return = array('reference_id' => $this->order->get_id(),
+    public function getDefaultParameters() {
+        $return = [
+            'reference_id' => $this->order->get_id(),
             'customer' => $this->getCustomerData(),
             'items' => $this->getItemsData(),
-        );
+        ];
         
-        if (empty($return array('items'))){
-            unset($return array('items'));
+        if (empty($return['items'])){
+            unset($return['items']);
         }
 
         if ($this->order->has_shipping_address() && Params::getConfig('shipping_param') !== 'never' && $this->order->get_shipping_method()){
             $address = $this->getShippingAddress();
-            $return array('shipping') array('address') = $address;
+            $return['shipping']['address'] = $address;
             $helper = new Params();
             if (Params::getConfig('shipping_param') === 'validate' && ! $helper->isAddressValid($address)){
-                unset($return array('shipping'));
+                unset($return['shipping']);
             }
         }
-        $return array('notification_urls') = $this->getNotificationUrls();
+        $return['notification_urls'] = $this->getNotificationUrls();
 
         return $return;
     }
@@ -76,15 +76,14 @@ class Common
     protected function getHashEmail()
     {
         $email = strtolower($this->order->get_billing_email());
-        $hash = hash('md5', $email);
+        $hash = hash('md5',$email);
         return "{$hash}@pagbankconnect.pag";
     }
 	/**
 	 * Populates the customer object with data from the order
 	 * @return Customer
 	 */
-	public function getCustomerData()
-	{
+	public function getCustomerData() {
         $customer = new Customer();
         //truncate
         $firstName = substr($this->order->get_billing_first_name(), 0, 60);
@@ -121,16 +120,17 @@ class Common
         
         if (!empty($taxId)) {
             $customer->setTaxId($taxId);
-            $this->order->add_meta_data('_rm_pagbank_customer_document', $taxId, true);
+            $this->order->add_meta_data('_rm_pagbank_customer_document',$taxId, true);
         }
         $phone = new Phone();
         $number = Params::extractPhone($this->order);
-        if (!empty($number array('area')) && !empty($number array('number'))) {
-            $phone->setCountry($number array('country'));
-            $phone->setArea((int)$number array('area'));
-            $phone->setNumber((int)$number array('number'));
-            $customer->setPhone( array($phone,
-            ));
+        if (!empty($number['area']) && !empty($number['number'])) {
+            $phone->setCountry($number['country']);
+            $phone->setArea((int)$number['area']);
+            $phone->setNumber((int)$number['number']);
+            $customer->setPhone([
+                $phone,
+            ]);
         }
         return $customer;
     }
@@ -148,32 +148,39 @@ class Common
 	 * Populates the items array with data from the order
 	 * @return array
 	 */
-	public function getItemsData()
-	{
-        return apply_filters('pagbank_connect_items_data',
-            $this->isHideItems() ? $this->getItemDefault(
-                $this->order->get_total() - ($this->order->get_shipping_total() ?? 0)
-            ) : $this->getItems(
-                $this->order->get_items()
-            )
+	public function getItemsData() {
+        $shipping_total = $this->order->get_shipping_total();
+        if ($shipping_total === null) {
+            $shipping_total = 0;
+        }
+        $defaultItems = $this->getItemDefault($this->order->get_total() - $shipping_total);
+        $items = $this->getItems($this->order->get_items());
+
+        return apply_filters(
+            'pagbank_connect_items_data',
+            $this->isHideItems() ? $defaultItems : $items
         );
     }
 
     /**
      * 
      * @param mixed $amount
-     * @return Item array()
+     * @return Item[]
      */
     protected function getItemDefault($amount)
     {
-        $items = array();
+        $items = [];
         $itemObj = new Item();
         $itemObj->setReferenceId(1);
-        $itemObj->setName('Compra em ' . get_bloginfo('name') ?? 'PagBank');
+        $blogName = get_bloginfo('name');
+        if (!$blogName) {
+            $blogName = 'PagBank';
+        }
+        $itemObj->setName('Compra em ' . $blogName);
         $itemObj->setQuantity(1);
         $unitAmount = number_format($amount, 2, '', '');
         $itemObj->setUnitAmount($unitAmount);
-        $items array() = $itemObj;
+        $items[] = $itemObj;
         return $items;
     }
 
@@ -183,19 +190,19 @@ class Common
      * Skips items with zero subtotal and handles recurring product pricing.
      *
      * @param array<WC_Order_Item_Product> $get_items
-     * @return Item array()
+     * @return Item[]
      */
     protected function getItems($get_items)
     {
-        $items = array();
+        $items = [];
          foreach ($get_items as $item) {
             $product = $item->get_product();
             $itemObj = new Item();
-            $itemObj->setReferenceId($item array('product_id'));
-            $itemObj->setName($item array('name'));
-            $itemObj->setQuantity($item array('quantity'));
+            $itemObj->setReferenceId($item['product_id']);
+            $itemObj->setName($item['name']);
+            $itemObj->setQuantity($item['quantity']);
 
-            $amount = $item->get_subtotal('edit') / $item array('quantity');
+            $amount = $item->get_subtotal('edit') / $item['quantity'];
             if ($product->get_meta('_recurring_enabled') == 'yes' && $product->get_meta('_recurring_trial_length') > 0) {
                 $amount = $product->get_price();
             }
@@ -203,10 +210,10 @@ class Common
             $unitAmount = number_format($amount, 2, '', '');
             $itemObj->setUnitAmount($unitAmount);
             
-            if ($item array('line_subtotal') == 0 && $amount == 0) {
+            if ($item['line_subtotal'] == 0 && $amount == 0) {
                 continue;
             }
-            $items array() = $itemObj;
+            $items[] = $itemObj;
         }
 
         return $items;
@@ -216,27 +223,23 @@ class Common
 	 * Populates the address object with data from the order
 	 * @return Address
 	 */
-	public function getShippingAddress()
-	{
+	public function getShippingAddress() {
         $address = new Address();
         $address->setStreet(substr($this->order->get_shipping_address_1('edit'), 0, 120));
         //Usually virtual orders don't have shipping address' attributes replicated. So we use billing address instead.
         $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
         $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_shipping_number', 'shipping_number');
-        $shippingComplement = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
+        $shippingComplement = Functions::getParamFromOrderMetaOrPost($this->order,
             '_shipping_complement',
             'shipping_complement'
         );
         $shippingComplement = substr($shippingComplement, 0, 40);
         $billingComplement = substr($this->order->get_billing_address_2('edit'), 0, 40);
-        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
+        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost($this->order,
             '_billing_neighborhood',
             'billing_neighborhood'
         );
-        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
+        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost($this->order,
             '_shipping_neighborhood',
             'shipping_neighborhood'
         );
@@ -265,31 +268,27 @@ class Common
         $address->setRegionCode($this->order->get_shipping_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_shipping_postcode('edit')));
 
-        return apply_filters('pagbank_connect_shipping_address', $address, $this->order);
+        return apply_filters('pagbank_connect_shipping_address',$address,$this->order);
     }
 
     /**
      * Populates the address object with data from the order
      * @return Address
      */
-    public function getBillingAddress()
-    {
+    public function getBillingAddress() {
         $address = new Address();
         $address->setStreet($this->order->get_billing_address_1('edit'));
         $billingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
         $shippingNumber = Functions::getParamFromOrderMetaOrPost($this->order, '_billing_number', 'billing_number');
-        $billingComplement = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
+        $billingComplement = Functions::getParamFromOrderMetaOrPost($this->order,
             '_billing_complement',
             'billing_complement'
         );
-        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
+        $billingNeighborhood = Functions::getParamFromOrderMetaOrPost($this->order,
             '_billing_neighborhood',
             'billing_neighborhood'
         );
-        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost(
-            $this->order,
+        $shippingNeighborhood = Functions::getParamFromOrderMetaOrPost($this->order,
             '_billing_neighborhood',
             'billing_neighborhood'
         );
@@ -310,76 +309,76 @@ class Common
         $address->setRegionCode($this->order->get_billing_state('edit'));
         $address->setPostalCode(Params::removeNonNumeric($this->order->get_billing_postcode('edit')));
         
-        return apply_filters('pagbank_connect_billing_address', $address, $this->order);
+        return apply_filters('pagbank_connect_billing_address',$address,$this->order);
     }
 
 	/**
 	 * Returns an array with the notification urls with the hash validation parameter
-	 * @return string array()
+	 * @return string[]
 	 */
-	public function getNotificationUrls()
-    {
+	public function getNotificationUrls() {
         $hash = Api::getOrderHash($this->order);
 		//Note that PagBank API currently supports only one URL
-        return array(get_site_url() . '/wc-api=rm_ps_notif&hash=' . $hash
-        );
+        return [
+            get_site_url() . '/?wc-api=rm_ps_notif&hash=' . $hash
+        ];
     }
 
 
     /**
 	 * Process response from the API and add the metadata to the order
      * @param WC_Order $order
-     * @param $response
+     * @param array    $response
      *
      * @return void
      */
-    public function process_response(WC_Order $order, $response) {
+    public function process_response(WC_Order $order, array $response) {
 
         switch ($order->get_meta('pagbank_payment_method')){
             case 'pix':
-                $order->add_meta_data('pagbank_pix_qrcode', $response array('qr_codes') array(0) array('links') array(0) array('href') ?null, true);
-                $order->add_meta_data('pagbank_pix_qrcode_text', $response array('qr_codes') array(0) array('text') ?null, true);
-                $order->add_meta_data('pagbank_pix_qrcode_expiration', $response array('qr_codes') array(0) array('expiration_date') ?null, true);
-                $order->set_props( array('payment_method' => 'rm-pagbank-pix'));
+                $order->add_meta_data('pagbank_pix_qrcode', isset($response['qr_codes'][0]['links'][0]['href']) ? $response['qr_codes'][0]['links'][0]['href'] : null, true);
+                $order->add_meta_data('pagbank_pix_qrcode_text', isset($response['qr_codes'][0]['text']) ? $response['qr_codes'][0]['text'] : null, true);
+                $order->add_meta_data('pagbank_pix_qrcode_expiration', isset($response['qr_codes'][0]['expiration_date']) ? $response['qr_codes'][0]['expiration_date'] : null, true);
+                $order->set_props(['payment_method' => 'rm-pagbank-pix']);
                 break;
             case 'boleto':
-                $order->add_meta_data('pagbank_boleto_png', $response array('charges') array(0) array('links') array(1) array('href') ?null, true);
-                $order->add_meta_data('pagbank_boleto_pdf', $response array('charges') array(0) array('links') array(0) array('href') ?null, true);
-                $order->add_meta_data('pagbank_boleto_due_date', $response array('charges') array(0) array('payment_method') array('boleto') array('due_date') ?null, true);
-                $order->add_meta_data('pagbank_boleto_barcode_formatted', $response array('charges') array(0) array('payment_method') array('boleto') array('formatted_barcode') ?null, true);
-                $order->add_meta_data('pagbank_boleto_barcode', $response array('charges') array(0) array('payment_method') array('boleto') array('barcode') ?null, true);
-                $order->set_props( array('payment_method' => 'rm-pagbank-boleto'));
+                $order->add_meta_data('pagbank_boleto_png', isset($response['charges'][0]['links'][1]['href']) ? $response['charges'][0]['links'][1]['href'] : null, true);
+                $order->add_meta_data('pagbank_boleto_pdf', isset($response['charges'][0]['links'][0]['href']) ? $response['charges'][0]['links'][0]['href'] : null, true);
+                $order->add_meta_data('pagbank_boleto_due_date', isset($response['charges'][0]['payment_method']['boleto']['due_date']) ? $response['charges'][0]['payment_method']['boleto']['due_date'] : null, true);
+                $order->add_meta_data('pagbank_boleto_barcode_formatted', isset($response['charges'][0]['payment_method']['boleto']['formatted_barcode']) ? $response['charges'][0]['payment_method']['boleto']['formatted_barcode'] : null, true);
+                $order->add_meta_data('pagbank_boleto_barcode', isset($response['charges'][0]['payment_method']['boleto']['barcode']) ? $response['charges'][0]['payment_method']['boleto']['barcode'] : null, true);
+                $order->set_props(['payment_method' => 'rm-pagbank-boleto']);
                 break;
 			case 'credit_card':
-				$order->add_meta_data('_pagbank_card_installments', $response array('charges') array(0) array('payment_method') array('installments') ?null);
-				$order->add_meta_data('Parcelas', $response array('charges') array(0) array('payment_method') array('installments') ?null);
-				$order->add_meta_data('_pagbank_card_brand', $response array('charges') array(0) array('payment_method') array('card') array('brand') ?null);
-				$order->add_meta_data('_pagbank_card_first_digits', $response array('charges') array(0) array('payment_method') array('card') array('first_digits') ?null);
-				$order->add_meta_data('_pagbank_card_last_digits', $response array('charges') array(0) array('payment_method') array('card') array('last_digits') ?null);
-				$order->add_meta_data('_pagbank_card_holder', $response array('charges') array(0) array('payment_method') array('card') array('holder') array('name') ?null);
-				$order->add_meta_data('_pagbank_card_exp_month', $response array('charges') array(0) array('payment_method') array('card') array('exp_month') ?null);
-				$order->add_meta_data('_pagbank_card_exp_year', $response array('charges') array(0) array('payment_method') array('card') array('exp_year') ?null);
-				$order->add_meta_data('_pagbank_card_response_reference', $response array('charges') array(0) array('payment_response') array('reference') ?null);
-				$order->add_meta_data('_pagbank_card_3ds_status', $response array('charges') array(0) array('payment_method') array('authentication_method') array('status') ?null);
-                $order->set_props( array('payment_method' => 'rm-pagbank-cc'));
+				$order->add_meta_data('_pagbank_card_installments', isset($response['charges'][0]['payment_method']['installments']) ? $response['charges'][0]['payment_method']['installments'] : null);
+				$order->add_meta_data('Parcelas', isset($response['charges'][0]['payment_method']['installments']) ? $response['charges'][0]['payment_method']['installments'] : null);
+				$order->add_meta_data('_pagbank_card_brand', isset($response['charges'][0]['payment_method']['card']['brand']) ? $response['charges'][0]['payment_method']['card']['brand'] : null);
+				$order->add_meta_data('_pagbank_card_first_digits', isset($response['charges'][0]['payment_method']['card']['first_digits']) ? $response['charges'][0]['payment_method']['card']['first_digits'] : null);
+				$order->add_meta_data('_pagbank_card_last_digits', isset($response['charges'][0]['payment_method']['card']['last_digits']) ? $response['charges'][0]['payment_method']['card']['last_digits'] : null);
+				$order->add_meta_data('_pagbank_card_holder', isset($response['charges'][0]['payment_method']['card']['holder']['name']) ? $response['charges'][0]['payment_method']['card']['holder']['name'] : null);
+				$order->add_meta_data('_pagbank_card_exp_month', isset($response['charges'][0]['payment_method']['card']['exp_month']) ? $response['charges'][0]['payment_method']['card']['exp_month'] : null);
+				$order->add_meta_data('_pagbank_card_exp_year', isset($response['charges'][0]['payment_method']['card']['exp_year']) ? $response['charges'][0]['payment_method']['card']['exp_year'] : null);
+				$order->add_meta_data('_pagbank_card_response_reference', isset($response['charges'][0]['payment_response']['reference']) ? $response['charges'][0]['payment_response']['reference'] : null);
+				$order->add_meta_data('_pagbank_card_3ds_status', isset($response['charges'][0]['payment_method']['authentication_method']['status']) ? $response['charges'][0]['payment_method']['authentication_method']['status'] : null);
+                $order->set_props(['payment_method' => 'rm-pagbank-cc']);
 				break;
             case 'redirect':
-                $order->add_meta_data('pagbank_redirect_url', $response array('links') array(1) array('href') ?null, true);
-                $order->add_meta_data('pagbank_redirect_expiration', $response array('expiration_date') ?null, false);
-                $order->add_meta_data('pagbank_checkout_id', $response array('id') ?null, true);
-                $order->set_props( array('payment_method' => 'rm-pagbank-redirect'));
+                $order->add_meta_data('pagbank_redirect_url', isset($response['links'][1]['href']) ? $response['links'][1]['href'] : null, true);
+                $order->add_meta_data('pagbank_redirect_expiration', isset($response['expiration_date']) ? $response['expiration_date'] : null, false);
+                $order->add_meta_data('pagbank_checkout_id', isset($response['id']) ? $response['id'] : null, true);
+                $order->set_props(['payment_method' => 'rm-pagbank-redirect']);
                 break;
                 
         }
-        if (isset($response array('id')) && substr($response array('id'), 0, 4) != 'CHEC'){ //if not a pagbank checkout code
-            $order->add_meta_data('pagbank_order_id', $response array('id'), true);
+        if (isset($response['id']) && substr($response['id'], 0, 4) != 'CHEC'){ //if not a pagbank checkout code
+            $order->add_meta_data('pagbank_order_id',$response['id'], true);
         }
-		$order->add_meta_data('pagbank_order_charges', $response array('charges') ?null, true);
+		$order->add_meta_data('pagbank_order_charges', isset($response['charges']) ? $response['charges'] : null, true);
 		$order->add_meta_data('pagbank_is_sandbox', Params::getConfig('is_sandbox', false) ? 1 : 0);
 
 		$order->update_status('pending', 'PagBank: Pagamento Pendente');
 
-        do_action('pagbank_connect_after_proccess_response', $order, $response);
+        do_action('pagbank_connect_after_proccess_response',$order,$response);
 	}
 
     public function getThankyouInstructions($order_id){
@@ -402,19 +401,17 @@ class Common
                 'orderStatus'        => $order->get_status(),
                 'successBehavior'    => Params::getConfig('success_behavior', ''),
                 'successBehaviorUrl' => Functions::applyOrderPlaceholders(
-                    Params::getConfig('success_behavior_url', wc_get_page_permalink('myaccount')),
-                    $order
+                    Params::getConfig('success_behavior_url', wc_get_page_permalink('myaccount')),$order
                 ),
                 'successBehaviorJs'  => json_encode(
                     Functions::applyOrderPlaceholders(
-                    Params::getConfig('success_behavior_js', ''), 
-                    $order
+                    Params::getConfig('success_behavior_js', ''),$order
                     )
                 ),
             );
 
             // Pass the variables to the JavaScript file
-            wp_localize_script('pagseguro-connect-success', 'pagbankVars', $jsVars);
+            wp_localize_script('pagseguro-connect-success', 'pagbankVars',$jsVars);
         });
     }
 }

@@ -1,8 +1,8 @@
-<php
+<?php
 namespace RM_PagBank\Connect\Recurring\Admin\Subscriptions;
 
-// use RM_PagBank\Helpers\Recurring; // PHP 5.6 compatibility
-// use WP_List_Table; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Recurring;
+use WP_List_Table;
 
 if ( ! class_exists ( 'WP_List_Table' ) ) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
@@ -17,15 +17,17 @@ class SubscriptionList extends WP_List_Table
 {
     public function __construct()
     {
-        parent::__construct( array('singular' => __('Assinatura', 'rm-pagbank'),
+        parent::__construct([
+            'singular' => __('Assinatura', 'rm-pagbank'),
             'plural'   => __('Assinaturas', 'rm-pagbank'),
             'ajax'     => false
-        ));
+        ]);
     }
 
     public function get_columns()
     {
-        return array('id'                 => __('ID', 'rm-pagbank'),
+        return [
+            'id'                 => __('ID', 'rm-pagbank'),
             'initial_order_id'   => __('Pedido Inicial', 'rm-pagbank'),
             'view'                 => __('Visualizar', 'rm-pagbank'),
             'recurring_amount'   => __('Valor Recorrente', 'rm-pagbank'),
@@ -34,81 +36,80 @@ class SubscriptionList extends WP_List_Table
             'created_at'         => __('Criado em', 'rm-pagbank'),
             'updated_at'         => __('Atualizado em', 'rm-pagbank'),
             'next_bill_at'       => __('Próxima Cobrança', 'rm-pagbank'),
-        );
+        ];
     }
 
-    public function column_default($item, $column_name)
+    public function column_default($item,$column_name)
     {
         switch ($column_name) {
             case 'created_at':
             case 'updated_at':
-                return date_i18n(get_option('date_format'), strtotime($item array($column_name)));
+                return date_i18n(get_option('date_format'), strtotime($item[$column_name]));
             case 'next_bill_at':
-                return in_array($item array('status'), array('ACTIVE', 'PENDING', 'SUSPENDED')) date_i18n(get_option('date_format'), strtotime($item array($column_name))) : "N/A";
+                return in_array($item['status'], ['ACTIVE', 'PENDING', 'SUSPENDED']) ? date_i18n(get_option('date_format'), strtotime($item[$column_name])) : "N/A";
             case 'recurring_type':
                 $recHelper = new Recurring();
-                return $recHelper->translateFrequency($item array($column_name));
+                return $recHelper->translateFrequency($item[$column_name]);
             case 'status':
                 $recHelper = new Recurring();
-                return $recHelper->getFriendlyStatus($item array($column_name));
+                return $recHelper->getFriendlyStatus($item[$column_name]);
             default:
-                return $item array($column_name);
+                return $item[$column_name];
         }
     }
 
     public function column_initial_order_id($item)
     {
-        if (!isset($item array('initial_order_id'))) {
+        if (!isset($item['initial_order_id'])) {
             return '';
         }
         
-        $order = wc_get_order($item array('initial_order_id'));
+        $order = wc_get_order($item['initial_order_id']);
         if (!$order || is_bool($order)) {
-            return htmlspecialchars($item array('initial_order_id'));
+            return htmlspecialchars($item['initial_order_id']);
         }
         
-        return '<a href="' . $order->get_edit_order_url() . '">' . htmlspecialchars($item array('initial_order_id')) . '</a>';
+        return '<a href="' . $order->get_edit_order_url() . '">' . htmlspecialchars($item['initial_order_id']) . '</a>';
     }
 
     public function column_view($item)
     {
-        return sprintf('<a href="page=%s&action=%s&id=%s">Visualizar</a>', 'rm-pagbank-subscriptions-view', 'view', $item array('id'));
+        return sprintf('<a href="?page=%s&action=%s&id=%s">Visualizar</a>', 'rm-pagbank-subscriptions-view', 'view',$item['id']);
     }
 
     public function prepare_items()
     {
-        $this->_column_headers = array($this->get_columns(), array(), $this->get_sortable_columns());
+        $this->_column_headers = [$this->get_columns(), array(),$this->get_sortable_columns()];
 
         global $wpdb;
         $per_page = 10;
         $current_page = $this->get_pagenum();
         $total_items = $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}pagbank_recurring");
 
-        $orderby = (isset($_GET array('orderby')) && in_array($_GET array('orderby'), array_keys($this->get_sortable_columns()))) ? $_GET array('orderby') : 'initial_order_id';
+        $orderby = (isset($_GET['orderby']) && in_array($_GET['orderby'], array_keys($this->get_sortable_columns()))) ? $_GET['orderby'] : 'initial_order_id';
         $orderby = wp_unslash($orderby);
-        $order = (isset($_GET array('order')) && in_array($_GET array('order'), array('asc', 'desc'))) ? $_GET array('order') : 'desc'; //phpcs:ignore WordPress.Security.NonceVerification
+        $order = (isset($_GET['order']) && in_array($_GET['order'], array('asc', 'desc'))) ? $_GET['order'] : 'desc'; //phpcs:ignore WordPress.Security.NonceVerification
 
         global $wpdb;
         $where = "1=1";
-        if (!empty($_REQUEST array('status'))) {
-            $status = sanitize_text_field(wp_unslash($_REQUEST array('status')));
-            $where .= $wpdb->prepare(" AND status = %s", $status);
+        if (!empty($_REQUEST['status'])) {
+            $status = sanitize_text_field(wp_unslash($_REQUEST['status']));
+            $where .= $wpdb->prepare(" AND status = %s",$status);
         }
-        if (!empty($_REQUEST array('order_id'))) {
-            $order_id = intval($_REQUEST array('order_id'));
-            $where .= $wpdb->prepare(" AND initial_order_id = %d", $order_id);
+        if (!empty($_REQUEST['order_id'])) {
+            $order_id = intval($_REQUEST['order_id']);
+            $where .= $wpdb->prepare(" AND initial_order_id = %d",$order_id);
         }
 
 
-        $this->set_pagination_args( array('total_items' => $total_items,
+        $this->set_pagination_args([
+            'total_items' => $total_items,
             'per_page'    => $per_page,
             'total_pages' => ceil($total_items / $per_page)
-        ));
+        ]);
 
-        $this->items = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d",
-                $per_page,
+        $this->items = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE $where ORDER BY $orderby $order LIMIT %d OFFSET %d",$per_page,
                 ($current_page - 1) * $per_page
             ),
             ARRAY_A
@@ -130,23 +131,23 @@ class SubscriptionList extends WP_List_Table
     }
     
     public function extra_tablenav($which) {
-        $page = isset($_REQUEST array('page')) ? $_REQUEST array('page') : '';
+        $page = isset($_REQUEST['page']) ? $_REQUEST['page'] : '';
     if ($which == "top"){
         ?>
         <form method="get">
-            <input type="hidden" name="page" value="<php echo esc_attr($page) ?>" />
+            <input type="hidden" name="page" value="<?php echo esc_attr($page) ?>" />
             <div class="alignleft actions bulkactions">
                 <select name="status" id="filter-by-status">
-                    <option value=""><php echo esc_attr('Todos os status', 'rm-pagbank');?></option>
-                    <php foreach (Recurring::getAllStatuses() as $value => $status):?>
-                        <option value="<php echo esc_attr($value);?>"><php echo esc_attr($status);?></option>
-                    <php endforeach;?>
+                    <option value=""><?php echo esc_attr('Todos os status', 'rm-pagbank');?></option>
+                    <?php foreach (Recurring::getAllStatuses() as $value => $status):?>
+                        <option value="<?php echo esc_attr($value);?>"><?php echo esc_attr($status);?></option>
+                    <?php endforeach;?>
                 </select>
-                <input type="text" name="order_id" id="filter-by-order-id" placeholder="<php echo esc_attr(__('ID do Pedido', 'rm-pagbank'));?>">
-                <php submit_button(__('Filtrar'), 'button', 'filter_action', false);?>
+                <input type="text" name="order_id" id="filter-by-order-id" placeholder="<?php echo esc_attr(__('ID do Pedido', 'rm-pagbank'));?>">
+                <?php submit_button(__('Filtrar'), 'button', 'filter_action', false);?>
             </div>
         </form>
-        <php
+        <?php
     }
 }
 }

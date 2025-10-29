@@ -1,11 +1,11 @@
-<php
+<?php
 namespace RM_PagBank\Connect;
 
-// use RM_PagBank\Connect\Recurring\Admin\Subscriptions\Details\OrdersList; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionDetails; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionEdit; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionList; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionReportingSummary; // PHP 5.6 compatibility
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\Details\OrdersList;
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionDetails;
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionEdit;
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionList;
+use RM_PagBank\Connect\Recurring\Admin\Subscriptions\SubscriptionReportingSummary;
 
 /**
  * Adds the PagBank menu and some of its submenus.
@@ -33,7 +33,8 @@ SVG;
             'PagBank Connect', // Page title
             'PagBank', // Menu title
             'manage_woocommerce', // Required capability to view the menu
-            'rm-pagbank', // Page slug array(MenuPagBank::class, 'defaultPagBankMenuAction'), // Function that renders the menu page
+            'rm-pagbank', // Page slug
+            [MenuPagBank::class, 'defaultPagBankMenuAction'], // Function that renders the menu page
             $icon, // Menu icon
             56.1 // Position in the menu
         );
@@ -42,7 +43,7 @@ SVG;
     public static function defaultPagBankMenuAction()
     {
         // Redirects to the plugin settings page
-        wp_safe_redirect(admin_url('admin.phppage=wc-settings&tab=checkout&section=rm-pagbank'));
+        wp_safe_redirect(admin_url('admin.php?page=wc-settings&tab=checkout&section=rm-pagbank'));
         exit;
     }
     
@@ -53,14 +54,16 @@ SVG;
             __('Configurações', 'pagbank-connect'), // Page title
             __('Configurações', 'pagbank-connect'), // Submenu title
             'manage_woocommerce', // Required capability to view the submenu
-            'rm-pagbank', // Submenu page slug array(MenuPagBank::class, 'addPagBankMenu') // Function that renders the submenu page
+            'rm-pagbank', // Submenu page slug
+            [MenuPagBank::class, 'addPagBankMenu'] // Function that renders the submenu page
         );
         add_submenu_page(
             'rm-pagbank',
             __('Assinaturas', 'pagbank-connect'),
             __('Assinaturas', 'pagbank-connect'),
             'manage_woocommerce',
-            'rm-pagbank-subscriptions', array(MenuPagBank::class, 'renderPagbankSubscriptionsListPage')
+            'rm-pagbank-subscriptions',
+            [MenuPagBank::class, 'renderPagbankSubscriptionsListPage']
         );
         
         add_submenu_page(
@@ -70,7 +73,7 @@ SVG;
             'manage_woocommerce',
             'rm-pagbank-reports',
             function () {
-                wp_safe_redirect(admin_url('admin.phppage=wc-reports&tab=pagbank'));
+                wp_safe_redirect(admin_url('admin.php?page=wc-reports&tab=pagbank'));
                 exit;
             }
         );
@@ -80,7 +83,8 @@ SVG;
             __('Embalagens', 'pagbank-connect'),
             __('Embalagens', 'pagbank-connect'),
             'manage_woocommerce',
-            'rm-pagbank-boxes', array(MenuPagBank::class, 'renderPagbankBoxesListPage')
+            'rm-pagbank-boxes',
+            [MenuPagBank::class, 'renderPagbankBoxesListPage']
         );
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -91,7 +95,7 @@ SVG;
                 'manage_woocommerce',
                 'rm-pagbank-logs',
                 function () {
-                    wp_safe_redirect(admin_url('admin.phppage=wc-status&tab=logs&source=pagbank-connect'));
+                    wp_safe_redirect(admin_url('admin.php?page=wc-status&tab=logs&source=pagbank-connect'));
                     exit;
                 }
             );
@@ -102,7 +106,8 @@ SVG;
             'Visualizar Assinatura', // Page title
             'Visualizar Assinatura', // Submenu title
             'manage_woocommerce', // Required capability to view the submenu
-            'rm-pagbank-subscriptions-view', // Submenu page slug array(MenuPagBank::class, 'renderPagbankSubscriptionViewPage') // Function that renders the submenu page
+            'rm-pagbank-subscriptions-view', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankSubscriptionViewPage'] // Function that renders the submenu page
         );
 
         add_submenu_page(
@@ -110,7 +115,8 @@ SVG;
             'Editar Assinatura', // Page title
             'Editar Assinatura', // Submenu title
             'manage_woocommerce', // Required capability to view the submenu
-            'rm-pagbank-subscriptions-edit', // Submenu page slug array(MenuPagBank::class, 'renderPagbankSubscriptionEditPage') // Function that renders the submenu page
+            'rm-pagbank-subscriptions-edit', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankSubscriptionEditPage'] // Function that renders the submenu page
         );
         
         add_submenu_page(
@@ -118,7 +124,8 @@ SVG;
             'Nova Caixa', // Page title
             'Nova Caixa', // Submenu title
             'manage_woocommerce', // Required capability to view the submenu
-            'rm-pagbank-boxes-new', // Submenu page slug array(MenuPagBank::class, 'renderPagbankBoxNewPage') // Function that renders the submenu page
+            'rm-pagbank-boxes-new', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankBoxNewPage'] // Function that renders the submenu page
         );
         
         add_submenu_page(
@@ -126,7 +133,8 @@ SVG;
             'Editar Caixa', // Page title
             'Editar Caixa', // Submenu title
             'manage_woocommerce', // Required capability to view the submenu
-            'rm-pagbank-boxes-edit', // Submenu page slug array(MenuPagBank::class, 'renderPagbankBoxEditPage') // Function that renders the submenu page
+            'rm-pagbank-boxes-edit', // Submenu page slug
+            [MenuPagBank::class, 'renderPagbankBoxEditPage'] // Function that renders the submenu page
         );
     }
     
@@ -157,7 +165,8 @@ SVG;
         if ($current_screen && strpos($current_screen->id, 'rm-pagbank-boxes') !== false) {
             wp_enqueue_style(
                 'rm-pagbank-boxes-admin',
-                plugins_url('public/css/admin/boxes.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array(),
+                plugins_url('public/css/admin/boxes.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
                 WC_PAGSEGURO_CONNECT_VERSION
             );
         }
@@ -174,22 +183,22 @@ SVG;
             width: 10%;
         }
     ';
-        wp_add_inline_style('rm-pagbank-admin', $custom_css);
+        wp_add_inline_style('rm-pagbank-admin',$custom_css);
     }
 
     public static function renderPagbankSubscriptionViewPage(){
         // Check if the subscription ID was passed
-        if (!isset($_GET array('id'))) { //phpcs:ignore WordPress.Security.NonceVerification
+        if (!isset($_GET['id'])) { //phpcs:ignore WordPress.Security.NonceVerification
             echo '<h1>' . esc_html( __('ID da assinatura não fornecido', 'pagbank-connect') ) . '</h1>';
             return;
         }
 
         // Get the subscription ID
-        $subscriptionId = intval($_GET array('id'));
+        $subscriptionId = intval($_GET['id']);
 
         // Get the subscription from the database
         global $wpdb;
-        $subscription = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d", $subscriptionId));
+        $subscription = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d",$subscriptionId));
 
         // Check if the subscription exists
         if (!$subscription) {
@@ -198,21 +207,21 @@ SVG;
         }
 
         // Get the IDs of the previous and next subscriptions
-        $prevSubscriptionId = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}pagbank_recurring WHERE id < %d ORDER BY id DESC LIMIT 1", $subscriptionId));
-        $nextSubscriptionId = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}pagbank_recurring WHERE id > %d ORDER BY id ASC LIMIT 1", $subscriptionId));
+        $prevSubscriptionId = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}pagbank_recurring WHERE id < %d ORDER BY id DESC LIMIT 1",$subscriptionId));
+        $nextSubscriptionId = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}pagbank_recurring WHERE id > %d ORDER BY id ASC LIMIT 1",$subscriptionId));
 
         // Render the subscription view page
         echo '<div class="wrap">';
         echo '<h1>' . esc_html( __('Visualizar Assinatura', 'pagbank-connect') ). '</h1>';
 
-        echo '<a href="page=rm-pagbank-subscriptions" class="button">' . esc_html( __('Voltar para a listagem de assinaturas', 'rm-pagbank') ) . '</a>';
+        echo '<a href="?page=rm-pagbank-subscriptions" class="button">' . esc_html( __('Voltar para a listagem de assinaturas', 'rm-pagbank') ) . '</a>';
         
         // Add the "View next subscription" and "View previous subscription" buttons
         if ($prevSubscriptionId) {
-            echo '<a href="page=rm-pagbank-subscriptions-view&id=' . intval($prevSubscriptionId) . '" class="button">' . esc_html( __('Ver Assinatura Anterior', 'pagbank-connect') ) . '</a> ';
+            echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . intval($prevSubscriptionId) . '" class="button">' . esc_html( __('Ver Assinatura Anterior', 'pagbank-connect') ) . '</a> ';
         }
         if ($nextSubscriptionId) {
-            echo '<a href="page=rm-pagbank-subscriptions-view&id=' . intval($nextSubscriptionId) . '" class="button">' . esc_html( __('Ver Próxima Assinatura', 'pagbank-connect') ) . '</a>';
+            echo '<a href="?page=rm-pagbank-subscriptions-view&id=' . intval($nextSubscriptionId) . '" class="button">' . esc_html( __('Ver Próxima Assinatura', 'pagbank-connect') ) . '</a>';
         }
 
         echo '<h2>' . esc_html( __('Detalhes da Assinatura', 'pagbank-connect') ) . '</h2>';
@@ -222,7 +231,7 @@ SVG;
 
 
         echo '<h2>' . esc_html( __('Ações', 'pagbank-connect') ). '</h2>';
-        do_action( 'rm_pagbank_view_subscription_actions', $subscription );
+        do_action( 'rm_pagbank_view_subscription_actions',$subscription );
 
         echo '<h2>' . esc_html( __('Pedidos Associados', 'pagbank-connect') ) . '</h2>';
         $ordersListTable = new OrdersList($subscription);
@@ -233,17 +242,17 @@ SVG;
 
     public static function renderPagbankSubscriptionEditPage(){
         // Check if the subscription ID was passed
-        if (!isset($_GET array('id'))) { //phpcs:ignore WordPress.Security.NonceVerification
+        if (!isset($_GET['id'])) { //phpcs:ignore WordPress.Security.NonceVerification
             echo '<h1>' . esc_html( __('ID da assinatura não fornecido', 'pagbank-connect') ) . '</h1>';
             return;
         }
 
         // Get the subscription ID
-        $subscriptionId = intval($_GET array('id'));
+        $subscriptionId = intval($_GET['id']);
 
         // Get the subscription from the database
         global $wpdb;
-        $subscription = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d", $subscriptionId));
+        $subscription = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d",$subscriptionId));
 
         // Check if the subscription exists
         if (!$subscription) {
@@ -255,7 +264,7 @@ SVG;
         echo '<div class="wrap">';
         echo '<h1>' . esc_html( __('Editar Assinatura', 'pagbank-connect') ). '</h1>';
 
-        echo '<a href="page=rm-pagbank-subscriptions" class="button">' . esc_html( __('Voltar para a listagem de assinaturas', 'rm-pagbank') ) . '</a>';
+        echo '<a href="?page=rm-pagbank-subscriptions" class="button">' . esc_html( __('Voltar para a listagem de assinaturas', 'rm-pagbank') ) . '</a>';
 
         echo '<h2>' . esc_html( __('Detalhes da Assinatura', 'pagbank-connect') ) . '</h2>';
         $subscriptionDetailsListTable = new SubscriptionEdit($subscription);
@@ -271,10 +280,10 @@ SVG;
     public static function renderPagbankBoxesListPage()
     {
         // processing deletion of a single box
-        if (isset($_GET array('action')) && $_GET array('action') === 'delete' && isset($_GET array('id'))) {
-            if (wp_verify_nonce($_GET array('_wpnonce'), 'delete_box_' . $_GET array('id'))) {
+        if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+            if (wp_verify_nonce($_GET['_wpnonce'], 'delete_box_' . $_GET['id'])) {
                 $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
-                $result = $box_manager->delete(intval($_GET array('id')));
+                $result = $box_manager->delete(intval($_GET['id']));
                 
                 if (is_wp_error($result)) {
                     echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
@@ -291,7 +300,7 @@ SVG;
         echo '<h1>' . esc_html(__('Embalagens Envio Fácil', 'pagbank-connect')) . '</h1>';
         
         // Button to add a new box
-        echo '<a href="' . admin_url('admin.phppage=rm-pagbank-boxes-new') . '" class="page-title-action">';
+        echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes-new') . '" class="page-title-action">';
         echo esc_html(__('Adicionar Nova Caixa', 'pagbank-connect'));
         echo '</a>';
         
@@ -310,10 +319,10 @@ SVG;
         $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
 
         // Process form submission
-        if ($_POST && wp_verify_nonce($_POST array('_wpnonce'), 'create_box')) {
+        if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'create_box')) {
             // If the field is not set, default to 0
-            if (!isset($_POST array('is_available'))) {
-                $_POST array('is_available') = 0;
+            if (!isset($_POST['is_available'])) {
+                $_POST['is_available'] = 0;
             }
             $result = $box_manager->create($_POST);
             
@@ -322,7 +331,7 @@ SVG;
             } else {
                 echo '<div class="notice notice-success"><p>' . esc_html(__('Caixa criada com sucesso!', 'pagbank-connect')) . '</p></div>';
                 // Redirect to the list
-                wp_safe_redirect(admin_url('admin.phppage=rm-pagbank-boxes'));
+                wp_safe_redirect(admin_url('admin.php?page=rm-pagbank-boxes'));
                 exit;
             }
         }
@@ -330,7 +339,7 @@ SVG;
         echo '<div class="wrap">';
         echo '<h1>' . esc_html(__('Nova Caixa', 'pagbank-connect')) . '</h1>';
         
-        echo '<a href="' . admin_url('admin.phppage=rm-pagbank-boxes') . '" class="button">';
+        echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes') . '" class="button">';
         echo esc_html(__('Voltar para Listagem', 'pagbank-connect'));
         echo '</a>';
         
@@ -344,12 +353,12 @@ SVG;
      */
     public static function renderPagbankBoxEditPage()
     {
-        if (!isset($_GET array('id'))) {
+        if (!isset($_GET['id'])) {
             echo '<h1>' . esc_html(__('ID da caixa não fornecido', 'pagbank-connect')) . '</h1>';
             return;
         }
         
-        $box_id = intval($_GET array('id'));
+        $box_id = intval($_GET['id']);
         $box_manager = new \RM_PagBank\Connect\EnvioFacil\Box();
         $box = $box_manager->get_by_id($box_id);
         
@@ -359,12 +368,12 @@ SVG;
         }
         
         // Process form submission
-        if ($_POST && wp_verify_nonce($_POST array('_wpnonce'), 'edit_box')) {
+        if ($_POST && wp_verify_nonce($_POST['_wpnonce'], 'edit_box')) {
             // If the field is not set, default to 0
-            if (!isset($_POST array('is_available'))) {
-                $_POST array('is_available') = 0;
+            if (!isset($_POST['is_available'])) {
+                $_POST['is_available'] = 0;
             }
-            $result = $box_manager->update($box_id, $_POST);
+            $result = $box_manager->update($box_id,$_POST);
             
             if (is_wp_error($result)) {
                 echo '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
@@ -378,7 +387,7 @@ SVG;
         echo '<div class="wrap">';
         echo '<h1>' . esc_html(__('Editar Caixa', 'pagbank-connect')) . '</h1>';
         
-        echo '<a href="' . admin_url('admin.phppage=rm-pagbank-boxes') . '" class="button">';
+        echo '<a href="' . admin_url('admin.php?page=rm-pagbank-boxes') . '" class="button">';
         echo esc_html(__('Voltar para Listagem', 'pagbank-connect'));
         echo '</a>';
         
@@ -398,101 +407,101 @@ SVG;
         
         ?>
         <form method="post" action="">
-            <php wp_nonce_field($action); ?>
+            <?php wp_nonce_field($action); ?>
             
             <table class="form-table">
                 <tbody>
                     <tr>
                         <th scope="row">
-                            <label for="reference"><php _e('Referência', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="reference"><?php _e('Referência', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="text" id="reference" name="reference" value="<php echo $is_edit esc_attr($box->reference) : ''; ?>" class="regular-text" required />
-                            <p class="description"><php _e('Identificador único da caixa (ex: CAIXA_PEQUENA_001)', 'pagbank-connect'); ?></p>
+                            <input type="text" id="reference" name="reference" value="<?php echo $is_edit ? esc_attr($box->reference) : ''; ?>" class="regular-text" required />
+                            <p class="description"><?php _e('Identificador único da caixa (ex: CAIXA_PEQUENA_001)', 'pagbank-connect'); ?></p>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="is_available"><php _e('Disponível', 'pagbank-connect'); ?></label>
+                            <label for="is_available"><?php _e('Disponível', 'pagbank-connect'); ?></label>
                         </th>
                         <td>
                             <label>
-                                <input type="checkbox" id="is_available" name="is_available" value="1" <php checked($is_edit ? $box->is_available : 1, 1); ?> />
-                                <php _e('Esta caixa está disponível para uso', 'pagbank-connect'); ?>
+                                <input type="checkbox" id="is_available" name="is_available" value="1" <?php checked($is_edit ? $box->is_available : 1, 1); ?> />
+                                <?php _e('Esta caixa está disponível para uso', 'pagbank-connect'); ?>
                             </label>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row" colspan="2">
-                            <h3><php _e('Dimensões Externas (cm)', 'pagbank-connect'); ?></h3>
+                            <h3><?php _e('Dimensões Externas (cm)', 'pagbank-connect'); ?></h3>
                         </th>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="outer_width"><php _e('Largura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="outer_width"><?php _e('Largura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_width" name="outer_width" value="<php echo $is_edit esc_attr($box->outer_width/10) : ''; ?>" class="small-text" min="10" max="100" step="0.1" required />
+                            <input type="number" id="outer_width" name="outer_width" value="<?php echo $is_edit ? esc_attr($box->outer_width/10) : ''; ?>" class="small-text" min="10" max="100" step="0.1" required />
                             <span class="description">cm (mín: 10cm, máx: 100cm)</span>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="outer_depth"><php _e('Altura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="outer_depth"><?php _e('Altura Externa', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_depth" name="outer_depth" value="<php echo $is_edit esc_attr($box->outer_depth/10) : ''; ?>" class="small-text" min="1" max="100" step="0.1" required />
+                            <input type="number" id="outer_depth" name="outer_depth" value="<?php echo $is_edit ? esc_attr($box->outer_depth/10) : ''; ?>" class="small-text" min="1" max="100" step="0.1" required />
                             <span class="description">cm (mín: 1cm, máx: 100cm)</span>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="outer_length"><php _e('Comprimento Externo', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="outer_length"><?php _e('Comprimento Externo', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="outer_length" name="outer_length" value="<php echo $is_edit esc_attr($box->outer_length/10) : ''; ?>" class="small-text" min="15" max="100" step="0.1" required />
+                            <input type="number" id="outer_length" name="outer_length" value="<?php echo $is_edit ? esc_attr($box->outer_length/10) : ''; ?>" class="small-text" min="15" max="100" step="0.1" required />
                             <span class="description">cm (mín: 15cm, máx: 100cm)</span>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="thickness"><php _e('Espessura', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="thickness"><?php _e('Espessura', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="thickness" name="thickness" value="<php echo $is_edit esc_attr($box->thickness/10) : '0.2'; ?>" class="small-text" min="0.1" step="0.1" required />
+                            <input type="number" id="thickness" name="thickness" value="<?php echo $is_edit ? esc_attr($box->thickness/10) : '0.2'; ?>" class="small-text" min="0.1" step="0.1" required />
                             <span class="description">cm</span>
-                            <p class="description"><php _e('As dimensões internas serão calculadas automaticamente', 'pagbank-connect'); ?></p>
+                            <p class="description"><?php _e('As dimensões internas serão calculadas automaticamente', 'pagbank-connect'); ?></p>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row" colspan="2">
-                            <h3><php _e('Peso (gramas)', 'pagbank-connect'); ?></h3>
+                            <h3><?php _e('Peso (gramas)', 'pagbank-connect'); ?></h3>
                         </th>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="max_weight"><php _e('Peso Máximo', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="max_weight"><?php _e('Peso Máximo', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="max_weight" name="max_weight" value="<php echo $is_edit esc_attr($box->max_weight) : ''; ?>" class="small-text" min="300" max="10000" required />
+                            <input type="number" id="max_weight" name="max_weight" value="<?php echo $is_edit ? esc_attr($box->max_weight) : ''; ?>" class="small-text" min="300" max="10000" required />
                             <span class="description">g (mín: 300g, máx: 10kg)</span>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="empty_weight"><php _e('Peso da Caixa Vazia', 'pagbank-connect'); ?> <span class="required">*</span></label>
+                            <label for="empty_weight"><?php _e('Peso da Caixa Vazia', 'pagbank-connect'); ?> <span class="required">*</span></label>
                         </th>
                         <td>
-                            <input type="number" id="empty_weight" name="empty_weight" value="<php echo $is_edit esc_attr($box->empty_weight) : ''; ?>" class="small-text" min="1" max="9999" required />
+                            <input type="number" id="empty_weight" name="empty_weight" value="<?php echo $is_edit ? esc_attr($box->empty_weight) : ''; ?>" class="small-text" min="1" max="9999" required />
                             <span class="description">g (deve ser menor que peso máximo)</span>
                         </td>
                     </tr>
@@ -501,7 +510,7 @@ SVG;
                 </tbody>
             </table>
             
-            <php submit_button($is_edit __('Atualizar Caixa', 'pagbank-connect') : __('Criar Caixa', 'pagbank-connect')); ?>
+            <?php submit_button($is_edit ? __('Atualizar Caixa', 'pagbank-connect') : __('Criar Caixa', 'pagbank-connect')); ?>
         </form>
         
         <script type="text/javascript">
@@ -513,7 +522,7 @@ SVG;
                 
                 if (emptyWeight > 0 && maxWeight > 0 && emptyWeight >= maxWeight) {
                     $('#empty_weight').css('border-color', '#dc3232');
-                    $('#empty_weight').next('.description').css('color', '#dc3232').text('<php _e('Peso vazio deve ser menor que o peso máximo', 'pagbank-connect'); ?>');
+                    $('#empty_weight').next('.description').css('color', '#dc3232').text('<?php _e('Peso vazio deve ser menor que o peso máximo', 'pagbank-connect'); ?>');
                     return false;
                 } else {
                     $('#empty_weight').css('border-color', '');
@@ -528,13 +537,13 @@ SVG;
             $('form').on('submit', function(e) {
                 if (!validateWeights()) {
                     e.preventDefault();
-                    alert('<php _e('Por favor, corrija os erros no formulário antes de continuar.', 'pagbank-connect'); ?>');
+                    alert('<?php _e('Por favor, corrija os erros no formulário antes de continuar.', 'pagbank-connect'); ?>');
                     return false;
                 }
             });
         });
         </script>
-        <php
+        <?php
     }
     
 }

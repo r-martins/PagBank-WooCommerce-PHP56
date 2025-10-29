@@ -1,17 +1,17 @@
-<php
+<?php
 
 namespace RM_PagBank\Traits;
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Params;
 
 trait StaticResources
 {
     /**
      * @var true
      */
-    private static $addedScripts = false;
+    private $addedScripts = false;
 
     /**
      * Add css files for checkout and success page
@@ -21,23 +21,25 @@ trait StaticResources
         //thank you page
         $alreadyEnqueued = wp_style_is('pagseguro-connect-pix');
         if (is_checkout() && !empty(is_wc_endpoint_url('order-received')) && !$alreadyEnqueued) {
-            $styles array('pagseguro-connect-pix') = array('src'     => plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                'deps'    => array(),
+            $styles['pagseguro-connect-pix'] = [
+                'src'     => plugins_url('public/css/success.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
                 'version' => WC_PAGSEGURO_CONNECT_VERSION,
                 'media'   => 'all',
                 'has_rtl' => false,
-            );
+            ];
         }
 
         $alreadyEnqueued = wp_style_is('pagseguro-connect-checkout');
         $recHelper = new RecurringHelper();
         if ((is_checkout() || $recHelper->isSubscriptionUpdatePage() || is_wc_endpoint_url('add-payment-method')) && !$alreadyEnqueued) {
-            $styles array('pagseguro-connect-checkout') = array('src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
-                'deps'    => array(),
+            $styles['pagseguro-connect-checkout'] = [
+                'src'     => plugins_url('public/css/checkout.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                'deps'    => [],
                 'version' => WC_PAGSEGURO_CONNECT_VERSION,
                 'media'   => 'all',
                 'has_rtl' => false,
-            );
+            ];
         }
 
         return $styles;
@@ -57,7 +59,8 @@ trait StaticResources
         if ( is_checkout() && !is_order_received_page() && !$alreadyEnqueued) {
             wp_enqueue_script(
                 'pagseguro-connect-checkout',
-                plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array('jquery'),
+                plugins_url('public/js/checkout.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery'],
                 WC_PAGSEGURO_CONNECT_VERSION,
                 true
             );
@@ -87,7 +90,8 @@ trait StaticResources
         if ($hook == 'plugins.php' && !$alreadyEnqueued) {
             wp_enqueue_style(
                 'pagseguro-connect-deactivate',
-                plugins_url('public/css/admin/deactivate.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array(),
+                plugins_url('public/css/admin/deactivate.css', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
                 WC_PAGSEGURO_CONNECT_VERSION
             );
         }
@@ -105,8 +109,9 @@ trait StaticResources
         # region Add general script to handle the pix notice dismissal (and maybe other features in the future)
         wp_register_script(
             'pagseguro-connect-admin-pix-notice',
-            plugins_url('public/js/admin/ps-connect-admin-general.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array('jquery'),
-            WC_PAGSEGURO_CONNECT_VERSION,
+            plugins_url('public/js/admin/ps-connect-admin-general.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+            ['jquery'],
+            WC_PAGSEGURO_CONNECT_VERSION
         );
         $woo_hold_stock_min = get_option( 'woocommerce_hold_stock_minutes');
         $scriptData = array(
@@ -115,16 +120,17 @@ trait StaticResources
             'woocommerce_hold_stock_pix_validation' => !empty($woo_hold_stock_min) && intval($woo_hold_stock_min) <=  intval(Params::getPixConfig('pix_expiry_minutes')),
             'woocommerce_hold_stock_boleto_validation' => !empty($woo_hold_stock_min) && intval($woo_hold_stock_min) <= (intval(Params::getBoletoConfig('boleto_expiry_days')) * 24 * 60)
         );
-        wp_localize_script('pagseguro-connect-admin-pix-notice', 'script_data', $scriptData);
+        wp_localize_script('pagseguro-connect-admin-pix-notice', 'script_data',$scriptData);
         wp_enqueue_script('pagseguro-connect-admin-pix-notice');
         # endregion
 
-        global $current_section; //only when section=rm-pagbank (plugin config page)
+        global $current_section; //only when ?section=rm-pagbank (plugin config page)
 
         if ($current_section && strpos($current_section, Connect::DOMAIN) !== false) {
             wp_enqueue_script(
                 'pagseguro-connect-admin',
-                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array(),
+                plugins_url('public/js/admin/ps-connect-admin.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                [],
                 WC_PAGSEGURO_CONNECT_VERSION
             );
         }
@@ -133,8 +139,9 @@ trait StaticResources
             $feedbackModal = file_get_contents(WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/feedback-modal.php');
             wp_enqueue_script(
                 'pagbank-connect-deactivate',
-                plugins_url('public/js/admin/deactivate.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE), array('jquery', 'jquery-ui-dialog'),
-                WC_PAGSEGURO_CONNECT_VERSION,
+                plugins_url('public/js/admin/deactivate.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
+                ['jquery', 'jquery-ui-dialog'],
+                WC_PAGSEGURO_CONNECT_VERSION
             );
             wp_add_inline_script(
                 'pagbank-connect-deactivate',
@@ -142,7 +149,8 @@ trait StaticResources
             );
             wp_localize_script(
                 'pagbank-connect-deactivate',
-                'pagbankConnect', array('feedbackModalHtml' => $feedbackModal)
+                'pagbankConnect',
+                ['feedbackModalHtml' => $feedbackModal]
             );
         }
     }

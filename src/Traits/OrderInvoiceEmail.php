@@ -1,8 +1,8 @@
-<php
+<?php
 
 namespace RM_PagBank\Traits;
 
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Params;
 
 trait OrderInvoiceEmail
 {
@@ -14,7 +14,7 @@ trait OrderInvoiceEmail
                 return;
             }
 
-            $customerInvoiceEmail = WC()->mailer()->emails array('WC_Email_Customer_Invoice');
+            $customerInvoiceEmail = WC()->mailer()->emails['WC_Email_Customer_Invoice'];
             $customerInvoiceEmail->trigger($order->get_id());
             $order->add_meta_data('pagbank_email_sent', 'yes', true);
             $order->add_order_note('PagBank: Email do pedido enviado com sucesso!');
@@ -32,7 +32,7 @@ trait OrderInvoiceEmail
                 return;
             }
 
-            $customerInvoiceEmail = WC()->mailer()->emails array('WC_Email_New_Order');
+            $customerInvoiceEmail = WC()->mailer()->emails['WC_Email_New_Order'];
             $customerInvoiceEmail->trigger($order->get_id());
             $order->add_meta_data('pagbank_email_new_order_sent', 'yes', true);
         } catch (\Exception $e) {

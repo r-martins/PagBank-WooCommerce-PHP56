@@ -1,9 +1,9 @@
-<php
+<?php
 namespace RM_PagBank\Connect\Blocks;
 
-// use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType; // PHP 5.6 compatibility
+use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use RM_PagBank\Connect\Standalone\Redirect as RedirectGateway;
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Params;
 
 final class Redirect extends AbstractPaymentMethodType
 {
@@ -25,9 +25,9 @@ final class Redirect extends AbstractPaymentMethodType
      * Initializes the payment method type.
      */
     public function initialize() {
-        $this->settings = get_option( "woocommerce_{$this->name}_settings", array() );
+        $this->settings = get_option( "woocommerce_{$this->name}_settings", [] );
         $gateways       = WC()->payment_gateways->payment_gateways();
-        $this->gateway  = isset( $gateways array($this->name ) ) ? $gateways array($this->name ) : new RedirectGateway();
+        $this->gateway  = isset($gateways[ $this->name ] ) ? $gateways[ $this->name ] : new RedirectGateway();
     }
 
     /**
@@ -46,19 +46,21 @@ final class Redirect extends AbstractPaymentMethodType
      */
     public function get_payment_method_script_handles() {
         if (!$this->gateway) {
-            return array();
+            return [];
         }
 
         $scriptPath = 'pagbank-connect/build/js/frontend/redirect.js';
 
         wp_register_script(
             'rm-pagbank-redirect-blocks-integration',
-            plugins_url( $scriptPath ), array('wc-blocks-registry',
+            plugins_url($scriptPath ),
+            [
+                'wc-blocks-registry',
                 'wc-settings',
                 'wp-element',
                 'wp-html-entities',
                 'wp-i18n',
-            ),
+            ],
             null,
             true
         );
@@ -66,7 +68,7 @@ final class Redirect extends AbstractPaymentMethodType
             wp_set_script_translations( 'rm-pagbank-redirect-blocks-integration');
         }
 
-        return array('rm-pagbank-redirect-blocks-integration');
+        return ['rm-pagbank-redirect-blocks-integration'];
     }
 
     /**
@@ -76,10 +78,10 @@ final class Redirect extends AbstractPaymentMethodType
      */
     public function get_payment_method_data() {
         return array(
-            'title'        => isset( $this->settings array('title' ) ) ? $this->settings array('title' ) : 'Pagar via PagBank',
+            'title'        => isset($this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Pagar via PagBank',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
-            'supports'  => array_filter( $this->gateway->supports, array($this->gateway, 'supports' ) ),
+            'supports'  => array_filter($this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
             'instructions' => $this->gateway->get_option('redirect_instructions'),
             'expirationTime' => Params::convertMinutesToHumanTime((int)$this->gateway->get_option('redirect_expiry_minutes')),

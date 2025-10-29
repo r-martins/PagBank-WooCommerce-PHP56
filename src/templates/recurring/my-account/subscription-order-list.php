@@ -1,4 +1,4 @@
-<php
+<?php
 /**
  * Subscription Order List
  *
@@ -15,4 +15,4 @@
 
 
 defined( 'ABSPATH' ) || exit;
-do_action('rm_pagbank_before_account_recurring_orders_list', $subscription);
+do_action('rm_pagbank_before_account_recurring_orders_list',$subscription);

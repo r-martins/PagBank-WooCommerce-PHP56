@@ -1,10 +1,10 @@
-<php
+<?php
 /**
  * Class PausedSubscription file.
  *
  */
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring\RecurringEmails; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Recurring\RecurringEmails;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -41,8 +41,8 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 			);
 
 			// Triggers for this email.
-			add_action( 'pagbank_recurring_subscription_paused_by_customer', array( $this, 'trigger' ), 10, 2 );
-			add_action( 'pagbank_recurring_subscription_paused_by_admin', array( $this, 'trigger' ), 10, 2 );
+			add_action( 'pagbank_recurring_subscription_paused_by_customer', array($this, 'trigger' ), 10, 2 );
+			add_action( 'pagbank_recurring_subscription_paused_by_admin', array($this, 'trigger' ), 10, 2 );
 
 			// Call parent constructor.
 			parent::__construct();
@@ -57,7 +57,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 */
 		public function get_default_subject() {
             return $this->format_string(
-                __(' array({site_title}): Sua assinatura #{id} foi pausada.', 'pagbank-connect')
+                __('[{site_title}]: Sua assinatura #{id} foi pausada.', 'pagbank-connect')
             );
 		}
 
@@ -77,31 +77,31 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 * @param stdClass       $order_id The order ID.
 		 * @param WC_Order|false $order Order object.
 		 */
-		public function trigger( $subscription, $order = false ) {
+		public function trigger($subscription,$order = false ) {
 			$this->setup_locale();
 
-			if ( $subscription && ! is_a( $order, 'WC_Order' ) ) {
-				$order = wc_get_order( $subscription->initial_order_id );
+			if ($subscription && ! is_a($order, 'WC_Order' ) ) {
+				$order = wc_get_order($subscription->initial_order_id );
 			}
 
-			if ( is_a( $order, 'WC_Order' ) ) {
+			if ( is_a($order, 'WC_Order' ) ) {
 				$this->object                                    = $order;
-				$this->placeholders array('{order_billing_full_name}') = $this->object->get_formatted_billing_full_name();
+				$this->placeholders['{order_billing_full_name}'] = $this->object->get_formatted_billing_full_name();
                 // Other settings.
-                $this->recipient = $this->get_option( 'recipient', $this->object->get_billing_email() );
+                $this->recipient = $this->get_option( 'recipient',$this->object->get_billing_email() );
 			}
 
             $this->subscription = $subscription;
             $this->mergePlaceholders($subscription);
             
             if ($subscription->next_bill_at)
-                $this->placeholders array('{next_bill_at}') = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
+                $this->placeholders['{next_bill_at}'] = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
             
             if ($subscription->paused_at) 
-                $this->placeholders array('{paused_at}') = gmdate('d/m/Y', strtotime($subscription->paused_at));
+                $this->placeholders['{paused_at}'] = gmdate('d/m/Y', strtotime($subscription->paused_at));
 
-			if ( $this->is_enabled() && $this->get_recipient() ) {
-				$this->send( $this->get_recipient(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
+			if ($this->is_enabled() && $this->get_recipient() ) {
+				$this->send($this->get_recipient(),$this->get_subject(),$this->get_content(),$this->get_headers(),$this->get_attachments() );
 			}
 
 			$this->restore_locale();
@@ -113,8 +113,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_content_html() {
-			return wc_get_template_html(
-				$this->template_html,
+			return wc_get_template_html($this->template_html,
 				array(
 					'order'              => $this->object,
 					'email_heading'      => $this->get_heading(),
@@ -123,9 +122,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 					'plain_text'         => false,
 					'email'              => $this,
 					'subscription'       => $this->subscription,
-				),
-                $this->template_base,
-                $this->template_base
+				),$this->template_base,$this->template_base
 			);
 		}
 
@@ -135,8 +132,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_content_plain() {
-			return wc_get_template_html(
-				$this->template_plain,
+			return wc_get_template_html($this->template_plain,
 				array(
 					'order'              => $this->object,
 					'email_heading'      => $this->get_heading(),
@@ -145,8 +141,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 					'plain_text'         => true,
 					'email'              => $this,
                     'subscription'       => $this->subscription,
-				),
-                $this->template_base
+				),$this->template_base
 			);
 		}
 
@@ -165,7 +160,7 @@ if ( ! class_exists( 'PausedSubscription', false ) ) :
 		 */
 		public function init_form_fields() {
 			/* translators: %s: list of placeholders */
-			$placeholder_text  = sprintf( __( 'Available placeholders: %s', 'woocommerce' ), '<code>' . esc_html( implode( '</code>, <code>', array_keys( $this->placeholders ) ) ) . '</code>' );
+			$placeholder_text  = sprintf( __( 'Available placeholders: %s', 'woocommerce' ), '<code>' . esc_html( implode( '</code>, <code>', array_keys($this->placeholders ) ) ) . '</code>' );
 			$this->form_fields = array(
 				'enabled'            => array(
 					'title'   => __( 'Enable/Disable', 'woocommerce' ),

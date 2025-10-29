@@ -1,16 +1,16 @@
-<php
+<?php
 
 namespace RM_PagBank\Traits;
 
-// use Automattic\WooCommerce\Enums\OrderStatus; // PHP 5.6 compatibility
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use WC_Data_Exception; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
+use Automattic\WooCommerce\Enums\OrderStatus;
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Exception;
+use RM_PagBank\Connect\Recurring;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
+use WC_Data_Exception;
+use WC_Order;
 
 trait ProcessPayment
 {
@@ -23,46 +23,45 @@ trait ProcessPayment
      * @return void
      * @throws Exception|\Exception
      */
-    public static function updateTransaction(WC_Order $order, $order_data)
-    {
-        $cronMsg = wp_doing_cron() __(' (Atualizado via Cron)', 'pagbank-connect') : '';
+    public static function updateTransaction(WC_Order $order, array $order_data) {
+        $cronMsg = wp_doing_cron() ? __(' (Atualizado via Cron)', 'pagbank-connect') : '';
         $md5 = md5(serialize($order_data));
         if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
-            Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect'), $order->get_id()), 'debug');
+            Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect'),$order->get_id()), 'debug');
             return; // Do not update if the data is the same
         }
-        $order->update_meta_data('_pagbank_last_update_md5', $md5);
+        $order->update_meta_data('_pagbank_last_update_md5',$md5);
         
-        $charge = isset($order_data array('charges') array(0)) ? $order_data array('charges') array(0) : array();
-        $status = isset($charge array('status')) ? $charge array('status') : '';
-        $payment_response = $charge array('payment_response') ?null;
-        $charge_id = $charge array('id') ?null;
+        $charge = isset($order_data['charges'][0]) ? $order_data['charges'][0] : array();
+        $status = isset($charge['status']) ? $charge['status'] : '';
+        $payment_response = isset($charge['payment_response']) ? $charge['payment_response'] : null;
+        $charge_id = isset($charge['id']) ? $charge['id'] : null;
 
-        $order->add_meta_data('pagbank_charge_id', $charge_id, true);
-        $order->add_meta_data('pagbank_payment_response', $payment_response, true);
-        $order->add_meta_data('pagbank_order_id', $order_data array('id') ?null, true);
-        if (isset($charge array('payment_method') array('type')) && $charge array('payment_method') array('type') == 'CREDIT_CARD') {
-            $order->update_meta_data('pagbank_tid', $charge array('payment_response') array('tid') ?null);
-            $order->update_meta_data('_pagbank_card_brand', $charge array('payment_method') array('card') array('brand') ?null);
-            $order->update_meta_data('_pagbank_card_first_digits', $charge array('payment_method') array('card') array('first_digits') ?null);
-            $order->update_meta_data('_pagbank_card_last_digits', $charge array('payment_method') array('card') array('last_digits') ?null);
-            $order->update_meta_data('_pagbank_card_holder', $charge array('payment_method') array('card') array('holder') array('name') ?null);
-            $order->update_meta_data('_pagbank_card_exp_month', $charge array('payment_method') array('card') array('exp_month') ?null);
-            $order->update_meta_data('_pagbank_card_exp_year', $charge array('payment_method') array('card') array('exp_year') ?null);
-            $order->update_meta_data('_pagbank_card_response_reference', $charge array('payment_response') array('reference') ?null);
-            $order->update_meta_data('_pagbank_card_3ds_status', $charge array('payment_method') array('authentication_method') array('status') ?null);
+        $order->add_meta_data('pagbank_charge_id',$charge_id, true);
+        $order->add_meta_data('pagbank_payment_response',$payment_response, true);
+        $order->add_meta_data('pagbank_order_id', isset($order_data['id']) ? $order_data['id'] : null, true);
+        if (isset($charge['payment_method']['type']) && $charge['payment_method']['type'] == 'CREDIT_CARD') {
+            $order->update_meta_data('pagbank_tid', isset($charge['payment_response']['tid']) ? $charge['payment_response']['tid'] : null);
+            $order->update_meta_data('_pagbank_card_brand', isset($charge['payment_method']['card']['brand']) ? $charge['payment_method']['card']['brand'] : null);
+            $order->update_meta_data('_pagbank_card_first_digits', isset($charge['payment_method']['card']['first_digits']) ? $charge['payment_method']['card']['first_digits'] : null);
+            $order->update_meta_data('_pagbank_card_last_digits', isset($charge['payment_method']['card']['last_digits']) ? $charge['payment_method']['card']['last_digits'] : null);
+            $order->update_meta_data('_pagbank_card_holder', isset($charge['payment_method']['card']['holder']['name']) ? $charge['payment_method']['card']['holder']['name'] : null);
+            $order->update_meta_data('_pagbank_card_exp_month', isset($charge['payment_method']['card']['exp_month']) ? $charge['payment_method']['card']['exp_month'] : null);
+            $order->update_meta_data('_pagbank_card_exp_year', isset($charge['payment_method']['card']['exp_year']) ? $charge['payment_method']['card']['exp_year'] : null);
+            $order->update_meta_data('_pagbank_card_response_reference', isset($charge['payment_response']['reference']) ? $charge['payment_response']['reference'] : null);
+            $order->update_meta_data('_pagbank_card_3ds_status', isset($charge['payment_method']['authentication_method']['status']) ? $charge['payment_method']['authentication_method']['status'] : null);
         }
 
         //redirect payments will change payment from 'redirect' to the payment actually used
-        if (isset($charge array(0) array('payment_method') array('type'))) {
-            $order->update_meta_data('pagbank_payment_method', $charge array(0) array('payment_method') array('type'));
+        if (isset($charge[0]['payment_method']['type'])) {
+            $order->update_meta_data('pagbank_payment_method',$charge[0]['payment_method']['type']);
         }
 
-        if (isset($charge array('payment_response') array('reference'))) {
-            $order->add_meta_data('pagbank_nsu', $charge array('payment_response') array('reference'));
+        if (isset($charge['payment_response']['reference'])) {
+            $order->add_meta_data('pagbank_nsu',$charge['payment_response']['reference']);
         }
         
-        $redirectStatus = $order_data array('status') ?null; //redirect checkout status (if expirable)
+        $redirectStatus = isset($order_data['status']) ? $order_data['status'] : null; //redirect checkout status (if expirable)
         if (!$status && $redirectStatus == 'EXPIRED') {
             $status = 'EXPIRED';
             $order->update_status(
@@ -71,24 +70,24 @@ trait ProcessPayment
             );
         }
 
-        if (isset($charge array('payment_response') array('raw_data') array('authorization_code'))) {
-            $order->add_meta_data('pagbank_authorization_code', $charge array('payment_response') array('raw_data') array('authorization_code'));
+        if (isset($charge['payment_response']['raw_data']['authorization_code'])) {
+            $order->add_meta_data('pagbank_authorization_code',$charge['payment_response']['raw_data']['authorization_code']);
         }
 
-        $order->add_meta_data('pagbank_status', $status, true);
+        $order->add_meta_data('pagbank_status',$status, true);
         $order->save_meta_data();
 
-        do_action('pagbank_status_changed_to_' . strtolower($status), $order, $order_data);
+        do_action('pagbank_status_changed_to_' . strtolower($status),$order,$order_data);
 
         // Add some additional information about the payment
-        if (isset($charge array('payment_response'))) {
+        if (isset($charge['payment_response'])) {
             $order->add_order_note(
                 'PagBank: Payment Response: '.sprintf(
                     '%d: %s %s %s',
-                    isset($charge array('payment_response') array('code')) ? $charge array('payment_response') array('code') : 'N/A',
-                    isset($charge array('payment_response') array('message')) ? $charge array('payment_response') array('message') : 'N/A',
-                    isset($charge array('payment_response') array('reference'))
-                        ? ' - REF/NSU: '.$charge array('payment_response') array('reference')
+                    isset($charge['payment_response']['code']) ? $charge['payment_response']['code'] : 'N/A',
+                    isset($charge['payment_response']['message']) ? $charge['payment_response']['message'] : 'N/A',
+                    isset($charge['payment_response']['reference'])
+                        ? ' - REF/NSU: '.$charge['payment_response']['reference']
                         : '',
                     ($status) ? "(Status: $status)" : ''
                 )
@@ -99,7 +98,7 @@ trait ProcessPayment
         switch ($status) {
             case 'AUTHORIZED': // Pre-Authorized but not captured yet
                 $order->add_order_note(
-                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id . $cronMsg,
+                    'PagBank: Pagamento pré-autorizado (não capturado). Charge ID: '.$charge_id . $cronMsg
                 );
                 $order->update_status(
                     'on-hold',
@@ -117,13 +116,13 @@ trait ProcessPayment
             case 'DECLINED': // Declined by PagBank or by the card issuer
                 $order->update_status('failed', 'PagBank: Pagamento recusado.' . $cronMsg);
                 $order->add_order_note(
-                    'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id . $cronMsg,
+                    'PagBank: Pagamento recusado. <br/>Charge ID: '.$charge_id . $cronMsg
                 );
                 break;
             case 'CANCELED': //this will not be hit if payment method is checkout pagbank (no $charge) and name is CANCELLED (double L)
                 $order->update_status('cancelled', 'PagBank: Pagamento cancelado.');
                 $order->add_order_note(
-                    'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id . $cronMsg,
+                    'PagBank: Pagamento cancelado. <br/>Charge ID: '.$charge_id . $cronMsg
                 );
                 break;
             default:
@@ -137,8 +136,7 @@ trait ProcessPayment
             } catch (Exception $e) {
                 Functions::log(
                     'Erro ao processar resposta inicial da assinatura: '.$e->getMessage() . $cronMsg,
-                    'error',
-                    $e->getTrace()
+                    'error',$e->getTrace()
                 );
             }
         }
@@ -156,23 +154,23 @@ trait ProcessPayment
                 return;
             }
 
-            if ($status == 'DECLINED' && $charge array("recurring") array("type") == 'SUBSEQUENT') {
+            if ($status == 'DECLINED' && $charge["recurring"]["type"] == 'SUBSEQUENT') {
                 $canRetry = wc_string_to_bool(Params::getRecurringConfig('recurring_retry_charge', 'yes'));
                 $shouldBeStatus = $canRetry ? 'SUSPENDED' : $shouldBeStatus;
             }
 
             if ($subscription->status != $shouldBeStatus) {
-                $recurring->updateSubscription($subscription, array('status' => $shouldBeStatus,
-                ));
+                $recurring->updateSubscription($subscription, [
+                    'status' => $shouldBeStatus,
+                ]);
             }
 
             if ($shouldBeStatus == 'ACTIVE') {
-                $recurring->updateSubscription($subscription, array('next_bill_at' => $recurringHelper->calculateNextBillingDate(
-                        $frequency,
-                        $cycle
+                $recurring->updateSubscription($subscription, [
+                    'next_bill_at' => $recurringHelper->calculateNextBillingDate($frequency,$cycle
                     )->format('Y-m-d H:i:s'),
                     'retry_attempts_remaining' => null
-                ));
+                ]);
             }
         }
     }
@@ -184,9 +182,9 @@ trait ProcessPayment
     public static function notification()
     {
         $body = file_get_contents('php://input');
-        $hash = htmlspecialchars($_GET array('hash'), ENT_QUOTES, 'UTF-8');
+        $hash = htmlspecialchars($_GET['hash'], ENT_QUOTES, 'UTF-8');
 
-        Functions::log('Notification received: ' . $body, 'debug', array('hash' => $hash));
+        Functions::log('Notification received: ' . $body, 'debug', ['hash' => $hash]);
 
         // Decode body
         $order_data = json_decode($body, true);
@@ -194,8 +192,8 @@ trait ProcessPayment
             wp_die('Falha ao decodificar o Json', 400);
 
         // Check presence of id and reference
-        $id = $order_data array('id') ?null;
-        $reference = $order_data array('reference_id') ?null;
+        $id = isset($order_data['id']) ? $order_data['id'] : null;
+        $reference = isset($order_data['reference_id']) ? $order_data['reference_id'] : null;
         if (!$id || !$reference)
             wp_die('ID ou Reference não informados', 400);
 
@@ -211,7 +209,7 @@ trait ProcessPayment
         if ($order_pagbank_id != $id) {
             if ($order->get_payment_method() == 'rm-pagbank-redirect') {
                 // get x-product-id header
-                $checkoutId = $_SERVER array('HTTP_X_PRODUCT_ID') ?null;
+                $checkoutId = isset($_SERVER['HTTP_X_PRODUCT_ID']) ? $_SERVER['HTTP_X_PRODUCT_ID'] : null;
                 if ($order_pagbank_id != $checkoutId)
                     wp_die('ID do pedido não corresponde ao código de checkout. Verifique header x-product-id.', 400);
             }else{
@@ -222,13 +220,13 @@ trait ProcessPayment
         if ($hash != Api::getOrderHash($order))
             wp_die('Hash inválido', 403);
 
-//        if (!isset($order_data array('charges')))
+//        if (!isset($order_data['charges']))
 //            wp_die('Charges não informado. Notificação ignorada.', 200);
 
         try{
-            self::updateTransaction($order, $order_data);
+            self::updateTransaction($order,$order_data);
         }catch (Exception $e){
-            Functions::log('Error updating transaction: ' . $e->getMessage(), 'error', array('order_id' => $order->get_id()));
+            Functions::log('Error updating transaction: ' . $e->getMessage(), 'error', ['order_id' => $order->get_id()]);
             wp_die('Erro ao atualizar transação', 500);
         }
 
@@ -239,9 +237,9 @@ trait ProcessPayment
      * @throws WC_Data_Exception
      * @throws Exception
      */
-    public function makeRequest(WC_Order $order, $params, $method)
+    public function makeRequest(WC_Order $order,$params,$method)
     {
-        $order->add_meta_data('pagbank_payment_method', $method->code, true);
+        $order->add_meta_data('pagbank_payment_method',$method->code, true);
 
         //force payment method, to avoid problems with standalone methods
         $order->set_payment_method(Connect::DOMAIN);
@@ -258,9 +256,9 @@ trait ProcessPayment
                 break;
         }
         $api = new Api();
-        $resp = $api->post($endpoint, $params);
-        if (isset($resp array('error_messages'))) {
-            throw new Exception($resp array('error_messages'), 40000);
+        $resp = $api->post($endpoint,$params);
+        if (isset($resp['error_messages'])) {
+            throw new Exception($resp['error_messages'], 40000);
         }
 
         return $resp;
@@ -270,15 +268,14 @@ trait ProcessPayment
      * Add note if customer changed payment method
      *
      * @param WC_Order $order
-     * @param $payment_method
+     * @param string $payment_method
      * @return void
      */
-    public function handleCustomerChangeMethod(WC_Order $order, $payment_method)
-    {
+    public function handleCustomerChangeMethod(WC_Order $order,$payment_method) {
         if ($order->get_meta('pagbank_payment_method')) {
             $current_method = $payment_method == 'cc' ? 'credit_card' : $payment_method;
             $old_method = $order->get_meta('pagbank_payment_method');
-            if (strcasecmp($current_method, $old_method) !== 0) {
+            if (strcasecmp($current_method,$old_method) !== 0) {
                 $order->add_order_note(
                     'PagBank: Cliente alterou o método de pagamento de ' . $old_method . ' para ' . $current_method
                 );

@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class PaymentMethodConfigOptions
@@ -22,29 +22,24 @@ class PaymentMethodConfigOptions implements JsonSerializable
     const OPTION_INTEREST_FREE_INSTALLMENTS = 'INTEREST_FREE_INSTALLMENTS';
 
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
 
-    public function getOption()
-    {
+    public function getOption() {
         return $this->option;
     }
 
-    public function setOption($option)
-    {
+    public function setOption($option) {
         $this->option = $option;
     }
 
-    public function getValue()
-    {
+    public function getValue() {
         return $this->value;
     }
 
-    public function setValue($value)
-    {
+    public function setValue($value) {
         $this->value = $value;
     }
 

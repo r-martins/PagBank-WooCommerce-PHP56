@@ -1,10 +1,10 @@
-<php
+<?php
 
 namespace RM_PagBank\Tests\Helpers;
 
-// use PHPUnit\Framework\TestCase; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use WC_Helper_Order; // PHP 5.6 compatibility
+use PHPUnit\Framework\TestCase;
+use RM_PagBank\Helpers\Params;
+use WC_Helper_Order;
 
 /**
  * Class ParamsTest
@@ -36,23 +36,24 @@ class ParamsTest extends \WP_UnitTestCase
 
 		$order->set_billing_phone('11 99999-9999');
 		$phone = Params::extractPhone($order);
-		$this->assertEquals($phone array('area'), '11');
-		$this->assertEquals($phone array('number'), '999999999');
-		$this->assertEquals($phone array('type'), 'MOBILE');
+		$this->assertEquals($phone['area'], '11');
+		$this->assertEquals($phone['number'], '999999999');
+		$this->assertEquals($phone['type'], 'MOBILE');
 
 		$order->set_billing_phone('12  31130011 ');
 		$phone = Params::extractPhone($order);
-		$this->assertEquals($phone array('area'), '12');
-		$this->assertEquals($phone array('number'), '31130011');
-		$this->assertEquals($phone array('type'), 'HOME');
+		$this->assertEquals($phone['area'], '12');
+		$this->assertEquals($phone['number'], '31130011');
+		$this->assertEquals($phone['type'], 'HOME');
 	}
 
 	public function testGetMaxInstallments()
 	{
 		//TODO find a way to mock wp_options or change its value OR convert to non-static method and use normal Mocks
 //		global $wpdb;
-//		$wpdb->insert($wpdb->options, array(//			'option_name' => 'woocommerce_rm-pagbank_settings',
-//			'option_value' => serialize(['cc_installments_options_max_installments' => 15)),
+//		$wpdb->insert($wpdb->options, [
+//			'option_name' => 'woocommerce_rm-pagbank_settings',
+//			'option_value' => serialize(['cc_installments_options_max_installments' => 15]),
 //			'autoload' => 'yes'
 //		]);
 //

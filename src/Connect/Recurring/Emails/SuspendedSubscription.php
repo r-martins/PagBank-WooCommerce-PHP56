@@ -1,10 +1,10 @@
-<php
+<?php
 /**
  * Class SuspendedSubscription file.
  *
  */
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Recurring\RecurringEmails; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Recurring\RecurringEmails;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,7 +20,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
      * @copyright 2023 Magenteiro
      */
     class SuspendedSubscription extends RecurringEmails {
-        public stdClass $subscription;
+        public $subscription;
 
         /**
 		 * Constructor.
@@ -40,8 +40,8 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 			);
 
 			// Triggers for this email.
-			add_action( 'pagbank_recurring_subscription_suspended_by_failure_notification', array( $this, 'trigger' ), 10, 2 );
-			add_action( 'pagbank_recurring_subscription_suspended_by_payment_failure', array( $this, 'trigger' ), 10, 2 );
+			add_action( 'pagbank_recurring_subscription_suspended_by_failure_notification', array($this, 'trigger' ), 10, 2 );
+			add_action( 'pagbank_recurring_subscription_suspended_by_payment_failure', array($this, 'trigger' ), 10, 2 );
 
 			// Call parent constructor.
 			parent::__construct();
@@ -55,7 +55,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_default_subject() {
-			return $this->format_string(__( ' array({site_title}): Sua assinatura #{subscription_id} foi suspensa.', 'pagbank-connect' ));
+			return $this->format_string(__( '[{site_title}]: Sua assinatura #{subscription_id} foi suspensa.', 'pagbank-connect' ));
 		}
 
 		/**
@@ -74,29 +74,29 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 * @param stdClass       $subscription Subscription row object.
 		 * @param WC_Order|false $order Order object.
 		 */
-		public function trigger( stdClass $subscription, $order = false ) {
+		public function trigger( stdClass $subscription,$order = false ) {
 			$this->setup_locale();
 
-			if ( $subscription && ! is_a( $order, 'WC_Order' ) ) {
-				$order = wc_get_order( $subscription->initial_order_id );
+			if ($subscription && ! is_a($order, 'WC_Order' ) ) {
+				$order = wc_get_order($subscription->initial_order_id );
 			}
 
-			if ( is_a( $order, 'WC_Order' ) ) {
+			if ( is_a($order, 'WC_Order' ) ) {
 				$this->object                                    = $order;
-				$this->placeholders array('{order_billing_full_name}') = $this->object->get_formatted_billing_full_name();
+				$this->placeholders['{order_billing_full_name}'] = $this->object->get_formatted_billing_full_name();
                 // Other settings.
-                $this->recipient = $this->get_option( 'recipient', $this->object->get_billing_email() );
+                $this->recipient = $this->get_option( 'recipient',$this->object->get_billing_email() );
 			}
             $this->mergePlaceholders($subscription);
-            $this->placeholders array('{subscription_id}') = $subscription->id;
-            $this->placeholders array('{next_bill_at}') = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
+            $this->placeholders['{subscription_id}'] = $subscription->id;
+            $this->placeholders['{next_bill_at}'] = gmdate('d/m/Y', strtotime($subscription->next_bill_at));
             if ($subscription->canceled_at)
-                $this->placeholders array('{canceled_at}') = gmdate('d/m/Y', strtotime($subscription->canceled_at));
+                $this->placeholders['{canceled_at}'] = gmdate('d/m/Y', strtotime($subscription->canceled_at));
             
             $this->subscription = $subscription;
 
-			if ( $this->is_enabled() && $this->get_recipient() ) {
-				$this->send( $this->get_recipient(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
+			if ($this->is_enabled() && $this->get_recipient() ) {
+				$this->send($this->get_recipient(),$this->get_subject(),$this->get_content(),$this->get_headers(),$this->get_attachments() );
 			}
 
 			$this->restore_locale();
@@ -108,8 +108,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_content_html() {
-			return wc_get_template_html(
-				$this->template_html,
+			return wc_get_template_html($this->template_html,
 				array(
 					'order'              => $this->object,
 					'email_heading'      => $this->get_heading(),
@@ -119,9 +118,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 					'email'              => $this,
 					'subscription'       => $this->subscription,
 					'account_link'       => wc_get_page_permalink( 'myaccount' ) . 'rm-pagbank-subscriptions-update/'.$this->subscription->id,
-				),
-                $this->template_base,
-                $this->template_base
+				),$this->template_base,$this->template_base
 			);
 		}
 
@@ -131,8 +128,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 * @return string
 		 */
 		public function get_content_plain() {
-			return wc_get_template_html(
-				$this->template_plain,
+			return wc_get_template_html($this->template_plain,
 				array(
 					'order'              => $this->object,
 					'email_heading'      => $this->get_heading(),
@@ -141,8 +137,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 					'plain_text'         => true,
 					'email'              => $this,
                     'subscription'       => $this->subscription,
-				),
-                $this->template_base
+				),$this->template_base
 			);
 		}
 
@@ -161,7 +156,7 @@ if ( ! class_exists( 'SuspendedSubscription', false ) ) :
 		 */
 		public function init_form_fields() {
 			/* translators: %s: list of placeholders */
-			$placeholder_text  = sprintf( __( 'Available placeholders: %s', 'woocommerce' ), '<code>' . esc_html( implode( '</code>, <code>', array_keys( $this->placeholders ) ) ) . '</code>' );
+			$placeholder_text  = sprintf( __( 'Available placeholders: %s', 'woocommerce' ), '<code>' . esc_html( implode( '</code>, <code>', array_keys($this->placeholders ) ) ) . '</code>' );
 			$this->form_fields = array(
 				'enabled'            => array(
 					'title'   => __( 'Enable/Disable', 'woocommerce' ),

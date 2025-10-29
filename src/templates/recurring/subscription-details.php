@@ -1,4 +1,4 @@
-<php
+<?php
 /**
  * Subscription Details table (customer view)
  *
@@ -13,7 +13,7 @@
 
 /** @var stdClass $subscription */
 
-// use RM_PagBank\Helpers\Recurring; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Recurring;
 
 defined( 'ABSPATH' ) || exit;
 $dashboard = new RM_PagBank\Connect\Recurring\RecurringDashboard();
@@ -25,113 +25,113 @@ if ( ! isset($subscription->id) || ! $subscription->id ) {
 wc_print_notices();
 ?>
 <section class="woocommerce-order-details">
-    <php do_action( 'rm_pagbank_recurring_details_before_subscription_table', $subscription ); ?>
+    <?php do_action( 'rm_pagbank_recurring_details_before_subscription_table',$subscription ); ?>
    
-    <h2 class="woocommerce-order-details__title"><php esc_html_e( 'Detalhes da Assinatura', 'pagbank-connect' ); ?></h2>
+    <h2 class="woocommerce-order-details__title"><?php esc_html_e( 'Detalhes da Assinatura', 'pagbank-connect' ); ?></h2>
 
     <table class="woocommerce-table woocommerce-table--order-details shop_table order_details">
 
         <thead>
         <tr>
-            <th class="woocommerce-table__product-name product-name"><php esc_html_e( 'Informações de Pagamento', 'pagbank-connect' ); ?></th>
+            <th class="woocommerce-table__product-name product-name"><?php esc_html_e( 'Informações de Pagamento', 'pagbank-connect' ); ?></th>
             <th class="woocommerce-table__product-table product-total">&nbsp;</th>
         </tr>
         </thead>
         
         <tbody>
-            <php
-            do_action( 'rm_pagbank_recurring_details_before_subscription_table_items', $subscription );
-            do_action('rm_pagbank_recurring_details_subscription_table_payment_info', $subscription ); 
+            <?php
+            do_action( 'rm_pagbank_recurring_details_before_subscription_table_items',$subscription );
+            do_action('rm_pagbank_recurring_details_subscription_table_payment_info',$subscription ); 
             ?>
         </tbody>
         
         <tfoot>
             <tr>
-                <th scope="row"><php _e('Valor da assinatura', 'pagbank-connect')?></th>
-                <td><php echo wc_price( $subscription->recurring_amount );?></td>
+                <th scope="row"><?php _e('Valor da assinatura', 'pagbank-connect')?></th>
+                <td><?php echo wc_price($subscription->recurring_amount );?></td>
             </tr>
-            <php if ($subscription->recurring_trial_period): ?>
+            <?php if ($subscription->recurring_trial_period): ?>
                 <tr>
-                    <th scope="row"><php _e('Período de testes (dias)', 'pagbank-connect')?></th>
-                    <td><php echo $subscription->recurring_trial_period;?></td>
+                    <th scope="row"><?php _e('Período de testes (dias)', 'pagbank-connect')?></th>
+                    <td><?php echo $subscription->recurring_trial_period;?></td>
                 </tr>
-            <php endif;?>
-            <php if ((int)$subscription->recurring_discount_cycles && (float)$subscription->recurring_discount_amount): ?>
+            <?php endif;?>
+            <?php if ((int)$subscription->recurring_discount_cycles && (float)$subscription->recurring_discount_amount): ?>
                 <tr>
-                    <th scope="row"><php _e('Desconto', 'pagbank-connect')?></th>
+                    <th scope="row"><?php _e('Desconto', 'pagbank-connect')?></th>
                     <td>
-                        <php
+                        <?php
                         $msg = __('%s por %s ciclos de cobrança.', 'pagbank-connect');
-                        $msg = sprintf($msg, wc_price($subscription->recurring_discount_amount), $subscription->recurring_discount_cycles);
+                        $msg = sprintf($msg, wc_price($subscription->recurring_discount_amount),$subscription->recurring_discount_cycles);
                         ?>
-                        <php echo $msg;?>
+                        <?php echo $msg;?>
                     </td>
                 </tr>
-            <php endif;?>
-            <php if ((int)$subscription->recurring_max_cycles): ?>
+            <?php endif;?>
+            <?php if ((int)$subscription->recurring_max_cycles): ?>
                 <tr>
-                    <th scope="row"><php _e('Número de cobranças', 'pagbank-connect')?></th>
+                    <th scope="row"><?php _e('Número de cobranças', 'pagbank-connect')?></th>
                     <td>
-                        <php echo $subscription->recurring_max_cycles;?>
+                        <?php echo $subscription->recurring_max_cycles;?>
                     </td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
             <tr>
-                <th scope="row"><php _e('Status', 'pagbank-connect')?></th>
-                <td><php echo Recurring::getFriendlyStatus($subscription->status);?></td>
+                <th scope="row"><?php _e('Status', 'pagbank-connect')?></th>
+                <td><?php echo Recurring::getFriendlyStatus($subscription->status);?></td>
             </tr>
             <tr>
-                <th scope="row"><php _e('Cobrança', 'pagbank-connect')?></th>
-                <td><php echo Recurring::getFriendlyType($subscription->recurring_type);?></td>
+                <th scope="row"><?php _e('Cobrança', 'pagbank-connect')?></th>
+                <td><?php echo Recurring::getFriendlyType($subscription->recurring_type);?></td>
             </tr>
-            <php if ( in_array($subscription->status, array('ACTIVE', 'PENDING', 'SUSPENDED')) ): ?>
+            <?php if ( in_array($subscription->status, ['ACTIVE', 'PENDING', 'SUSPENDED']) ): ?>
                 <tr>
-                    <th scope="row"><php _e('Próxima Cobrança', 'pagbank-connect')?></th>
-                    <td><php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
+                    <th scope="row"><?php _e('Próxima Cobrança', 'pagbank-connect')?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
 
-            <php if ( in_array($subscription->status, array('CANCELED')) ): ?>
+            <?php if ( in_array($subscription->status, ['CANCELED']) ): ?>
                 <tr>
-                    <th scope="row"><php _e('Cancelada em', 'pagbank-connect')?></th>
-                    <td><php echo wc_format_datetime(wc_string_to_datetime($subscription->canceled_at));?></td>
+                    <th scope="row"><?php _e('Cancelada em', 'pagbank-connect')?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->canceled_at));?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
 
-            <php if ( in_array($subscription->status, array('PAUSED')) ): ?>
+            <?php if ( in_array($subscription->status, ['PAUSED']) ): ?>
                 <tr>
-                    <th scope="row"><php _e('Pausada em', 'pagbank-connect')?></th>
-                    <td><php echo wc_format_datetime(wc_string_to_datetime($subscription->paused_at));?></td>
+                    <th scope="row"><?php _e('Pausada em', 'pagbank-connect')?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->paused_at));?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
 
-            <php if ( in_array($subscription->status, array('SUSPENDED')) ): ?>
+            <?php if ( in_array($subscription->status, ['SUSPENDED']) ): ?>
                 <tr>
-                    <th scope="row"><php _e('Suspensa em', 'pagbank-connect')?></th>
-                    <td><php echo wc_format_datetime(wc_string_to_datetime($subscription->suspended_at));?></td>
+                    <th scope="row"><?php _e('Suspensa em', 'pagbank-connect')?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->suspended_at));?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
 
-            <php if ( ! empty($subscription->canceled_reason) ): ?>
+            <?php if ( ! empty($subscription->canceled_reason) ): ?>
                 <tr>
-                    <th scope="row"><php _e('Razão do Cancelamento', 'pagbank-connect')?></th>
-                    <td><php echo esc_html($subscription->canceled_reason);?></td>
+                    <th scope="row"><?php _e('Razão do Cancelamento', 'pagbank-connect')?></th>
+                    <td><?php echo esc_html($subscription->canceled_reason);?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
 
-            <php if ( $subscription->status == 'PENDING_CANCEL' ): ?>
+            <?php if ($subscription->status == 'PENDING_CANCEL' ): ?>
                 <tr>
-                    <th scope="row"><php _e('Assinatura será cancelada em', 'pagbank-connect')?></th>
-                    <td><php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
+                    <th scope="row"><?php _e('Assinatura será cancelada em', 'pagbank-connect')?></th>
+                    <td><?php echo wc_format_datetime(wc_string_to_datetime($subscription->next_bill_at));?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
 
-            <php if ( ! empty($subscription->suspended_reason) && !in_array($subscription->status, array('ACTIVE', 'PENDING', 'PAUSED'))): ?>
+            <?php if ( ! empty($subscription->suspended_reason) && !in_array($subscription->status, ['ACTIVE', 'PENDING', 'PAUSED'])): ?>
                 <tr>
-                    <th scope="row"><php _e('Razão da Suspensão', 'pagbank-connect')?></th>
-                    <td><php echo esc_html($subscription->suspended_reason);?></td>
+                    <th scope="row"><?php _e('Razão da Suspensão', 'pagbank-connect')?></th>
+                    <td><?php echo esc_html($subscription->suspended_reason);?></td>
                 </tr>
-            <php endif;?>
+            <?php endif;?>
         
             
         </tfoot>

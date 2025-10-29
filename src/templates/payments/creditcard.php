@@ -1,10 +1,10 @@
-<php
+<?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 /** @var Gateway $this */
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Gateway; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Recurring; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Gateway;
+use RM_PagBank\Helpers\Recurring;
 
 wp_enqueue_script( 'wc-credit-card-form' );
 $default_installments = $this->getDefaultInstallments();
@@ -18,7 +18,8 @@ $cvc_field = '<p class="form-row form-row-last">
 			<input id="' . esc_attr( Connect::DOMAIN ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'woocommerce' ) . '" ' . $this->field_name( 'card-cvc' ) . ' style="width:100px" />
 		</p>';
 
-$default_fields = array('card-holer-name' => '<p class="form-row form-row-wide">
+$default_fields = [
+    'card-holer-name' => '<p class="form-row form-row-wide">
 				<label for="' . esc_attr( Connect::DOMAIN ) . '-card-holder">' . esc_html__( 'Titular do Cartão', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
 				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-holder-name" class="input-text wc-credit-card-form-holder-name" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" type="text" placeholder="' . esc_html__( 'como gravado no cartão', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-holder-name' ) . ' />
 			</p>',
@@ -31,11 +32,11 @@ $default_fields = array('card-holer-name' => '<p class="form-row form-row-wide">
 				<input id="' . esc_attr( Connect::DOMAIN ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocapitalize="off" spellcheck="false" type="tel" placeholder="' . esc_attr__( 'MM / YY', 'woocommerce' ) . '" ' . $this->field_name( 'card-expiry' ) . ' maxlength="7" />
 			</p>',
     'card-cvc-field' => $cvc_field,
-);
+];
 
 // Only add installments field if not on add-payment-method page
 if (!is_wc_endpoint_url('add-payment-method')) {
-    $default_fields array('card-installments') = '<p class="form-row form-row-full">
+    $default_fields['card-installments'] = '<p class="form-row form-row-full">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-installments">' . esc_html__( 'Parcelas', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
                     <select id="' . esc_attr( Connect::DOMAIN ) . '-card-installments" class="input-text wc-credit-card-form-card-installments"  ' . $this->field_name( 'card-installments' ) . ' >
                         {{installment_options}}
@@ -45,7 +46,7 @@ if (!is_wc_endpoint_url('add-payment-method')) {
 
 // Add CPF/CNPJ field only on add-payment-method page
 if (is_wc_endpoint_url('add-payment-method')) {
-    $default_fields array('card-cpf-cnpj') = '<p class="form-row form-row-wide">
+    $default_fields['card-cpf-cnpj'] = '<p class="form-row form-row-wide">
                     <label for="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj">' . esc_html__( 'CPF/CNPJ', 'pagbank-connect' ) . '&nbsp;<span class="required">*</span></label>
                     <input id="' . esc_attr( Connect::DOMAIN ) . '-card-cpf-cnpj" class="input-text wc-credit-card-form-card-cpf-cnpj" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" type="tel" maxlength="18" placeholder="' . esc_attr__( 'documento do pagador', 'pagbank-connect' ) . '" ' . $this->field_name( 'card-cpf-cnpj' ) . ' />
                 </p>';
@@ -58,8 +59,8 @@ if ($default_installments && !is_wc_endpoint_url('add-payment-method')){
 			$installment_options .= '<option value="">' . $installment . '</option>'; //error message
 			break;
 		}
-        $installment_options .= '<option value="'.$installment array('installments').'">'.$installment array('installments').'x de R$ '. $installment array('installment_amount') . ' (';
-        $installment_options .= $installment array('interest_free') ? 'sem juros)' : 'Total: R$ ' . $installment array('total_amount') . ')';
+        $installment_options .= '<option value="'.$installment['installments'].'">'.$installment['installments'].'x de R$ '. $installment['installment_amount'] . ' (';
+        $installment_options .= $installment['interest_free'] ? 'sem juros)' : 'Total: R$ ' . $installment['total_amount'] . ')';
     }
 }
 
@@ -71,7 +72,7 @@ if (is_wc_endpoint_url('order-pay')) {
         foreach ($order->get_items() as $item) {
             $product = $item->get_product();
             if ($recHelper->isProductRecurring($product)) {
-                $default_fields array('card-set-default') = '<p class="form-row form-row-wide">
+                $default_fields['card-set-default'] = '<p class="form-row form-row-wide">
                     <label for="' . esc_attr(Connect::DOMAIN) . '-card-set-default">' . esc_html__('Usar este cartão em futuras cobranças', 'pagbank-connect') . '</label>
                     <input type="checkbox" id="' . esc_attr(Connect::DOMAIN) . '-card-set-default" class="input-checkbox" ' . $this->field_name('card-set-default') . ' value="1"/>
                 </p>';
@@ -81,38 +82,38 @@ if (is_wc_endpoint_url('order-pay')) {
     }
 }
 
-if (isset($default_fields array('card-installments'))) {
-    $default_fields array('card-installments') = str_replace('{{installment_options}}', $installment_options, $default_fields array('card-installments'));
+if (isset($default_fields['card-installments'])) {
+    $default_fields['card-installments'] = str_replace('{{installment_options}}',$installment_options,$default_fields['card-installments']);
 }
 
 
 //if ( ! $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
-//    $default_fields array('card-cvc-field') = $cvc_field;
+//    $default_fields['card-cvc-field'] = $cvc_field;
 //}
 
-$fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_fields', $default_fields, Connect::DOMAIN ) );
+$fields = wp_parse_args($fields, apply_filters( 'woocommerce_credit_card_form_fields',$default_fields, Connect::DOMAIN ) );
 ?>
 
-    <fieldset id="wc-<php echo esc_attr( Connect::DOMAIN ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
-        <php do_action( 'woocommerce_credit_card_form_start', Connect::DOMAIN ); ?>
-        <php
-        foreach ( $fields as $field ) {
+    <fieldset id="wc-<?php echo esc_attr( Connect::DOMAIN ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
+        <?php do_action( 'woocommerce_credit_card_form_start', Connect::DOMAIN ); ?>
+        <?php
+        foreach ($fields as $field ) {
             echo $field; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
         }
         ?>
-        <input type="hidden" <php echo $this->field_name('card-encrypted');?>" id="<php echo esc_attr( Connect::DOMAIN )?>-card-encrypted" />
-        <input type="hidden" <php echo $this->field_name('card-3d');?>" id="<php echo esc_attr( Connect::DOMAIN )?>-card-3d" />
-        <php do_action( 'woocommerce_credit_card_form_end', Connect::DOMAIN ); ?>
-        <php if ($isCartRecurring) :?>
+        <input type="hidden" <?php echo $this->field_name('card-encrypted');?>" id="<?php echo esc_attr( Connect::DOMAIN )?>-card-encrypted" />
+        <input type="hidden" <?php echo $this->field_name('card-3d');?>" id="<?php echo esc_attr( Connect::DOMAIN )?>-card-3d" />
+        <?php do_action( 'woocommerce_credit_card_form_end', Connect::DOMAIN ); ?>
+        <?php if ($isCartRecurring) :?>
             <p class="form-row form-row-wide">
-                <php echo wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong');?>
+                <?php echo wp_kses($recHelper->getRecurringTermsFromCart('creditcard'), 'strong');?>
             </p>
-        <php endif;?>
+        <?php endif;?>
         <div class="clear"></div>
     </fieldset>
     <input type="hidden" name="ps_connect_method" value="cc"/>
-<php
+<?php
 
-//if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
+//if ($this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
 //    echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
 //}

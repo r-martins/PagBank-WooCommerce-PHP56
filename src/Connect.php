@@ -1,31 +1,31 @@
-<php
+<?php
 
 namespace RM_PagBank;
 
-// use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry; // PHP 5.6 compatibility
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Gateway; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\MenuPagBank; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\OrderProcessor; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Payments\CreditCard; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Payments\Pix; // PHP 5.6 compatibility
+use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
+use Exception;
+use RM_PagBank\Connect\Gateway;
+use RM_PagBank\Connect\MenuPagBank;
+use RM_PagBank\Connect\OrderProcessor;
+use RM_PagBank\Connect\Payments\CreditCard;
+use RM_PagBank\Connect\Payments\Pix;
 use RM_PagBank\Connect\Standalone\Pix as StandalonePix;
 use RM_PagBank\Connect\Standalone\CreditCard as StandaloneCc;
 use RM_PagBank\Connect\Standalone\Boleto as StandaloneBoleto;
-// use RM_PagBank\Connect\Standalone\Redirect; // PHP 5.6 compatibility
+use RM_PagBank\Connect\Standalone\Redirect;
 use RM_PagBank\Connect\Standalone\Redirect as StandaloneRedirect;
 use RM_PagBank\Connect\Blocks\Boleto as BoletoBlock;
 use RM_PagBank\Connect\Blocks\Redirect as RedirectBlock;
 use RM_PagBank\Connect\Blocks\CreditCard as CreditCardBlock;
 use RM_PagBank\Connect\Blocks\Pix as PixBlock;
-// use RM_PagBank\Cron\CancelExpiredPix; // PHP 5.6 compatibility
-// use RM_PagBank\Cron\ForceOrderUpdate; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Recurring; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
-// use WP_Query; // PHP 5.6 compatibility
+use RM_PagBank\Cron\CancelExpiredPix;
+use RM_PagBank\Cron\ForceOrderUpdate;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
+use WC_Order;
+use WP_Query;
 
 /**
  * Class Connect
@@ -41,35 +41,35 @@ class Connect
     {
         // Checks if WooCommerce is installed or return
         if ( !class_exists('WooCommerce')) {
-            add_action('admin_notices', array(__CLASS__, 'wooMissingNotice'));
+            add_action('admin_notices', [__CLASS__, 'wooMissingNotice']);
             return;
         }
-        add_action('wp_ajax_nopriv_ps_get_installments', array(CreditCard::class, 'getAjaxInstallments'));
-        add_action('wp_ajax_ps_get_installments', array(CreditCard::class, 'getAjaxInstallments'));
-        add_action('woocommerce_api_wc_pagseguro_info', array(__CLASS__, 'configInfo'));
-        add_action('woocommerce_api_rm_ps_notif', array(__CLASS__, 'notification'));
-        add_action('wp_ajax_get_cart_total', array(CreditCard::class, 'getCartTotal'));
-        add_action('wp_ajax_nopriv_get_cart_total', array(CreditCard::class, 'getCartTotal'));
-        add_action('wp_ajax_ps_deactivate_feedback', array(__CLASS__, 'deactivateFeedback'));
-        add_action('woocommerce_api_pagbank_force_order_update', array(__CLASS__, 'forceOrderUpdate'));
-        add_action('woocommerce_before_template_part', array(CreditCard::class, 'orderPayScript'), 10, 1);
-        add_action('woocommerce_product_object_updated_props', array(CreditCard::class, 'updateProductTransient'), 10, 2);
-        add_action('woocommerce_update_product_variation', array(CreditCard::class, 'updateProductVariationTransient'), 10, 2);
-        add_action('woocommerce_after_add_to_cart_form', array(CreditCard::class, 'getProductInstallments'), 25);
-        add_shortcode('rm_pagbank_credit_card_installments', array(CreditCard::class, 'getProductInstallments'));
-        add_action('update_option', array(CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged'), 10, 3);
-//        add_action('load-woocommerce_page_wc-settings', array(__CLASS__, 'redirectStandaloneConfigPage'));
-        add_action('wp_loaded', array(__CLASS__, 'removeOtherPaymentMethodsWhenRecurring'));
-        add_filter('woocommerce_available_payment_gateways', array(__CLASS__, 'recurringRestrictPaymentMethod'));
-        add_action('admin_notices', array(__CLASS__, 'checkPixOrderKeys'));
-        add_filter( 'woocommerce_rest_prepare_shop_order_object', array(__CLASS__, 'addOrderMetaToApiResponse'), 10, 3 );
-        add_action('woocommerce_admin_order_data_after_order_details', array(__CLASS__, 'addPaymentInfoAdmin'), 10, 1);
-        add_action('woocommerce_api_wc_order_status', array(__CLASS__, 'getOrderStatus'));
-        add_filter('woocommerce_order_item_needs_processing', array(__CLASS__, 'orderItemNeedsProcessing'), 10, 3);
-        add_filter('woocommerce_get_checkout_order_received_url', array(Redirect::class, 'getOrderReceivedURL'), 100, 2);
-        add_filter('woocommerce_get_checkout_payment_url', array(Redirect::class, 'changePaymentLink'), 10, 2);
-        add_filter('woocommerce_get_price_html', array(Pix::class, 'showPriceDiscountPixProduct'), 10, 2);
-        add_action('rest_api_init', array(CreditCard::class,'restApiInstallments'));
+        add_action('wp_ajax_nopriv_ps_get_installments', [CreditCard::class, 'getAjaxInstallments']);
+        add_action('wp_ajax_ps_get_installments', [CreditCard::class, 'getAjaxInstallments']);
+        add_action('woocommerce_api_wc_pagseguro_info', [__CLASS__, 'configInfo']);
+        add_action('woocommerce_api_rm_ps_notif', [__CLASS__, 'notification']);
+        add_action('wp_ajax_get_cart_total', [CreditCard::class, 'getCartTotal']);
+        add_action('wp_ajax_nopriv_get_cart_total', [CreditCard::class, 'getCartTotal']);
+        add_action('wp_ajax_ps_deactivate_feedback', [__CLASS__, 'deactivateFeedback']);
+        add_action('woocommerce_api_pagbank_force_order_update', [__CLASS__, 'forceOrderUpdate']);
+        add_action('woocommerce_before_template_part', [CreditCard::class, 'orderPayScript'], 10, 1);
+        add_action('woocommerce_product_object_updated_props', [CreditCard::class, 'updateProductTransient'], 10, 2);
+        add_action('woocommerce_update_product_variation', [CreditCard::class, 'updateProductVariationTransient'], 10, 2);
+        add_action('woocommerce_after_add_to_cart_form', [CreditCard::class, 'getProductInstallments'], 25);
+        add_shortcode('rm_pagbank_credit_card_installments', [CreditCard::class, 'getProductInstallments']);
+        add_action('update_option', [CreditCard::class, 'deleteInstallmentsTransientIfConfigHasChanged'], 10, 3);
+//        add_action('load-woocommerce_page_wc-settings', [__CLASS__, 'redirectStandaloneConfigPage']);
+        add_action('wp_loaded', [__CLASS__, 'removeOtherPaymentMethodsWhenRecurring']);
+        add_filter('woocommerce_available_payment_gateways', [__CLASS__, 'recurringRestrictPaymentMethod']);
+        add_action('admin_notices', [__CLASS__, 'checkPixOrderKeys']);
+        add_filter( 'woocommerce_rest_prepare_shop_order_object', [__CLASS__, 'addOrderMetaToApiResponse'], 10, 3 );
+        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'addPaymentInfoAdmin'], 10, 1);
+        add_action('woocommerce_api_wc_order_status', [__CLASS__, 'getOrderStatus']);
+        add_filter('woocommerce_order_item_needs_processing', [__CLASS__, 'orderItemNeedsProcessing'], 10, 3);
+        add_filter('woocommerce_get_checkout_order_received_url', [Redirect::class, 'getOrderReceivedURL'], 100, 2);
+        add_filter('woocommerce_get_checkout_payment_url', [Redirect::class, 'changePaymentLink'], 10, 2);
+        add_filter('woocommerce_get_price_html', [Pix::class, 'showPriceDiscountPixProduct'], 10, 2);
+        add_action('rest_api_init', [CreditCard::class,'restApiInstallments']);
 
         // Load plugin files
         self::includes();
@@ -78,7 +78,7 @@ class Connect
         add_filter( 'plugin_action_links_' . plugin_basename( WC_PAGSEGURO_CONNECT_PLUGIN_FILE ), array( self::class, 'addPluginActionLinks' ) );
 
         // Payment method title used
-        add_filter('woocommerce_gateway_title', array(__CLASS__, 'getMethodTitle'), 10, 2);
+        add_filter('woocommerce_gateway_title', [__CLASS__, 'getMethodTitle'], 10, 2);
 
         self::addPagBankMenu();
 
@@ -90,7 +90,7 @@ class Connect
         //if pix enabled
         if (Params::getPixConfig('enabled')) {
             //region cron to cancel expired pix non-paid payments
-            add_action('rm_pagbank_cron_cancel_expired_pix', array(CancelExpiredPix::class, 'execute'));
+            add_action('rm_pagbank_cron_cancel_expired_pix', [CancelExpiredPix::class, 'execute']);
             if (!wp_next_scheduled('rm_pagbank_cron_cancel_expired_pix')) {
                 wp_schedule_event(
                     time(),
@@ -103,7 +103,7 @@ class Connect
 
         //if force order update enabled
         if (Params::getConfig('force_order_update', false)) {
-            add_action('rm_pagbank_cron_force_order_update', array(ForceOrderUpdate::class, 'execute'));
+            add_action('rm_pagbank_cron_force_order_update', [ForceOrderUpdate::class, 'execute']);
             if (!wp_next_scheduled('rm_pagbank_cron_force_order_update')) {
                 wp_schedule_event(
                     time(),
@@ -113,8 +113,8 @@ class Connect
             }
         }
 
-        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', array(StandalonePix::class, 'dismissPixOrderKeysNotice'));
-        add_filter('woocommerce_admin_reports', array(\RM_PagBank\Connect\Recurring\Admin\Reports\RecurringsReport::class, 'reportsFilter'));
+        add_action('wp_ajax_pagbank_dismiss_pix_order_keys_notice', [StandalonePix::class, 'dismissPixOrderKeysNotice']);
+        add_filter('woocommerce_admin_reports', [\RM_PagBank\Connect\Recurring\Admin\Reports\RecurringsReport::class, 'reportsFilter']);
     }
 
     public static function gatewayBlockSupport() {
@@ -154,31 +154,31 @@ class Connect
     /**
      * Add Gateway
      *
-     * @param $gateways
+     * @param array $gateways
      *
      * @return array
      */
-    public static function addGateway($gateways)
+    public static function addGateway(array $gateways)
     {
-        $section = sanitize_text_field(isset($_GET array('section')) ? $_GET array('section') : '');
+        $section = sanitize_text_field(isset($_GET['section']) ? $_GET['section'] : '');
 
         if ($section !== self::DOMAIN) {//plugin's config page (then its not standalone)
             $pix = new StandalonePix();
-            $gateways array() = $pix;
+            $gateways[] = $pix;
 
             $cc = new StandaloneCc();
-            $gateways array() = $cc;
+            $gateways[] = $cc;
 
             $boleto = new StandaloneBoleto();
-            $gateways array() = $boleto;
+            $gateways[] = $boleto;
 
             $redirect = new StandaloneRedirect();
-            $gateways array() = $redirect;
+            $gateways[] = $redirect;
 
             return $gateways;
         }
 
-        $gateways array() = new Gateway();
+        $gateways[] = new Gateway();
 
         return $gateways;
     }
@@ -186,11 +186,11 @@ class Connect
     public static function addPluginActionLinks($links )
     {
         $plugin_links   = array();
-        $plugin_links array() = '<a href="' . esc_url(admin_url('admin.phppage=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', 'pagbank-connect' ) . '</a>';
-        $plugin_links array() = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br' ) . '" target="_blank">' . __( 'Documentação', 'pagbank-connect' ) . '</a>';
-        $plugin_links array() = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br/requests/new' ) . '" target="_blank">' . __( 'Suporte', 'pagbank-connect' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', 'pagbank-connect' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br' ) . '" target="_blank">' . __( 'Documentação', 'pagbank-connect' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br/requests/new' ) . '" target="_blank">' . __( 'Suporte', 'pagbank-connect' ) . '</a>';
 
-        return array_merge( $plugin_links, $links );
+        return array_merge($plugin_links,$links );
     }
 
     /**
@@ -200,15 +200,17 @@ class Connect
     public static function configInfo()
     {
         $api = new Api();
-        $settings = array('platform' => 'Wordpress',
+        $settings = [
+            'platform' => 'Wordpress',
             'module_version' =>[
                 'Version' => WC_PAGSEGURO_CONNECT_VERSION,
-            ),
+            ],
             'extra_fields' => class_exists('Extra_Checkout_Fields_For_Brazil'),
             'block_checkout' => Functions::isBlockCheckoutInUse(),
             'connect_key' => strlen(Params::getConfig('connect_key')) == 40 ? 'Good' : 'Wrong size',
             'standalone' => Params::getConfig('standalone'),
-            'settings' => array('enabled' => Params::getConfig('enabled'),
+            'settings' => [
+                'enabled' => Params::getConfig('enabled'),
                 'cc_enabled' => Params::getCcConfig('enabled'),
                 'pix_enabled' => Params::getPixConfig('enabled'),
                 'boleto_enabled' => Params::getBoletoConfig('enabled'),
@@ -218,12 +220,14 @@ class Connect
                     'enabled' => Params::getBoletoConfig('enabled'),
                     'expiry_days' => Params::getBoletoConfig('boleto_expiry_days'),
                     'discount' => Params::getBoletoConfig('boleto_discount'),
-                ),
-                'pix' => array('enabled' => Params::getPixConfig('enabled'),
+                ],
+                'pix' => [
+                    'enabled' => Params::getPixConfig('enabled'),
                     'expiry_minutes' => Params::getPixConfig('pix_expiry_minutes'),
                     'discount' => Params::getPixConfig('pix_discount'),
-                ),
-                'cc' => array('enabled' => Params::getCcConfig('enabled', 'no'),
+                ],
+                'cc' => [
+                    'enabled' => Params::getCcConfig('enabled', 'no'),
                     'enabled_installment' => Params::getCcConfig('cc_installment_product_page', 'no'),
                     'installment_options' => Params::getCcConfig('cc_installment_options'),
                     'installment_options_fixed' => Params::getCcConfig('cc_installment_options_fixed', '3'),
@@ -234,37 +238,40 @@ class Connect
                     '3d_secure_allow_continue' => Params::getCcConfig('cc_3ds_allow_continue', 'no'),
                     '3d_secure_retry' => Params::getCcConfig('cc_3ds_retry'),
                     '3d_retry_failed' => Params::getCcConfig('cc_3ds_retry', 'yes'),
-                ),
-                'recurring' => array('enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
+                ],
+                'recurring' => [
+                        'enabled' => Params::getRecurringConfig('recurring_enabled', 'no'),
                         'recurring_process_frequency' => Params::getRecurringConfig('recurring_process_frequency'),
                         'customer_can_cancel' => Params::getRecurringConfig('recurring_customer_can_cancel', 'yes'),
                         'customer_can_pause' => Params::getRecurringConfig('recurring_customer_can_pause', 'yes'),
                         'clear_cart' => Params::getRecurringConfig('recurring_clear_cart', 'no'),
                         'recurring_retry_charge' => Params::getRecurringConfig('recurring_retry_charge', 'yes'),
                         'recurring_retry_attempts' => Params::getRecurringConfig('recurring_retry_attempts', '3'),
-                ),
-                'redirect' => array('enabled' => Params::getRedirectConfig('enabled', 'no'),
+                ],
+                'redirect' => [
+                        'enabled' => Params::getRedirectConfig('enabled', 'no'),
                         'redirect_expiry_minutes' => Params::getRedirectConfig('redirect_expiry_minutes', '120'),
                         'redirect_discount' => Params::getRedirectConfig('redirect_discount', '0'),
                         'redirect_discount_excludes_shipping' => Params::getRedirectConfig('redirect_discount_excludes_shipping', 'no'),
                         'redirect_payment_methods' => Params::getRedirectConfig('redirect_payment_methods'),
-                ),
+                ],
             ],
-            'extra' => array('hpos_enabled' => wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled() ? 'yes' : 'no',
+            'extra' => [
+                'hpos_enabled' => wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled() ? 'yes' : 'no',
                 'litespeed_cache' => is_plugin_active('litespeed-cache/litespeed-cache.php') ? 'yes' : 'no',
                 'wordfence_active' => is_plugin_active('wordfence/wordfence.php') ? 'yes' : 'no',
-            ),
+            ],
         ];
 
         try{
             $api = new Api();
             $resp = $api->get('ws/public-keys/card');
-            if (isset($resp array('public_key'))){
-                $resp array('public_key') = substr($resp array('public_key'), 0, 50) . '...';
+            if (isset($resp['public_key'])){
+                $resp['public_key'] = substr($resp['public_key'], 0, 50) . '...';
             }
-            $settings array('live_auth') = $resp;
+            $settings['live_auth'] = $resp;
         }catch (Exception $e){
-            $settings array('live_auth') = $e->getMessage();
+            $settings['live_auth'] = $e->getMessage();
         }
         wp_send_json($settings);
 
@@ -283,14 +290,14 @@ class Connect
     public static function loadTextDomain()
     {
         $dir = __DIR__ . '/../languages/';
-        load_plugin_textdomain('pagbank-connect', false, $dir);
+        load_plugin_textdomain('pagbank-connect', false,$dir);
     }
 
-    public static function getMethodTitle($title, $id){
+    public static function getMethodTitle($title,$id){
         //get order
-        if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST array('ps_connect_method'))) //phpcs:ignore WordPress.Security.NonceVerification
+        if ($id == 'rm-pagbank' && wp_doing_ajax() && isset($_POST['ps_connect_method'])) //phpcs:ignore WordPress.Security.NonceVerification
         {
-            $method = htmlspecialchars($_POST array('ps_connect_method'), ENT_QUOTES, 'UTF-8');
+            $method = htmlspecialchars($_POST['ps_connect_method'], ENT_QUOTES, 'UTF-8');
             $method = Functions::getFriendlyPaymentMethodName($method);
             $title = Params::getConfig('title') . ' - ' . $method;
         }
@@ -365,55 +372,55 @@ class Connect
             $boletoSettings = array();
             foreach ($settings as $key => $setting) {
                 if (strpos($key,'cc_') !== false) {
-                    $ccSettings array($key) = $setting;
+                    $ccSettings[$key] = $setting;
                     continue;
                 }
                 if (strpos($key,'pix_') !== false) {
-                    $pixSettings array($key) = $setting;
+                    $pixSettings[$key] = $setting;
                     continue;
                 }
                 if (strpos($key,'boleto_') !== false) {
-                    $boletoSettings array($key) = $setting;
+                    $boletoSettings[$key] = $setting;
                     continue;
                 }
                 if (strpos($key,'recurring_') !== false) {
-                    $recurringSettings array($key) = $setting;
+                    $recurringSettings[$key] = $setting;
                     continue;
                 }
 
-                $generalSettings array($key) = $setting;
+                $generalSettings[$key] = $setting;
             }
 
-            if (isset($ccSettings array('cc_enabled'))) {
-                $ccSettings array('enabled') = $ccSettings array('cc_enabled');
-                unset($ccSettings array('cc_enabled'));
+            if (isset($ccSettings['cc_enabled'])) {
+                $ccSettings['enabled'] = $ccSettings['cc_enabled'];
+                unset($ccSettings['cc_enabled']);
             }
-            if (isset($pixSettings array('pix_enabled'))) {
-                $pixSettings array('enabled') = $pixSettings array('pix_enabled');
-                unset($pixSettings array('pix_enabled'));
+            if (isset($pixSettings['pix_enabled'])) {
+                $pixSettings['enabled'] = $pixSettings['pix_enabled'];
+                unset($pixSettings['pix_enabled']);
             }
-            if (isset($boletoSettings array('boleto_enabled'))) {
-                $boletoSettings array('enabled') = $boletoSettings array('boleto_enabled');
-                unset($boletoSettings array('boleto_enabled'));
-            }
-
-            if (isset($ccSettings array('cc_title'))) {
-                $ccSettings array('title') = $ccSettings array('cc_title');
-                unset($ccSettings array('cc_title'));
-            }
-            if (isset($pixSettings array('pix_title'))) {
-                $pixSettings array('title') = $pixSettings array('pix_title');
-                unset($pixSettings array('pix_title'));
-            }
-            if (isset($boletoSettings array('boleto_title'))) {
-                $boletoSettings array('title') = $boletoSettings array('boleto_title');
-                unset($boletoSettings array('boleto_title'));
+            if (isset($boletoSettings['boleto_enabled'])) {
+                $boletoSettings['enabled'] = $boletoSettings['boleto_enabled'];
+                unset($boletoSettings['boleto_enabled']);
             }
 
-            $generalSettings array('standalone') = 'yes';
+            if (isset($ccSettings['cc_title'])) {
+                $ccSettings['title'] = $ccSettings['cc_title'];
+                unset($ccSettings['cc_title']);
+            }
+            if (isset($pixSettings['pix_title'])) {
+                $pixSettings['title'] = $pixSettings['pix_title'];
+                unset($pixSettings['pix_title']);
+            }
+            if (isset($boletoSettings['boleto_title'])) {
+                $boletoSettings['title'] = $boletoSettings['boleto_title'];
+                unset($boletoSettings['boleto_title']);
+            }
 
-            if (isset($generalSettings array('hide_id_unavailable'))) {
-                $generalSettings array('hide_if_unavailable') = $generalSettings array('hide_id_unavailable');
+            $generalSettings['standalone'] = 'yes';
+
+            if (isset($generalSettings['hide_id_unavailable'])) {
+                $generalSettings['hide_if_unavailable'] = $generalSettings['hide_id_unavailable'];
             }
 
             $generalSettings = serialize($generalSettings);
@@ -421,43 +428,47 @@ class Connect
             $pixSettings = serialize($pixSettings);
             $boletoSettings = serialize($boletoSettings);
 
-            $wpdb->update(
-                $settingsTable, array('option_value' => $generalSettings), array('option_name' => 'woocommerce_rm-pagbank_settings')
+            $wpdb->update($settingsTable,
+                ['option_value' => $generalSettings],
+                ['option_name' => 'woocommerce_rm-pagbank_settings']
             );
 
             if (get_option('woocommerce_rm-pagbank-cc_settings')) {
-                $wpdb->update(
-                    $settingsTable, array('option_value' => $ccSettings), array('option_name' => 'woocommerce_rm-pagbank-cc_settings')
+                $wpdb->update($settingsTable,
+                    ['option_value' => $ccSettings],
+                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings']
                 );
             } else {
-                $wpdb->insert(
-                    $settingsTable, array('option_name' => 'woocommerce_rm-pagbank-cc_settings', 'option_value' => $ccSettings)
+                $wpdb->insert($settingsTable,
+                    ['option_name' => 'woocommerce_rm-pagbank-cc_settings', 'option_value' => $ccSettings]
                 );
             }
 
             if (get_option('woocommerce_rm-pagbank-pix_settings')) {
-                $wpdb->update(
-                    $settingsTable, array('option_value' => $pixSettings), array('option_name' => 'woocommerce_rm-pagbank-pix_settings')
+                $wpdb->update($settingsTable,
+                    ['option_value' => $pixSettings],
+                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings']
                 );
             } else {
-                $wpdb->insert(
-                    $settingsTable, array('option_name' => 'woocommerce_rm-pagbank-pix_settings', 'option_value' => $pixSettings)
+                $wpdb->insert($settingsTable,
+                    ['option_name' => 'woocommerce_rm-pagbank-pix_settings', 'option_value' => $pixSettings]
                 );
             }
 
             if (get_option('woocommerce_rm-pagbank-boleto_settings')) {
-                $wpdb->update(
-                    $settingsTable, array('option_value' => $boletoSettings), array('option_name' => 'woocommerce_rm-pagbank-boleto_settings')
+                $wpdb->update($settingsTable,
+                    ['option_value' => $boletoSettings],
+                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings']
                 );
             } else {
-                $wpdb->insert(
-                    $settingsTable, array('option_name' => 'woocommerce_rm-pagbank-boleto_settings', 'option_value' => $boletoSettings)
+                $wpdb->insert($settingsTable,
+                    ['option_name' => 'woocommerce_rm-pagbank-boleto_settings', 'option_value' => $boletoSettings]
                 );
             }
 
             foreach ($recurringSettings as $key => $setting) {
                 $key = 'woocommerce_rm-pagbank-' . $key;
-                update_option($key, $setting);
+                update_option($key,$setting);
             }
 
             update_option('pagbank_db_version', '4.13');
@@ -547,21 +558,23 @@ class Connect
      */
     public static function deactivateFeedback()
     {
-        if (!isset($_REQUEST array('nonce')) || !wp_verify_nonce($_REQUEST array('nonce'), 'pagbank_connect_send_feedback')) {
-            wp_send_json_error( array('error' => __(
+        if (!isset($_REQUEST['nonce']) || !wp_verify_nonce($_REQUEST['nonce'], 'pagbank_connect_send_feedback')) {
+            wp_send_json_error(
+                [
+                    'error' => __(
                         'Chave de formulário inválida. '.'Recarregue a página e tente novamente.',
                         'pagbank-connect'
                     ),
-                ),
+                ],
                 400
             );
         }
-        parse_str($_REQUEST array('feedback'), $formData);
+        parse_str($_REQUEST['feedback'],$formData);
 
-        if (isset($formData array('selected-reason')) || isset($formData array('comment'))) {
-            $reason = $formData array('selected-reason');
-            $commment = isset($formData array('comment')) ? $formData array('comment') : '';
-            $openTicket = $formData array('autorizaContato') ?false;
+        if (isset($formData['selected-reason']) || isset($formData['comment'])) {
+            $reason = $formData['selected-reason'];
+            $commment = isset($formData['comment']) ? $formData['comment'] : '';
+            $openTicket = isset($formData['autorizaContato']) ? $formData['autorizaContato'] : false;
             $siteUrl = get_site_url();
 
             /** @var WP_User $currentUser */
@@ -569,9 +582,10 @@ class Connect
             $email = $currentUser->user_email;
 
             $url = 'https://docs.google.com/forms/d/e/1FAIpQLSd4cTW1fWcFZwhJmoICTVc9--rEggj-aJMAqpxv6KFf9dIOjw/'
-                .'formResponse?&submit=Submitusp=pp_url';
+                .'formResponse?&submit=Submit?usp=pp_url';
 
-            $params = http_build_query( array('entry.160403419' => $reason,
+            $params = http_build_query([
+                'entry.160403419' => $reason,
                 'entry.581422256' => $email,
                 'entry.1295704444' => $siteUrl,
                 'entry.715814172' => $openTicket ? 'Sim' : 'Não',
@@ -581,7 +595,7 @@ class Connect
                 'entry.764056986' => WC_PAGSEGURO_CONNECT_VERSION,
                 'entry.817525399' => $commment
 
-            ));
+            ]);
             $url .= '&' . $params;
             wp_remote_get($url);
         }
@@ -601,9 +615,9 @@ class Connect
             add_filter('woocommerce_available_payment_gateways', function ($gateways) {
                     $cc = new StandaloneCc();
                     $cc->id = Connect::DOMAIN . '-cc';
-                    return array($cc->id => $cc);
+                    return [$cc->id => $cc];
             });
-            return array(Connect::DOMAIN => new Gateway());
+            return [Connect::DOMAIN => new Gateway()];
         }
     }
 
@@ -614,7 +628,7 @@ class Connect
         if ($isCartRecurring) {
             $cc = new StandaloneCc();
             $cc->id = Connect::DOMAIN . '-cc';
-            return array($cc->id => $cc);
+            return [$cc->id => $cc];
         }
         return $gateways;
     }
@@ -649,7 +663,8 @@ class Connect
         // Check if HPOS is enabled
         if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
             // HPOS is enabled
-            $lastPixOrder = wc_get_orders( array('limit' => 1,
+            $lastPixOrder = wc_get_orders([
+                'limit' => 1,
                 'orderby' => 'date',
                 'order' => 'DESC',
                 'meta_query' => [
@@ -657,9 +672,11 @@ class Connect
                     [
                         'key' => 'pagbank_payment_method',
                         'value' => 'pix',
-                    ), array('key' => 'pagbank_is_sandbox',
+                    ],
+                    [
+                        'key' => 'pagbank_is_sandbox',
                         'value' => '0',
-                    )
+                    ]
                 ]
             ]);
         } else {
@@ -687,48 +704,44 @@ class Connect
 
             $query = new WP_Query($args);
 
-            $lastPixOrder = array();
+            $lastPixOrder = [];
             if ($query->have_posts()) {
                 while ($query->have_posts()) {
                     $query->the_post();
                     $order_id = get_the_ID();
                     $order = wc_get_order($order_id);
-                    $lastPixOrder array() = $order;
+                    $lastPixOrder[] = $order;
                 }
                 wp_reset_postdata();
                 $post = $original_post; // Reset the global post data 
             }
         }
 
-        if (empty($lastPixOrder) || !isset($lastPixOrder array(0)) || $lastPixOrder array(0) instanceof WC_Order === false) {
+        if (empty($lastPixOrder) || !isset($lastPixOrder[0]) || $lastPixOrder[0] instanceof WC_Order === false) {
             // Update the transient to prevent checking again for 30 minutes
             update_option('pagbank_pix_lastorder_checked', time() );
             return;
         }
 
-        $pixKey = $lastPixOrder array(0)->get_meta('pagbank_pix_qrcode_text');
+        $pixKey = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode_text');
         $validationFailed = Functions::isValidPixCode($pixKey) === false;
 
         if ($validationFailed) {
-            $qrCodeImg = $lastPixOrder array(0)->get_meta('pagbank_pix_qrcode');
+            $qrCodeImg = $lastPixOrder[0]->get_meta('pagbank_pix_qrcode');
             $helpUrl = 'https://pagsegurotransparente.zendesk.com/hc/pt-br/articles/20449852438157-QrCode-Pix-gerado-%C3%A9-Inv%C3%A1lido';
             $openTicket = 'https://bit.ly/ticketnovo';
-            $orderLink = admin_url('post.phppost=' . $lastPixOrder array(0)->get_id() . '&action=edit');
-            $orderId = $lastPixOrder array(0)->get_id();
+            $orderLink = admin_url('post.php?post=' . $lastPixOrder[0]->get_id() . '&action=edit');
+            $orderId = $lastPixOrder[0]->get_id();
             ?>
             <div class="notice notice-error is-dismissible pagbank-pix-notice">
-                <p><php echo sprintf(
+                <p><?php echo sprintf(
                         __(
                             'O último código <a href="%s">código PIX</a> gerado no pedido <a href="%s">%s</a> parece inválido. Isso ocorre porque você provavelmente não possui chaves PIX aleatórias cadastradas no PagBank. <a href="%s">Clique aqui</a> para saber mais.',
                             'pagbank-connect'
-                        ),
-                        $qrCodeImg,
-                        $orderLink,
-                        $orderId,
-                        $helpUrl
+                        ),$qrCodeImg,$orderLink,$orderId,$helpUrl
                     ); ?></p>
             </div>
-            <php
+            <?php
         }
 
         // Update the transient to prevent checking again
@@ -743,9 +756,9 @@ class Connect
      *
      * @return mixed
      */
-    public static function addOrderMetaToApiResponse( $response, $order, $request ) {
+    public static function addOrderMetaToApiResponse($response,$order,$request ) {
         // Check if there's a request for the meta
-        if ( empty( $request array('include_meta') ) || 'true' !== $request array('include_meta') ) {
+        if ( empty($request['include_meta'] ) || 'true' !== $request['include_meta'] ) {
             return $response;
         }
 
@@ -753,16 +766,16 @@ class Connect
         $meta_data = $order->get_meta_data();
         $meta_array = array();
 
-        foreach ( $meta_data as $meta ) {
+        foreach ($meta_data as $meta ) {
             if (strpos($meta->key, 'pagbank') === false) {
                 continue;
             }
             // Each item in meta_data is an instance of the WC_Meta_Data class
-            $meta_array array($meta->key ) = $meta->value;
+            $meta_array[ $meta->key ] = $meta->value;
         }
 
         // Add the meta data array to the response
-        $response->data array('meta_data') = array_merge_recursive($response->data array('meta_data'), $meta_array);
+        $response->data['meta_data'] = array_merge_recursive($response->data['meta_data'],$meta_array);
 
         return $response;
     }
@@ -786,7 +799,7 @@ class Connect
      */
     public static function getOrderStatus()
     {
-        $orderId = $_GET array('order_id') ?null;
+        $orderId = isset($_GET['order_id']) ? $_GET['order_id'] : null;
         if (!$orderId) {
             wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
         }
@@ -809,7 +822,7 @@ class Connect
      *
      * @return void
      */
-    public static function orderItemNeedsProcessing($needsProcessing, $product, $orderId)
+    public static function orderItemNeedsProcessing($needsProcessing,$product,$orderId)
     {
         $order = wc_get_order($orderId);
         $paymentMethod = $order->get_payment_method();
@@ -828,9 +841,9 @@ class Connect
     
     private static function addPagBankMenu()
     {
-        add_action('admin_menu', array(MenuPagBank::class, 'addPagBankMenu'));
-        add_action('admin_menu', array(MenuPagBank::class, 'addPagBankSubmenuItems'));
-        add_action('admin_enqueue_scripts', array(MenuPagBank::class, 'adminPagesStyle'));
+        add_action('admin_menu', [MenuPagBank::class, 'addPagBankMenu']);
+        add_action('admin_menu', [MenuPagBank::class, 'addPagBankSubmenuItems']);
+        add_action('admin_enqueue_scripts', [MenuPagBank::class, 'adminPagesStyle']);
     }
 
     public static function forceOrderUpdate()
@@ -840,7 +853,7 @@ class Connect
         }
 
         $order_id = filter_input(INPUT_GET, 'order_id', FILTER_SANITIZE_NUMBER_INT);
-        $pagbank_order_id = isset($_GET array('pagbank_order_id')) sanitize_text_field($_GET array('pagbank_order_id')) : '';
+        $pagbank_order_id = isset($_GET['pagbank_order_id']) ? sanitize_text_field($_GET['pagbank_order_id']) : '';
 
         if (empty($pagbank_order_id) || empty($order_id)) {
             wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
@@ -854,7 +867,7 @@ class Connect
         }
 
 
-        $edit_order_url = admin_url('post.phppost=' . $order_id . '&action=edit');
+        $edit_order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
 
         $orderData = Api::getOrderData($pagbank_order_id);
         $md5 = md5(serialize($orderData));
@@ -874,7 +887,7 @@ class Connect
         );
         $orderProcessor = new OrderProcessor();
         try {
-            $orderProcessor->updateTransaction($order, $orderData);
+            $orderProcessor->updateTransaction($order,$orderData);
         } catch (\Exception $e) {
             $order->add_order_note(
                 __('Erro ao atualizar o pedido: ', 'pagbank-connect') . $e->getMessage(),

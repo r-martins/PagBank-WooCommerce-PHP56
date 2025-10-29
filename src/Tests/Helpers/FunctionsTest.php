@@ -1,9 +1,9 @@
-<php
+<?php
 
 namespace RM_PagBank\Tests;
 
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use PHPUnit\Framework\TestCase; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Functions;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class FunctionsTest

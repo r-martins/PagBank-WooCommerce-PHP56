@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class Recurring
@@ -16,25 +16,22 @@ class Recurring implements JsonSerializable
 {
     protected $type;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
     
-	public function getType()
-	{
+	public function getType() {
 		return $this->type;
 	}
 
 	/**
 	 * Set Recurring Type. Can be INITIAL or SUBSEQUENT.
-	 * @param $type
+	 * @param string $type
 	 *
 	 * @return void
 	 */
-	public function setType($type)
-	{
+	public function setType($type) {
 		$this->type = $type;
 	}
 

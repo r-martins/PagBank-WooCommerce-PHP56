@@ -1,24 +1,27 @@
-<php
+<?php
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
+use RM_PagBank\Connect;
 
 return array(
-    'enabled'                                 => array('title'       => __('Habilitar', 'pagbank-connect'),
+    'enabled'                                 => [
+        'title'       => __('Habilitar', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => '',
         'default'     => 'yes',
-    ),
-    'title'                                   => array('title'       => __('Título Principal', 'pagbank-connect'),
+    ],
+    'title'                                   => [
+        'title'       => __('Título Principal', 'pagbank-connect'),
         'type'        => 'safe_text',
         'description' => __('Nome do meio de pagamento que seu cliente irá ver no checkout.', 'pagbank-connect'),
         'default'     => __('Cartão de Crédito via PagBank', 'pagbank-connect'),
         'desc_tip'    => true,
-    ),
-    'cc_installment_options'                     => array('title'       => __('Opções de Parcelamento', 'pagbank-connect'),
+    ],
+    'cc_installment_options'                     => [
+        'title'       => __('Opções de Parcelamento', 'pagbank-connect'),
         'type'        => 'select',
         'description' => __(
             '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173-'
@@ -31,18 +34,20 @@ return array(
             'buyer'     => __('Juros por conta do comprador', 'pagbank-connect'),
             'fixed'     => __('Até X parcelas sem juros', 'pagbank-connect'),
             'min_total' => __('Até X parcelas sem juros dependendo do valor da parcela', 'pagbank-connect'),
-        ),
+        ],
     ],
-    'cc_installment_options_fixed'               => array('title'             => __('Número de Parcelas sem Juros', 'pagbank-connect'),
+    'cc_installment_options_fixed'               => [
+        'title'             => __('Número de Parcelas sem Juros', 'pagbank-connect'),
         'type'              => 'number',
         'desc'              => '',
         'default'           => 3,
         'custom_attributes' => [
             'min' => 1,
             'max' => 18,
-        ),
+        ],
     ],
-    'cc_installments_options_min_total'          => array('title'             => __('Valor Mínimo da Parcela sem Juros', 'pagbank-connect'),
+    'cc_installments_options_min_total'          => [
+        'title'             => __('Valor Mínimo da Parcela sem Juros', 'pagbank-connect'),
         'type'              => 'number',
         'description'       => __(
             'Valor inteiro sem decimais. Exemplo: 10 para R$ 10,00 <br/><small>Neste exemplo, um pedido '
@@ -55,9 +60,10 @@ return array(
         'custom_attributes' => [
             'min' => 5,
             'max' => 99999,
-        ),
+        ],
     ],
-    'cc_installments_options_limit_installments' => array('title'       => __('Limitar parcelas?', 'pagbank-connect'),
+    'cc_installments_options_limit_installments' => [
+        'title'       => __('Limitar parcelas?', 'pagbank-connect'),
         'type'        => 'select',
         'description' => __(
             '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/19945359660173'
@@ -67,34 +73,38 @@ return array(
         'options'     => [
             'no'  => __('Não (recomendável)', 'pagbank-connect'),
             'yes' => __('Sim', 'pagbank-connect'),
-        ),
+        ],
     ],
 
-    'cc_installments_options_max_installments' => array('title'             => __('Número Máximo de Parcelas', 'pagbank-connect'),
+    'cc_installments_options_max_installments' => [
+        'title'             => __('Número Máximo de Parcelas', 'pagbank-connect'),
         'type'              => 'number',
         'default'           => 18,
         'custom_attributes' => [
             'min' => 1,
             'max' => 18,
-        ),
+        ],
     ],
-    'cc_installment_product_page'              => array('title'       => __('Informações de Parcelamento', 'pagbank-connect'),
+    'cc_installment_product_page'              => [
+        'title'       => __('Informações de Parcelamento', 'pagbank-connect'),
         'label'       => __('Exibir informações de parcelamento na tela do produto?', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Veja <a href="https://ajuda.pbintegracoes.com/hc/pt-br'
             .'/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produt'
             .'o" target="_blank">como funciona</a>.',
         'default'     => 'no',
-    ),
-    'cc_installment_shortcode_enabled'              => array('title'       => __('Shortcode de parcelamento', 'pagbank-connect'),
+    ],
+    'cc_installment_shortcode_enabled'              => [
+        'title'       => __('Shortcode de parcelamento', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Veja <a href="https://ajuda.pbintegracoes.com/hc/pt-br'
             .'/articles/26223028355597-Exibir-informa%C3%A7%C3%B5es-de-parcelamento-na-p%C3%A1gina-de-produt'
             .'o#shortcode" target="_blank">como usar</a>.',
         'default'     => 'no',
-    ),
-    'cc_installment_product_page_type'         => array('title'       => __('Formato das informações de parcelamento', 'pagbank-connect'),
+    ],
+    'cc_installment_product_page_type'         => [
+        'title'       => __('Formato das informações de parcelamento', 'pagbank-connect'),
         'type'        => 'select',
         'description' => __(
             '<a href="https://ajuda.pbintegracoes.com/hc/pt-br/articles/26223028355597'
@@ -106,9 +116,10 @@ return array(
             'table'                 => __('Tabela com todas as parcelas', 'pagbank-connect'),
             'text-installment-free' => __('Texto com parcela máxima sem juros', 'pagbank-connect'),
             'text-installment-max'  => __('Texto com parcela máxima', 'pagbank-connect'),
-        ),
+        ],
     ],
-    'cc_soft_descriptor'                       => array('title'             => __('Identificador na Fatura', 'pagbank-connect'),
+    'cc_soft_descriptor'                       => [
+        'title'             => __('Identificador na Fatura', 'pagbank-connect'),
         'type'              => 'text',
         'default'           => 'CompraViaPagBank',
         'description'       => __(
@@ -120,9 +131,10 @@ return array(
         'desc_tip'          => false,
         'custom_attributes' => [
             'maxlength' => 17,
-        ),
+        ],
     ],
-    'cc_3ds'                                   => array('title'       => __('Autenticação 3D', 'pagbank-connect'),
+    'cc_3ds'                                   => [
+        'title'       => __('Autenticação 3D', 'pagbank-connect'),
         'label'       => __('Habilitar', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Habilita a autenticação <a href="https://ajuda.pbintegracoes.com/hc/pt-br/a'
@@ -132,20 +144,22 @@ return array(
             .'para compras online, <br/> e evita que chargebacks de compras não reconhecidas sejam '
             .'cobrados do lojista.',
         'default'     => 'yes',
-    ),
-    'cc_3ds_allow_continue'                    => array('title'       => __('Quando 3D não for suportado', 'pagbank-connect'),
+    ],
+    'cc_3ds_allow_continue'                    => [
+        'title'       => __('Quando 3D não for suportado', 'pagbank-connect'),
         'label'       => __('Permitir concluir', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Alguns cartões não possuem suporte a autenticação 3D. <br/>'
             .'Ao marcar esta opção, o cliente poderá concluir a compra mesmo que o cartão não suporte tal recurso <br/>'
             .'ou se a obtenção da sessão 3D Secure junto ao PagBank falhar.',
         'default'     => 'no',
-    ),
-    'cc_3ds_retry' => array('title'       => __('Quando o pagamento for recusado', 'pagbank-connect'),
+    ],
+    'cc_3ds_retry' => [
+        'title'       => __('Quando o pagamento for recusado', 'pagbank-connect'),
         'label'       => __('Permitir tentar novamente com validação 3DS', 'pagbank-connect'),
         'type'        => 'checkbox',
         'description' => 'Permitir que o cliente tente finalizar o pedido usando 3DS quando a primeira tentativa for recusada. <br/>'
             .'Esta opção só será exibida se o motivo da recusa do pagamento pelo PagBank permitir uma nova tentativa. <br/>',
         'default'     => 'yes',
-    ),
+    ],
 );

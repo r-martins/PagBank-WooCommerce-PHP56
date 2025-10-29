@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 /**
  * Class TokenData
@@ -33,8 +33,7 @@ class TokenData implements JsonSerializable
 	//Assurance level of the tokenized card.
     protected $assurance_level;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -42,80 +41,70 @@ class TokenData implements JsonSerializable
     /**
      * @return string
      */
-    public function getRequestorId()
-    {
+    public function getRequestorId() {
         return $this->requestor_id;
     }
 
     /**
-     * @param $requestor_id
+     * @param string $requestor_id
      */
-    public function setRequestorId($requestor_id)
-    {
+    public function setRequestorId($requestor_id) {
         $this->requestor_id = $requestor_id;
     }
 
     /**
      * @return string
      */
-    public function getWallet()
-    {
+    public function getWallet() {
         return $this->wallet;
     }
 
     /**
-     * @param $wallet
+     * @param string $wallet
      */
-    public function setWallet($wallet)
-    {
+    public function setWallet($wallet) {
         $this->wallet = $wallet;
     }
 
     /**
      * @return string
      */
-    public function getCryptogram()
-    {
+    public function getCryptogram() {
         return $this->cryptogram;
     }
 
     /**
-     * @param $cryptogram
+     * @param string $cryptogram
      */
-    public function setCryptogram($cryptogram)
-    {
+    public function setCryptogram($cryptogram) {
         $this->cryptogram = $cryptogram;
     }
 
     /**
      * @return string
      */
-    public function getEcommerceDomain()
-    {
+    public function getEcommerceDomain() {
         return $this->ecommerce_domain;
     }
 
     /**
-     * @param $ecommerce_domain
+     * @param string $ecommerce_domain
      */
-    public function setEcommerceDomain($ecommerce_domain)
-    {
+    public function setEcommerceDomain($ecommerce_domain) {
         $this->ecommerce_domain = $ecommerce_domain;
     }
 
     /**
      * @return string
      */
-    public function getAssuranceLevel()
-    {
+    public function getAssuranceLevel() {
         return $this->assurance_level;
     }
 
     /**
-     * @param $assurance_level
+     * @param string $assurance_level
      */
-    public function setAssuranceLevel($assurance_level)
-    {
+    public function setAssuranceLevel($assurance_level) {
         $this->assurance_level = $assurance_level;
     }
 

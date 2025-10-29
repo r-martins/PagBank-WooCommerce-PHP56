@@ -1,9 +1,9 @@
-<php
+<?php
 /** @noinspection PhpUnused */
 
 namespace RM_PagBank\Object;
 
-// use JsonSerializable; // PHP 5.6 compatibility
+use JsonSerializable;
 
 class Item implements JsonSerializable
 {
@@ -12,8 +12,7 @@ class Item implements JsonSerializable
     private $quantity;
     private $unit_amount;
 
-    # array(\ReturnTypeWillChange)
-    public function jsonSerialize()
+        public function jsonSerialize()
     {
         return get_object_vars($this);
     }
@@ -21,64 +20,56 @@ class Item implements JsonSerializable
     /**
      * @return string
      */
-    public function getReferenceId()
-    {
+    public function getReferenceId() {
         return $this->reference_id;
     }
 
     /**
-     * @param $reference_id
+     * @param string $reference_id
      */
-    public function setReferenceId($reference_id)
-    {
+    public function setReferenceId($reference_id) {
         $this->reference_id = substr($reference_id, 0, 255);
     }
 
     /**
      * @return string
      */
-    public function getName()
-    {
+    public function getName() {
         return $this->name;
     }
 
     /**
-     * @param $name
+     * @param string $name
      */
-    public function setName($name)
-    {
+    public function setName($name) {
         $this->name = substr($name, 0, 100);
     }
 
     /**
      * @return int
      */
-    public function getQuantity()
-    {
+    public function getQuantity() {
         return $this->quantity;
     }
 
     /**
-     * @param $quantity
+     * @param int $quantity
      */
-    public function setQuantity($quantity)
-    {
+    public function setQuantity($quantity) {
         $this->quantity = $quantity;
     }
 
     /**
      * @return int
      */
-    public function getUnitAmount()
-    {
+    public function getUnitAmount() {
         return $this->unit_amount;
     }
 
     /**
-     * @param $unit_amount
+     * @param int $unit_amount
      */
-    public function setUnitAmount($unit_amount)
-    {
+    public function setUnitAmount($unit_amount) {
         $this->unit_amount = $unit_amount;
     }
 }

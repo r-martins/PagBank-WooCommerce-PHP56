@@ -1,10 +1,10 @@
-<php
+<?php
 namespace RM_PagBank\Connect\Blocks;
 
-// use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType; // PHP 5.6 compatibility
+use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 use RM_PagBank\Connect\Standalone\Boleto as BoletoGateway;
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Recurring; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Params;
+use RM_PagBank\Helpers\Recurring;
 
 final class Boleto extends AbstractPaymentMethodType
 {
@@ -26,9 +26,9 @@ final class Boleto extends AbstractPaymentMethodType
      * Initializes the payment method type.
      */
     public function initialize() {
-        $this->settings = get_option( "woocommerce_{$this->name}_settings", array() );
+        $this->settings = get_option( "woocommerce_{$this->name}_settings", [] );
         $gateways       = WC()->payment_gateways->payment_gateways();
-        $this->gateway  = isset( $gateways array($this->name ) ) ? $gateways array($this->name ) : new BoletoGateway();
+        $this->gateway  = isset($gateways[ $this->name ] ) ? $gateways[ $this->name ] : new BoletoGateway();
     }
 
     /**
@@ -47,19 +47,21 @@ final class Boleto extends AbstractPaymentMethodType
      */
     public function get_payment_method_script_handles() {
         if (!$this->gateway) {
-            return array();
+            return [];
         }
 
         $scriptPath = 'pagbank-connect/build/js/frontend/boleto.js';
 
         wp_register_script(
             'rm-pagbank-boleto-blocks-integration',
-            plugins_url( $scriptPath ), array('wc-blocks-registry',
+            plugins_url($scriptPath ),
+            [
+                'wc-blocks-registry',
                 'wc-settings',
                 'wp-element',
                 'wp-html-entities',
                 'wp-i18n',
-            ),
+            ],
             null,
             true
         );
@@ -67,7 +69,7 @@ final class Boleto extends AbstractPaymentMethodType
             wp_set_script_translations( 'rm-pagbank-boleto-blocks-integration');
         }
 
-        return array('rm-pagbank-boleto-blocks-integration');
+        return ['rm-pagbank-boleto-blocks-integration'];
     }
 
     /**
@@ -77,10 +79,10 @@ final class Boleto extends AbstractPaymentMethodType
      */
     public function get_payment_method_data() {
         return array(
-            'title'        => isset( $this->settings array('title' ) ) ? $this->settings array('title' ) : 'Boleto via PagBank',
+            'title'        => isset($this->settings[ 'title' ] ) ? $this->settings[ 'title' ] : 'Boleto via PagBank',
             'description'  => $this->get_setting( 'description' ),
             'icon'  => $this->gateway->get_icon(),
-            'supports'  => array_filter( $this->gateway->supports, array($this->gateway, 'supports' ) ),
+            'supports'  => array_filter($this->gateway->supports, [ $this->gateway, 'supports' ] ),
             'paymentUnavailable' => $this->gateway->paymentUnavailable(),
             'instructions' => $this->gateway->get_option('boleto_instructions'),
             'expirationTime' => (int)$this->gateway->get_option('boleto_expiry_days'),

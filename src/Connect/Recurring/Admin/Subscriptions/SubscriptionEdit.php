@@ -1,8 +1,8 @@
-<php
+<?php
 namespace RM_PagBank\Connect\Recurring\Admin\Subscriptions;
 
-// use RM_PagBank\Helpers\Recurring; // PHP 5.6 compatibility
-// use WP_List_Table; // PHP 5.6 compatibility
+use RM_PagBank\Helpers\Recurring;
+use WP_List_Table;
 
 if ( ! class_exists ( 'SubscriptionDetails' ) ) {
     require_once(dirname(__FILE__) . '/SubscriptionDetails.php');
@@ -18,57 +18,58 @@ if ( ! class_exists ( 'SubscriptionDetails' ) ) {
 class SubscriptionEdit extends SubscriptionDetails
 {
     public function display() {
-        $singular = $this->_args array('singular');
+        $singular = $this->_args['singular'];
 
         $this->display_tablenav( 'top' );
 
         $this->screen->render_screen_reader_content( 'heading_list' );
-        $action = Recurring::subscriptionActionUrl('edit', $this->subscription)
+        $action = Recurring::subscriptionActionUrl('edit',$this->subscription)
         ?>
-        <form method="post" action="<php echo $action ?>">
-            <table class="wp-list-table <php echo esc_attr(implode(' ', $this->get_table_classes())); ?>">
-                <php $this->print_table_description(); ?>
+        <form method="post" action="<?php echo $action ?>">
+            <table class="wp-list-table <?php echo esc_attr(implode(' ',$this->get_table_classes())); ?>">
+                <?php $this->print_table_description(); ?>
                 <thead>
                 <tr>
-                    <php $this->print_column_headers(); ?>
+                    <?php $this->print_column_headers(); ?>
                 </tr>
                 </thead>
 
                 <tbody id="the-list"
-                    <php if ($singular) {?>
-                        data-wp-lists="list:<php echo esc_attr($singular) ?>"
-                        <php
+                    <?php if ($singular) {?>
+                        data-wp-lists="list:<?php echo esc_attr($singular) ?>"
+                        <?php
                     }
                     ?>>
-                <php $this->display_rows_or_placeholder(); ?>
+                <?php $this->display_rows_or_placeholder(); ?>
                 </tbody>
             </table>
             <button type="submit" class="button">
-                <php _e('Salvar', 'rm-pagbank') ?>
+                <?php _e('Salvar', 'rm-pagbank') ?>
             </button>
         </form>
-        <php
+        <?php
         $this->display_tablenav( 'bottom' );
     }
 
     private function get_edit_colluns() {
-        return array('recurring_amount' => 'Valor Recorrente',
-            );
+        return [
+                'recurring_amount' => 'Valor Recorrente',
+            ];
     }
 
     public function column_value($item)
     {
-        if ($item array('name') === 'Pedido Inicial') {
-            $order = wc_get_order($item array('value'));
-            return '<a href="' . $order->get_edit_order_url() . '">' . $item array('value') . '</a>';
+        if ($item['name'] === 'Pedido Inicial') {
+            $order = wc_get_order($item['value']);
+            return '<a href="' . $order->get_edit_order_url() . '">' . $item['value'] . '</a>';
         }
 
-        if (!array_key_exists($item array('name'), array_flip($this->get_edit_colluns()))) {
-            return $item array('value');
+        if (!array_key_exists($item['name'], array_flip($this->get_edit_colluns()))) {
+            return $item['value'];
         }
 
-        $name = array_search($item array('name'), $this->get_edit_colluns());
-        $value = number_format($item array('value'), 2, ',', '.');
+        $name = array_search($item['name'],$this->get_edit_colluns());
+        $value = number_format($item['value'], 2, ',', '.');
         return "<input type='text' name='{$name}' value='{$value}'>";
     }
 }

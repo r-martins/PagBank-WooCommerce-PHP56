@@ -1,18 +1,18 @@
-<php
+<?php
 namespace RM_PagBank\Connect;
 
-// use Automattic\WooCommerce\Internal\DependencyManagement\ContainerException; // PHP 5.6 compatibility
-// use Exception; // PHP 5.6 compatibility
-// use RM_PagBank\Connect; // PHP 5.6 compatibility
-// use RM_PagBank\Connect\Payments\CreditCardToken; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Api; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Functions; // PHP 5.6 compatibility
-// use RM_PagBank\Helpers\Params; // PHP 5.6 compatibility
+use Automattic\WooCommerce\Internal\DependencyManagement\ContainerException;
+use Exception;
+use RM_PagBank\Connect;
+use RM_PagBank\Connect\Payments\CreditCardToken;
+use RM_PagBank\Helpers\Api;
+use RM_PagBank\Helpers\Functions;
+use RM_PagBank\Helpers\Params;
 use RM_PagBank\Helpers\Recurring as RecurringHelper;
-// use stdClass; // PHP 5.6 compatibility
-// use WC_Emails; // PHP 5.6 compatibility
-// use WC_Order; // PHP 5.6 compatibility
-// use wpdb; // PHP 5.6 compatibility
+use stdClass;
+use WC_Emails;
+use WC_Order;
+use wpdb;
 
 /**
  * Class Recurring
@@ -31,25 +31,25 @@ class Recurring
         }
 
         //region admin management
-        add_action('woocommerce_product_data_panels', array($this, 'addRecurringTabContent'));
-        add_action('woocommerce_process_product_meta', array($this, 'saveRecurringTabContent'));
-        add_filter('woocommerce_product_data_tabs', array($this, 'addProductRecurringTab'));
+        add_action('woocommerce_product_data_panels', [$this, 'addRecurringTabContent']);
+        add_action('woocommerce_process_product_meta', [$this, 'saveRecurringTabContent']);
+        add_filter('woocommerce_product_data_tabs', [$this, 'addProductRecurringTab']);
         //endregion
 
         //region frontend initial-order flow
-        add_action('woocommerce_checkout_update_order_meta', array($this, 'addProductMetaToOrder'), 20, 1);
-        add_action('woocommerce_store_api_checkout_update_order_meta', array($this, 'addProductMetaToOrder'), 20, 1);
-        add_filter('woocommerce_add_to_cart_validation', array($this, 'avoidOtherThanRecurringInCart'), 1, 2);
-        add_filter('woocommerce_checkout_registration_required', array($this, 'disableGuestCheckoutForRecurringOrder'), 1, 1);
-        add_filter('woocommerce_order_needs_payment', array($this, 'requestPaymentForRecurringTrialOrder'), 1, 3);
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
+        add_action('woocommerce_store_api_checkout_update_order_meta', [$this, 'addProductMetaToOrder'], 20, 1);
+        add_filter('woocommerce_add_to_cart_validation', [$this, 'avoidOtherThanRecurringInCart'], 1, 2);
+        add_filter('woocommerce_checkout_registration_required', [$this, 'disableGuestCheckoutForRecurringOrder'], 1, 1);
+        add_filter('woocommerce_order_needs_payment', [$this, 'requestPaymentForRecurringTrialOrder'], 1, 3);
         //endregion
         
         //emails
-        add_filter('woocommerce_email_classes', array($this, 'addEmails'));
+        add_filter('woocommerce_email_classes', [$this, 'addEmails']);
         WC_Emails::instance();
         
         //region cron jobs
-        add_action('rm_pagbank_cron_process_recurring_payments', array($this, 'processRecurringPayments'));
+        add_action('rm_pagbank_cron_process_recurring_payments', [$this, 'processRecurringPayments']);
         if ( ! wp_next_scheduled('rm_pagbank_cron_process_recurring_payments') ) {
             wp_schedule_event(
                 time(),
@@ -58,7 +58,7 @@ class Recurring
             );
         }
 
-        add_action('rm_pagbank_cron_process_recurring_cancellations', array($this, 'processRecurringCancellations'));
+        add_action('rm_pagbank_cron_process_recurring_cancellations', [$this, 'processRecurringCancellations']);
         if ( ! wp_next_scheduled('rm_pagbank_cron_process_recurring_cancellations') ) {
             wp_schedule_event(
                 time(),
@@ -67,7 +67,7 @@ class Recurring
             );
         }
 
-        add_action('rm_pagbank_cron_process_expired_paused', array($this, 'processRecurringExpiredPaused'));
+        add_action('rm_pagbank_cron_process_expired_paused', [$this, 'processRecurringExpiredPaused']);
         if ( ! wp_next_scheduled('rm_pagbank_cron_process_expired_paused') ) {
             wp_schedule_event(
                 time(),
@@ -78,30 +78,30 @@ class Recurring
         //endregion
         
         //region frontend subscription management
-        add_filter('woocommerce_account_menu_items', array($this, 'addSubscriptionManagementMenuItem'), 10, 1);
-        add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', array($this, 'addManageSubscriptionContent'));
-        add_action('woocommerce_account_rm-pagbank-subscriptions-view_endpoint', array($this, 'addManageSubscriptionViewContent'));
-        add_action('woocommerce_account_rm-pagbank-subscriptions-update_endpoint', array($this, 'addManageSubscriptionUpdateContent'));
-        add_action('woocommerce_api_rm-pagbank-subscription-edit', array($this, 'addManageSubscriptionEditAction'));
-        add_action('rm_pagbank_view_subscription', array($this, 'subscriptionDetailsTable'), 10, 1);
-        add_action('rm_pagbank_recurring_details_subscription_table_payment_info', array($this, 'getPaymentInfoRows'), 10, 1);
-        add_action('rm_pagbank_view_subscription_actions', array($this, 'getSubscriptionActionButtons'), 10, 1);
-        add_action('rm_pagbank_view_subscription_order_list', array($this, 'getSubscriptionOrderList'), 10, 1);
-        add_filter('the_title', array($this, 'recurring_endpoint_title'), 10, 2 );
-        add_filter('rm_pagbank_account_recurring_actions', array($this, 'filterAllowedActions'), 10, 2);
-        add_filter('woocommerce_my_account_my_orders_actions', array($this, 'filterRecurringOrderActions'), 10, 2);
+        add_filter('woocommerce_account_menu_items', [$this, 'addSubscriptionManagementMenuItem'], 10, 1);
+        add_action('woocommerce_account_rm-pagbank-subscriptions_endpoint', [$this, 'addManageSubscriptionContent']);
+        add_action('woocommerce_account_rm-pagbank-subscriptions-view_endpoint', [$this, 'addManageSubscriptionViewContent']);
+        add_action('woocommerce_account_rm-pagbank-subscriptions-update_endpoint', [$this, 'addManageSubscriptionUpdateContent']);
+        add_action('woocommerce_api_rm-pagbank-subscription-edit', [$this, 'addManageSubscriptionEditAction']);
+        add_action('rm_pagbank_view_subscription', [$this, 'subscriptionDetailsTable'], 10, 1);
+        add_action('rm_pagbank_recurring_details_subscription_table_payment_info', [$this, 'getPaymentInfoRows'], 10, 1);
+        add_action('rm_pagbank_view_subscription_actions', [$this, 'getSubscriptionActionButtons'], 10, 1);
+        add_action('rm_pagbank_view_subscription_order_list', [$this, 'getSubscriptionOrderList'], 10, 1);
+        add_filter('the_title', [$this, 'recurring_endpoint_title'], 10, 2 );
+        add_filter('rm_pagbank_account_recurring_actions', [$this, 'filterAllowedActions'], 10, 2);
+        add_filter('woocommerce_my_account_my_orders_actions', [$this, 'filterRecurringOrderActions'], 10, 2);
         //endregion
         
-        add_action('woocommerce_cart_calculate_fees', array($this, 'addInitialFeeToCart'), 10, 1);
-        add_action('woocommerce_before_calculate_totals', array($this, 'handleRecurringProductPrice'), 10, 1);
-        add_filter('woocommerce_cart_needs_payment', array($this, 'enablePaymentInTrialOrder'), 10, 2);
-        add_action('template_redirect', array($this, 'handleRestrictedAccess'));
-        add_action('pagbank_recurring_cancellation_processed', array($this, 'updateUserRestrictedAccessForSubscription'), 10, 1);
-        add_action('pagbank_recurring_subscription_created_notification', array($this, 'updateUserRestrictedAccessForSubscription'), 10, 1);
-        add_action('pagbank_recurring_subscription_status_changed', array($this, 'updateUserRestrictedAccessForSubscription'), 10, 2);
-        add_action('pagbank_recurring_subscription_update_payment_method', array($this, 'subscriptionUpdatePayment'), 10, 1);
-        add_action('pagbank_recurring_subscription_payment_method_changed', array($this, 'subscriptionMaybeChargeAndUpdate'), 10, 1);
-        add_action('admin_notices', array($this,'showMessegesTransient'), 10, 2);
+        add_action('woocommerce_cart_calculate_fees', [$this, 'addInitialFeeToCart'], 10, 1);
+        add_action('woocommerce_before_calculate_totals', [$this, 'handleRecurringProductPrice'], 10, 1);
+        add_filter('woocommerce_cart_needs_payment', [$this, 'enablePaymentInTrialOrder'], 10, 2);
+        add_action('template_redirect', [$this, 'handleRestrictedAccess']);
+        add_action('pagbank_recurring_cancellation_processed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 1);
+        add_action('pagbank_recurring_subscription_created_notification', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 1);
+        add_action('pagbank_recurring_subscription_status_changed', [$this, 'updateUserRestrictedAccessForSubscription'], 10, 2);
+        add_action('pagbank_recurring_subscription_update_payment_method', [$this, 'subscriptionUpdatePayment'], 10, 1);
+        add_action('pagbank_recurring_subscription_payment_method_changed', [$this, 'subscriptionMaybeChargeAndUpdate'], 10, 1);
+        add_action('admin_notices', [$this,'showMessegesTransient'], 10, 2);
     }
 
     public static function showMessegesTransient()
@@ -118,7 +118,7 @@ class Recurring
             delete_transient('pagbank_recurring_message');
         }
     }
-    public static function recurringSettingsFields($settings, $current_section)
+    public static function recurringSettingsFields($settings,$current_section)
     {
         if ( 'rm-pagbank-recurring-settings' !== $current_section ) {
             return $settings;
@@ -148,7 +148,7 @@ class Recurring
 
         // Percorra cada produto no carrinho
         foreach($cart->get_cart() as $cart_item) {
-            $product = $cart_item array('data');
+            $product = $cart_item['data'];
 
             // Verifique a propriedade do produto
             if($product->get_meta('_initial_fee') && $product->get_meta('_recurring_enabled') == 'yes') {
@@ -159,7 +159,7 @@ class Recurring
 
         // Adicione a taxa extra ao carrinho se for maior que zero
         if($extra_fee > 0) {
-            $cart->add_fee(__('Taxa Inicial', 'pagbank-connect'), $extra_fee);
+            $cart->add_fee(__('Taxa Inicial', 'pagbank-connect'),$extra_fee);
         }
     }
 
@@ -174,8 +174,8 @@ class Recurring
         }
 
         $recurringHelper = new RecurringHelper();
-        foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-            $product = $cart_item array('data');
+        foreach ($cart->get_cart() as $cart_item_key => $cart_item ) {
+            $product = $cart_item['data'];
 
             if ($product->get_meta('_recurring_enabled') != 'yes') {
                 continue;
@@ -183,23 +183,24 @@ class Recurring
 
             if ($product->get_meta('_recurring_trial_length')) {
                 $trial_price = 0;
-                $product->set_price( $trial_price );
+                $product->set_price($trial_price );
                 continue;
             }
 
             if ($recurringHelper->hasDiscount($product)) {
                 $discount = $product->get_meta('_recurring_discount_amount');
                 $price = $product->get_price();
-                $product->set_price( $price - $discount );
+                $product->set_price($price - $discount );
             }
         }
     }
     
     public function addProductRecurringTab($productTabs)
     {
-        $productTabs array('recurring_pagbank') = array('label' => __('Assinatura PagBank', 'pagbank-connect'),
+        $productTabs['recurring_pagbank'] = [
+            'label' => __('Assinatura PagBank', 'pagbank-connect'),
             'target' => 'recurring_pagbank',
-            'class' => ['show_if_simple', 'show_if_variable'),
+            'class' => ['show_if_simple', 'show_if_variable'],
             'priority' => 90,
         ];
         
@@ -212,7 +213,7 @@ class Recurring
         <!-- id below must match target registered in above add_my_custom_product_data_tab function -->
         <div id="recurring_pagbank" class="panel woocommerce_options_panel">
             <div class="options_group">
-            <php
+            <?php
             woocommerce_wp_checkbox( array(
                 'id'            => '_recurring_enabled',
                 'label'         => __( 'Habilitar recorrência', 'pagbank-connect' ),
@@ -220,18 +221,20 @@ class Recurring
                 'default'  		=> '0',
                 'desc_tip'    	=> false,
             ) );
-            woocommerce_wp_select( array('id' => '_frequency',
+            woocommerce_wp_select([
+                'id' => '_frequency',
                 'label' => __('Frequência', 'pagbank-connect'),
                 'options' => [
                     'daily'     => __('Diário', 'pagbank-connect'),
                     'weekly'    => __('Semanal', 'pagbank-connect'),
                     'monthly'    => __('Mensal', 'pagbank-connect'),
                     'yearly'    => __('Anual', 'pagbank-connect'),
-                ),
+                ],
                 'desc_tip' => true,
                 'value' => get_post_meta($post->ID, '_frequency', true),
             ]);
-            woocommerce_wp_text_input( array('id' => '_frequency_cycle',
+            woocommerce_wp_text_input([
+                'id' => '_frequency_cycle',
                 'label' => __('Ciclo', 'pagbank-connect'),
                 'description' => __('Ex: Se Frequência fosse Diário e ciclo fosse 2, cobraria a cada 2 dias.', 'pagbank-connect'),
                 'desc_tip' => true,
@@ -239,16 +242,18 @@ class Recurring
                 'custom_attributes' => [
                     'min' => 1,
                     'step' => 1,
-                ),
+                ],
                 'value' => get_post_meta($post->ID, '_frequency_cycle', true),
             ]);
-            woocommerce_wp_text_input( array('id' => '_initial_fee',
+            woocommerce_wp_text_input([
+                'id' => '_initial_fee',
                 'label' => __('Taxa inicial', 'pagbank-connect'),
                 'description' => __('Use . como separador decimal.', 'pagbank-connect'),
                 'desc_tip' => true,
                 'value' => get_post_meta($post->ID, '_initial_fee', true),
-            ));
-            woocommerce_wp_text_input( array('id' => '_recurring_max_cycles',
+            ]);
+            woocommerce_wp_text_input([
+                'id' => '_recurring_max_cycles',
                 'label' => __('Não cobrar mais que X ciclos', 'pagbank-connect'),
                 'description' => __('Número máximo de ciclos de cobrança. Nesse caso, o cliente não poderá cancelar a assinatura antes de finalizar.', 'pagbank-connect'),
                 'desc_tip' => true,
@@ -257,29 +262,32 @@ class Recurring
                 'custom_attributes' => [
                     'min' => 1,
                     'step' => 1,
-                ),
+                ],
             ]);
             ?>
             </div>
             <div class="options_group">
-                <php
-                woocommerce_wp_text_input( array('id' => '_recurring_trial_length',
+                <?php
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_trial_length',
                     'label' => __('Período de testes (dias)', 'pagbank-connect'),
                     'description' => __('Definir um período para o cliente testar a assinatura. Valor em dias.', 'pagbank-connect'),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_trial_length', true),
-                ));
+                ]);
                 ?>
             </div>
             <div class="options_group">
-                <php
-                woocommerce_wp_text_input( array('id' => '_recurring_discount_amount',
+                <?php
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_discount_amount',
                     'label' => __('Desconto (R$)', 'pagbank-connect'),
                     'description' => __('Valor de desconto a ser aplicado nos pedidos inicial e recorrentes durante o número de ciclos determinado.', 'pagbank-connect'),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_discount_amount', true),
-                ));
-                woocommerce_wp_text_input( array('id' => '_recurring_discount_cycles',
+                ]);
+                woocommerce_wp_text_input([
+                    'id' => '_recurring_discount_cycles',
                     'label' => __('Número de ciclos de pagamento com desconto', 'pagbank-connect'),
                     'description' => __('Ex: Se Desconto fosse 5 e ciclo fosse 2, aplicaria o desconto no pedido inicial e na primeira cobrança.', 'pagbank-connect'),
                     'desc_tip' => true,
@@ -287,39 +295,42 @@ class Recurring
                     'custom_attributes' => [
                         'min' => 1,
                         'step' => 1,
-                    ),
+                    ],
                     'value' => get_post_meta($post->ID, '_recurring_discount_cycles', true),
                 ]);
                 ?>
                 </div>
-                <h2><php echo __('Restringir conteúdo', 'pagbank-connect');?><span class="woocommerce-help-tip" tabindex="0" aria-label="<php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>" data-tip="<php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>"></span></h2>
+                <h2><?php echo __('Restringir conteúdo', 'pagbank-connect');?><span class="woocommerce-help-tip" tabindex="0" aria-label="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>" data-tip="<?php echo __('Restrinja o acesso à páginas e categorias somente para assinantes deste produto', 'pagbank-connect')?>"></span></h2>
                 
                 <div class="options_group">
-                <php
-                woocommerce_wp_select( array('id' => '_recurring_restricted_pages',
-                    'name' => '_recurring_restricted_pages array()',
+                <?php
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_pages',
+                    'name' => '_recurring_restricted_pages[]',
                     'label' => __('Páginas restritas', 'pagbank-connect'),
                     'description' => __('Selecione as páginas que só podem ser acessadas por assinantes. Use a tecla Crtl ou Command (Mac) para selecionar mais de uma.', 'pagbank-connect'),
                     'options' => $this->getPagesOptions(),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_pages', true),
-                    'custom_attributes' => ['multiple' => 'multiple'),
+                    'custom_attributes' => ['multiple' => 'multiple'],
                     'class' => 'wc-enhanced-select short'
                 ]);
-                woocommerce_wp_select( array('id' => '_recurring_restricted_categories',
-                    'name' => '_recurring_restricted_categories array()',
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_categories',
+                    'name' => '_recurring_restricted_categories[]',
                     'label' => __('Categorias restritas', 'pagbank-connect'),
                     'description' => __('Selecione as categorias que só podem ser acessadas por assinantes.', 'pagbank-connect'),
                     'options' => $this->getCategoriesOptions(),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_categories', true),
-                    'custom_attributes' => ['multiple' => 'multiple'),
+                    'custom_attributes' => ['multiple' => 'multiple'],
                     'class' => 'wc-enhanced-select short'
                 ]);
-                woocommerce_wp_select( array('id' => '_recurring_restricted_unauthorized_page',
+                woocommerce_wp_select([
+                    'id' => '_recurring_restricted_unauthorized_page',
                     'label' => __('Redirecionar para', 'pagbank-connect'),
                     'description' => __('Selecione a página que o cliente verá quando não tiver acesso.', 'pagbank-connect'),
-                    'options' => [''=> __('Selecione', 'pagbank-connect')) + $this->getPagesOptions(),
+                    'options' => [''=> __('Selecione', 'pagbank-connect')] + $this->getPagesOptions(),
                     'desc_tip' => true,
                     'value' => get_post_meta($post->ID, '_recurring_restricted_unauthorized_page', true),
                 ]);
@@ -327,31 +338,31 @@ class Recurring
                 ?>
             </div>
             <div class="options_group">
-                <p><php echo esc_html(
+                <p><?php echo esc_html(
                         __('Alterações de valor, ciclos, taxas, periodos de testes, etc só afetarão futuras assinaturas.', 'pagbank-connect')
                     );?></p>
-                <p><php echo esc_html(
+                <p><?php echo esc_html(
                         __('Alterações na restrição de conteúdo terão efeito imediato.', 'pagbank-connect')
                     );?></p>
             </div>
         </div>
-        <php
+        <?php
     }
 
     private function getPagesOptions() {
         $pages = get_pages();
-        $options = array();
+        $options = [];
         foreach ($pages as $page) {
-            $options array($page->ID) = $page->post_title . ' (ID: ' . $page->ID . ')';
+            $options[$page->ID] = $page->post_title . ' (ID: ' . $page->ID . ')';
         }
         return $options;
     }
 
     private function getCategoriesOptions() {
         $categories = get_categories();
-        $options = array();
+        $options = [];
         foreach ($categories as $category) {
-            $options array($category->term_id) = $category->name . ' (ID: ' . $category->term_id . ')';
+            $options[$category->term_id] = $category->name . ' (ID: ' . $category->term_id . ')';
         }
         return $options;
     }
@@ -365,57 +376,59 @@ class Recurring
     public function saveRecurringTabContent($postId)
     {
         $oldRecurringEnabled = get_post_meta($postId, '_recurring_enabled', true);
-        $recurringEnabled = isset($_POST array('_recurring_enabled')) ? 'yes' : 'no';
-        update_post_meta($postId, '_recurring_enabled', $recurringEnabled);
+        $recurringEnabled = isset($_POST['_recurring_enabled']) ? 'yes' : 'no';
+        update_post_meta($postId, '_recurring_enabled',$recurringEnabled);
         if ($oldRecurringEnabled != $recurringEnabled) {
             delete_transient('recurring_restricted_products');
             $this->updateAllUsersRestrictedAccess();
         }
         
-        $frequency = isset($_POST array('_frequency')) sanitize_text_field($_POST array('_frequency')) : 'monthly'; //phpcs:ignore WordPress.Security.NonceVerification
-        update_post_meta($postId, '_frequency', $frequency);
+        $frequency = isset($_POST['_frequency']) ? sanitize_text_field($_POST['_frequency']) : 'monthly'; //phpcs:ignore WordPress.Security.NonceVerification
+        update_post_meta($postId, '_frequency',$frequency);
         
         if ($recurringEnabled == 'yes') {
-            $cycle = isset($_POST array('_frequency_cycle')) sanitize_text_field($_POST array('_frequency_cycle')) : 1;
+            $cycle = isset($_POST['_frequency_cycle']) ? sanitize_text_field($_POST['_frequency_cycle']) : 1;
             $cycle = max($cycle, 1);
             
-            $initial = sanitize_text_field(isset($_POST array('_initial_fee')) ? $_POST array('_initial_fee') : 0);
-            $initial = floatval(str_replace(',', '.', $initial));
-            $initial = floatval(number_format(max(0, $initial), 2, '.', ''));
-            update_post_meta($postId, '_frequency_cycle', $cycle);
-            update_post_meta($postId, '_initial_fee', $initial);
+            $initial_input = isset($_POST['_initial_fee']) ? $_POST['_initial_fee'] : 0;
+            $initial = sanitize_text_field($initial_input);
+            $initial = floatval(str_replace(',', '.',$initial));
+            $initial = floatval(number_format(max(0,$initial), 2, '.', ''));
+            update_post_meta($postId, '_frequency_cycle',$cycle);
+            update_post_meta($postId, '_initial_fee',$initial);
 
-            $trialLength = isset($_POST array('_recurring_trial_length')) sanitize_text_field($_POST array('_recurring_trial_length')) : 0;
-            update_post_meta($postId, '_recurring_trial_length', $trialLength);
+            $trialLength = isset($_POST['_recurring_trial_length']) ? sanitize_text_field($_POST['_recurring_trial_length']) : 0;
+            update_post_meta($postId, '_recurring_trial_length',$trialLength);
 
-            $discountAmount = sanitize_text_field(isset($_POST array('_recurring_discount_amount')) ? $_POST array('_recurring_discount_amount') : 0);
-            $discountAmount = floatval(str_replace(',', '.', $discountAmount));
-            $discountAmount = floatval(number_format(max(0, $discountAmount), 2, '.', ''));
-            update_post_meta($postId, '_recurring_discount_amount', $discountAmount);
+            $discount_input = isset($_POST['_recurring_discount_amount']) ? $_POST['_recurring_discount_amount'] : 0;
+            $discountAmount = sanitize_text_field($discount_input);
+            $discountAmount = floatval(str_replace(',', '.',$discountAmount));
+            $discountAmount = floatval(number_format(max(0,$discountAmount), 2, '.', ''));
+            update_post_meta($postId, '_recurring_discount_amount',$discountAmount);
 
-            $cycle = isset($_POST array('_recurring_discount_cycles')) sanitize_text_field($_POST array('_recurring_discount_cycles')) : 0;
-            update_post_meta($postId, '_recurring_discount_cycles', $cycle);
+            $cycle = isset($_POST['_recurring_discount_cycles']) ? sanitize_text_field($_POST['_recurring_discount_cycles']) : 0;
+            update_post_meta($postId, '_recurring_discount_cycles',$cycle);
 
-            $maxCycles = isset($_POST array('_recurring_max_cycles')) sanitize_text_field($_POST array('_recurring_max_cycles')) : 0;
-            update_post_meta($postId, '_recurring_max_cycles', $maxCycles);
+            $maxCycles = isset($_POST['_recurring_max_cycles']) ? sanitize_text_field($_POST['_recurring_max_cycles']) : 0;
+            update_post_meta($postId, '_recurring_max_cycles',$maxCycles);
 
             //region Restricted Access (pages and categories - coming soon)
             // if restricted pages info changed, clear transient recurring_restricted_products
             $oldRestrictedPages = get_post_meta($postId, '_recurring_restricted_pages', true);
             $oldRestrictedCategories = get_post_meta($postId, '_recurring_restricted_categories', true);
 
-            $restrictedPages = isset($_POST array('_recurring_restricted_pages')) array_map('sanitize_text_field', $_POST array('_recurring_restricted_pages')) : array();
-            update_post_meta($postId, '_recurring_restricted_pages', $restrictedPages);
+            $restrictedPages = isset($_POST['_recurring_restricted_pages']) ? array_map('sanitize_text_field',$_POST['_recurring_restricted_pages']) : [];
+            update_post_meta($postId, '_recurring_restricted_pages',$restrictedPages);
 
-            $restrictedCategories = isset($_POST array('_recurring_restricted_categories')) array_map('sanitize_text_field', $_POST array('_recurring_restricted_categories')) : array();
-            update_post_meta($postId, '_recurring_restricted_categories', $restrictedCategories);
+            $restrictedCategories = isset($_POST['_recurring_restricted_categories']) ? array_map('sanitize_text_field',$_POST['_recurring_restricted_categories']) : [];
+            update_post_meta($postId, '_recurring_restricted_categories',$restrictedCategories);
 
             if ($oldRestrictedPages != $restrictedPages || $oldRestrictedCategories != $restrictedCategories) {
                 delete_transient('recurring_restricted_products');
                 $this->updateAllUsersRestrictedAccess();
             }
-            $unauthoridedPageId = isset($_POST array('_recurring_restricted_unauthorized_page')) intval(sanitize_text_field($_POST array('_recurring_restricted_unauthorized_page'))) : get_option('page_on_front');
-            update_post_meta($postId, '_recurring_restricted_unauthorized_page', $unauthoridedPageId);
+            $unauthoridedPageId = isset($_POST['_recurring_restricted_unauthorized_page']) ? intval(sanitize_text_field($_POST['_recurring_restricted_unauthorized_page'])) : get_option('page_on_front');
+            update_post_meta($postId, '_recurring_restricted_unauthorized_page',$unauthoridedPageId);
             
             
             //endregion
@@ -424,7 +437,7 @@ class Recurring
         update_post_meta($postId, '_recurring_restriction_active', (!empty($restrictedCategories) || !empty($restrictedPages)));
     }
     
-    public function avoidOtherThanRecurringInCart($canBeAdded, $productId)
+    public function avoidOtherThanRecurringInCart($canBeAdded,$productId)
     {
         $cart = WC()->cart;
         $cartItems = $cart->get_cart();
@@ -457,12 +470,11 @@ class Recurring
     /**
      * Disables guest checkout if the cart contains recurring products regardless of the settings
      *
-     * @param $mustBeRegistered
+     * @param bool $mustBeRegistered
      *
      * @return bool
      */
-    public function disableGuestCheckoutForRecurringOrder($mustBeRegistered)
-    {
+    public function disableGuestCheckoutForRecurringOrder($mustBeRegistered) {
         $recHelper = new RecurringHelper();
         if ($recHelper->isCartRecurring()) {
             $mustBeRegistered = true;
@@ -478,7 +490,7 @@ class Recurring
      * @param $order
      * @return mixed|true
      */
-    public function requestPaymentForRecurringTrialOrder($needsPayment, $order)
+    public function requestPaymentForRecurringTrialOrder($needsPayment,$order)
     {
         $recHelper = new RecurringHelper();
         if ($recHelper->isCartRecurring() && $order->get_total() == 0) {
@@ -494,8 +506,7 @@ class Recurring
      * @return bool
      * @throws Exception
      */
-    public function processInitialResponse($order)
-    {
+    public function processInitialResponse($order) {
         global $wpdb;
         
         $recHelper = new RecurringHelper();
@@ -507,11 +518,11 @@ class Recurring
         $discountCycles = (int)$order->get_meta('_recurring_discount_cycles');
         $maxCycles = (int)$order->get_meta('_recurring_max_cycles');
 
-        $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle);
+        $nextBill = $recHelper->calculateNextBillingDate($frequency,$cycle);
 
         $trialLength = (int) $order->get_meta('_pagbank_recurring_trial_length');
         if ($trialLength) {
-            $nextBill = $recHelper->calculateNextBillingDate($frequency, $cycle, $trialLength);
+            $nextBill = $recHelper->calculateNextBillingDate($frequency,$cycle,$trialLength);
         }
 
         $recurringAmount = $order->get_total() - $initialFee;
@@ -522,7 +533,8 @@ class Recurring
         $paymentInfo = $this->getPaymentInfo($order);
         $statusFromOrder = $recHelper->getStatusFromOrder($order);
 
-        $success = $this->insertOrUpdateSubscription( array('initial_order_id'          => $order->get_id(),
+        $success = $this->insertOrUpdateSubscription([
+            'initial_order_id'          => $order->get_id(),
             'recurring_amount'          => $recurringAmount,
             'recurring_initial_fee'     => $initialFee,
             'recurring_trial_period'    => $trialLength,
@@ -536,40 +548,38 @@ class Recurring
             'updated_at'                => gmdate('Y-m-d H:i:s'),
             'next_bill_at'              => $nextBill->format('Y-m-d H:i:s'),
             'payment_info'              => json_encode($paymentInfo),
-        ));
+        ]);
         
         if ($success !== false && $statusFromOrder == 'ACTIVE') {
             $subOrderId = $order->get_id();
             $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = %d";
-            $subscription = $wpdb->get_row($wpdb->prepare($sql, $subOrderId));
+            $subscription = $wpdb->get_row($wpdb->prepare($sql,$subOrderId));
 
             //send welcome e-mail
-            do_action('pagbank_recurring_subscription_created_notification', $subscription, $order);
+            do_action('pagbank_recurring_subscription_created_notification',$subscription,$order);
         }
         
         return $success !== false;
     }
 
-    private function insertOrUpdateSubscription($data)
-    {
+    private function insertOrUpdateSubscription(array $data) {
         global $wpdb;
-        $format = array('%d', '%f', '%f', '%d', '%f', '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s');
+        $format = ['%d', '%f', '%f', '%d', '%f', '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s'];
         $table = $wpdb->prefix . 'pagbank_recurring';
 
         $existingSubscription = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE initial_order_id = %d",
-            $data array('initial_order_id')
+            "SELECT * FROM {$table} WHERE initial_order_id = %d",$data['initial_order_id']
         ));
 
         if ($existingSubscription && $existingSubscription->status === 'PENDING') {
-            $update = $wpdb->update($table, $data, array('id' => $existingSubscription->id)) !== false;
-            if ($update && isset($data array('status')) && strcmp($data array('status'), $existingSubscription->status) != 0) {
-                do_action('pagbank_recurring_subscription_status_changed', $existingSubscription, $data array('status'));
+            $update = $wpdb->update($table,$data, ['id' => $existingSubscription->id]) !== false;
+            if ($update && isset($data['status']) && strcmp($data['status'],$existingSubscription->status) != 0) {
+                do_action('pagbank_recurring_subscription_status_changed',$existingSubscription,$data['status']);
             }
             return $update; 
         }
 
-        return $wpdb->insert($table, $data, $format) !== false;
+        return $wpdb->insert($table,$data,$format) !== false;
     }
 
     /**
@@ -590,7 +600,7 @@ class Recurring
             ? "status IN ('ACTIVE', 'SUSPENDED') AND next_bill_at <= '%s'"
             : "id = 0%d";
         $nowOrId = $subscription == null ? $now : $subscription->id;
-        $sql = $wpdb->prepare($sql, $nowOrId);
+        $sql = $wpdb->prepare($sql,$nowOrId);
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
             $recurringOrder = new Connect\Recurring\RecurringOrder($subscription);
@@ -610,8 +620,8 @@ class Recurring
          WHERE status = 'PENDING_CANCEL' AND next_bill_at <= canceled_at";
         $subscriptions = $wpdb->get_results($sql);
         foreach ($subscriptions as $subscription) {
-            $this->updateSubscription($subscription, array('status' => 'CANCELED'));
-            do_action('pagbank_recurring_cancellation_processed', $subscription);
+            $this->updateSubscription($subscription, ['status' => 'CANCELED']);
+            do_action('pagbank_recurring_cancellation_processed',$subscription);
         }
     }
     
@@ -625,18 +635,19 @@ class Recurring
         $now = gmdate('Y-m-d H:i:s');
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring 
          WHERE status = 'PAUSED' AND next_bill_at <= '%s'";
-        $subscriptions = $wpdb->get_results($wpdb->prepare($sql, $now));
+        $subscriptions = $wpdb->get_results($wpdb->prepare($sql,$now));
         foreach ($subscriptions as $subscription) {
             //remove access to restricted content if any
             $this->updateUserRestrictedAccessForSubscription($subscription);
-            do_action('pagbank_recurring_expired_paused_processed', $subscription);
+            do_action('pagbank_recurring_expired_paused_processed',$subscription);
         }
     }
 
     public function subscriptionUpdatePayment($subscription)
     {
-        wc_get_template('recurring/my-account/form-change-credit-card.php', array('subscription' => $subscription,
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
+        wc_get_template('recurring/my-account/form-change-credit-card.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
     }
     
     public function addProductMetaToOrder($orderId)
@@ -650,12 +661,12 @@ class Recurring
         foreach ($order->get_items() as $item){
             $originalItem = wc_get_product($item->get_product_id());
             if ($originalItem->get_meta('_recurring_enabled') == 'yes'){
-                $order->update_meta_data('_recurring_frequency', $originalItem->get_meta('_frequency'));
-                $order->update_meta_data('_recurring_cycle', $originalItem->get_meta('_frequency_cycle'));
-                $order->update_meta_data('_recurring_initial_fee', $originalItem->get_meta('_initial_fee'));
-                $order->update_meta_data('_recurring_discount_amount', $originalItem->get_meta('_recurring_discount_amount'));
-                $order->update_meta_data('_recurring_discount_cycles', $originalItem->get_meta('_recurring_discount_cycles'));
-                $order->update_meta_data('_recurring_max_cycles', $originalItem->get_meta('_recurring_max_cycles'));
+                $order->update_meta_data('_recurring_frequency',$originalItem->get_meta('_frequency'));
+                $order->update_meta_data('_recurring_cycle',$originalItem->get_meta('_frequency_cycle'));
+                $order->update_meta_data('_recurring_initial_fee',$originalItem->get_meta('_initial_fee'));
+                $order->update_meta_data('_recurring_discount_amount',$originalItem->get_meta('_recurring_discount_amount'));
+                $order->update_meta_data('_recurring_discount_cycles',$originalItem->get_meta('_recurring_discount_cycles'));
+                $order->update_meta_data('_recurring_max_cycles',$originalItem->get_meta('_recurring_max_cycles'));
                 $order->save();
             }
         }
@@ -669,44 +680,46 @@ class Recurring
      *
      * @return array The payment info to be stored
      */
-    public function getPaymentInfo(WC_Order $order)
-    {
+    public function getPaymentInfo(WC_Order $order) {
         $paymentMethod = $order->get_meta('pagbank_payment_method');
-        $paymentInfo = array('method' => $paymentMethod,
-        );
+        $paymentInfo = [
+            'method' => $paymentMethod,
+        ];
         
         if ($paymentMethod == 'credit_card') {
             $initialChargeInfo = $order->get_meta('pagbank_order_charges');
-            if ( ! isset($initialChargeInfo array(0))){
+            if ( ! isset($initialChargeInfo[0])){
                 Functions::log('Não foi possível carregar as informações do pagamento inicial para gerar os '
-                    .'detalhes da recorrência.', 'critical', array('order id' => $order->get_id()) );
-                return array();
+                    .'detalhes da recorrência.', 'critical', ['order id' => $order->get_id()] );
+                return [];
             }
-            $chargeInfo = $initialChargeInfo array(0) array('payment_method');
-            $paymentInfo array('card') = array('holder_name' => $chargeInfo['card') array('holder') array('name'),
-                'number' => $chargeInfo array('card') array('first_digits') . '******' . $chargeInfo array('card') array('last_digits'),
-                'expiration_date' => $chargeInfo array('card') array('exp_month') . '/' .
-                    $chargeInfo array('card') array('exp_year'),
-                'brand' => $chargeInfo array('card') array('brand'),
-                'id' => $chargeInfo array('card') array('id') ?null,
+            $chargeInfo = $initialChargeInfo[0]['payment_method'];
+            $paymentInfo['card'] = [
+                'holder_name' => $chargeInfo['card']['holder']['name'],
+                'number' => $chargeInfo['card']['first_digits'] . '******' . $chargeInfo['card']['last_digits'],
+                'expiration_date' => $chargeInfo['card']['exp_month'] . '/' .
+                    $chargeInfo['card']['exp_year'],
+                'brand' => $chargeInfo['card']['brand'],
+                'id' => isset($chargeInfo['card']['id']) ? $chargeInfo['card']['id'] : null,
             ];
         }
 
         if ($paymentMethod == 'credit_card_token') {
-            $paymentInfo array('method') = 'credit_card';
+            $paymentInfo['method'] = 'credit_card';
             $cardInfo = $order->get_meta('pagbank_order_recurring_card');
-            if ( ! isset($cardInfo array('id'))){
+            if ( ! isset($cardInfo['id'])){
                 Functions::log('Não foi possível carregar as informações do pagamento inicial para gerar os '
-                    .'detalhes da recorrência.', 'critical', array('order id' => $order->get_id()) );
-                return array();
+                    .'detalhes da recorrência.', 'critical', ['order id' => $order->get_id()] );
+                return [];
             }
 
-            $paymentInfo array('card') = array('holder_name' => $cardInfo['holder') array('name'),
-                'number' => $cardInfo array('first_digits') . '******' . $cardInfo array('last_digits'),
-                'expiration_date' => $cardInfo array('exp_month') . '/' .
-                    $cardInfo array('exp_year'),
-                'brand' => $cardInfo array('brand'),
-                'id' => $cardInfo array('id')
+            $paymentInfo['card'] = [
+                'holder_name' => $cardInfo['holder']['name'],
+                'number' => $cardInfo['first_digits'] . '******' . $cardInfo['last_digits'],
+                'expiration_date' => $cardInfo['exp_month'] . '/' .
+                    $cardInfo['exp_year'],
+                'brand' => $cardInfo['brand'],
+                'id' => $cardInfo['id']
             ];
         }
         
@@ -715,16 +728,15 @@ class Recurring
 
     /**
      * Adds transactional e-mail templates for recurring orders
-     * @param $emails
+     * @param array $emails
      *
      * @return array
      */
-    public static function addEmails($emails)
-    {
-        $emails array('RM_PagBank_Canceled_Subscription') = include __DIR__ . '/Recurring/Emails/CanceledSubscription.php';
-        $emails array('RM_PagBank_New_Subscription') = include __DIR__ . '/Recurring/Emails/NewSubscription.php';
-        $emails array('RM_PagBank_Paused_Subscription') = include __DIR__ . '/Recurring/Emails/PausedSubscription.php';
-        $emails array('RM_PagBank_Suspended_Subscription') = include __DIR__ . '/Recurring/Emails/SuspendedSubscription.php';
+    public static function addEmails(array $emails) {
+        $emails['RM_PagBank_Canceled_Subscription'] = include __DIR__ . '/Recurring/Emails/CanceledSubscription.php';
+        $emails['RM_PagBank_New_Subscription'] = include __DIR__ . '/Recurring/Emails/NewSubscription.php';
+        $emails['RM_PagBank_Paused_Subscription'] = include __DIR__ . '/Recurring/Emails/PausedSubscription.php';
+        $emails['RM_PagBank_Suspended_Subscription'] = include __DIR__ . '/Recurring/Emails/SuspendedSubscription.php';
         
         return $emails;
     }
@@ -733,7 +745,7 @@ class Recurring
     
     public function addSubscriptionManagementMenuItem($items)
     {
-        $items array('rm-pagbank-subscriptions') = __('Assinaturas', 'pagbank-connect');
+        $items['rm-pagbank-subscriptions'] = __('Assinaturas', 'pagbank-connect');
         return $items;
     }
     
@@ -750,9 +762,10 @@ class Recurring
         $recDash = new Connect\Recurring\RecurringDashboard();
         $mySubs = $recDash->getMySubscriptions();
         //get 
-        wc_get_template('recurring/my-account/dashboard.php', array('subscriptions' => $mySubs,
+        wc_get_template('recurring/my-account/dashboard.php', [
+                'subscriptions' => $mySubs,
                 'dashboard'  => $recDash
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
     
     public function addManageSubscriptionViewContent($subscriptionId)
@@ -760,19 +773,20 @@ class Recurring
         $subscriptionId = intval($subscriptionId);
         $subscription = $this->getSubscription($subscriptionId);
         if (is_null($subscription)) {
-            wc_get_template('recurring/my-account/subscription-not-found.php', array(), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
             return;
         }
 
-        if (isset($_GET array('action'))) {
-            do_action('rm_pagbank_manage_subscription_action', wp_slash($_GET array('action')));
+        if (isset($_GET['action'])) {
+            do_action('rm_pagbank_manage_subscription_action', wp_slash($_GET['action']));
             $subscription = $this->getSubscription($subscriptionId);
         }
         
         $order = wc_get_order($subscription->initial_order_id);
         if ($order->get_customer_id('edit') !== get_current_user_id()) {
             wc_get_template(
-                'recurring/my-account/subscription-not-found.php', array(),
+                'recurring/my-account/subscription-not-found.php',
+                [],
                 Connect::DOMAIN,
                 WC_PAGSEGURO_CONNECT_TEMPLATES_DIR
             );
@@ -781,13 +795,14 @@ class Recurring
         
         $dash = new Connect\Recurring\RecurringDashboard();
         
-        wc_get_template('recurring/my-account/view-subscription.php', array('subscription' => $subscription,
+        wc_get_template('recurring/my-account/view-subscription.php', [
+                'subscription' => $subscription,
                 'initialOrder' => $order,
                 'dashboard' => $dash
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }    
 
-    public function addSubscriptionManagementTitle($title, $postid)
+    public function addSubscriptionManagementTitle($title,$postid)
     {
         if ($title == 'My account'){
             return 'Assinaturas';
@@ -801,19 +816,20 @@ class Recurring
         $subscriptionId = intval($subscriptionId);
         $subscription = $this->getSubscription($subscriptionId);
         if (is_null($subscription)) {
-            wc_get_template('recurring/my-account/subscription-not-found.php', array(), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+            wc_get_template('recurring/my-account/subscription-not-found.php', [], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
             return;
         }
 
-        if (isset($_GET array('action'))) {
-            do_action('rm_pagbank_manage_subscription_action', wp_slash($_GET array('action')));
+        if (isset($_GET['action'])) {
+            do_action('rm_pagbank_manage_subscription_action', wp_slash($_GET['action']));
             $subscription = $this->getSubscription($subscriptionId);
         }
 
         $order = wc_get_order($subscription->initial_order_id);
         if ($order->get_customer_id('edit') !== get_current_user_id()) {
             wc_get_template(
-                'recurring/my-account/subscription-not-found.php', array(),
+                'recurring/my-account/subscription-not-found.php',
+                [],
                 Connect::DOMAIN,
                 WC_PAGSEGURO_CONNECT_TEMPLATES_DIR
             );
@@ -822,24 +838,25 @@ class Recurring
 
         $dash = new Connect\Recurring\RecurringDashboard();
 
-        wc_get_template('recurring/my-account/update-subscription.php', array('subscription' => $subscription,
+        wc_get_template('recurring/my-account/update-subscription.php', [
+            'subscription' => $subscription,
             'initialOrder' => $order,
             'dashboard' => $dash
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
 
     /**
      * Replace a page title with the endpoint title.
      *
-     * @param  $title Post title.
+     * @param  string $title Post title.
      * @return string
      */
-    public function recurring_endpoint_title( $title ) {
+    public function recurring_endpoint_title($title ) {
         global $wp_query;
 
-        if ( ! is_null( $wp_query ) && ! is_admin() && is_main_query() && in_the_loop() && is_page() && $this->isRecurringEndpoint() ) {
-            $action         = isset( $_GET array('action') ) sanitize_text_field( wp_unslash( $_GET array('action') ) ) : '';
-            $endpoint_title = $this->getEndpointTitle( $action );
+        if ( ! is_null($wp_query ) && ! is_admin() && is_main_query() && in_the_loop() && is_page() && $this->isRecurringEndpoint() ) {
+            $action         = isset($_GET['action'] ) ? sanitize_text_field( wp_unslash($_GET['action'] ) ) : '';
+            $endpoint_title = $this->getEndpointTitle($action );
             $title          = $endpoint_title ? $endpoint_title : $title;
 
             remove_filter( 'the_title', 'recurring_endpoint_title' );
@@ -851,19 +868,20 @@ class Recurring
     public static function isRecurringEndpoint()
     {
         global $wp;
-        $pbEndpoints = array('my-account/rm-pagbank-subscriptions',
+        $pbEndpoints = [
+            'my-account/rm-pagbank-subscriptions',
             'my-account/rm-pagbank-subscriptions-view',
             'my-account/rm-pagbank-subscriptions-edit',
             'my-account/rm-pagbank-subscriptions-update'
-        );
+        ];
         foreach ($pbEndpoints as $endpoint) {
-            if (stripos($wp->request, $endpoint) !== false)
+            if (stripos($wp->request,$endpoint) !== false)
                 return true;
         }
         return false;
     }
     
-    public function getEndpointTitle(  $action )
+    public function getEndpointTitle($action )
     {
         global $wp;
         
@@ -871,12 +889,12 @@ class Recurring
         $endpoint = $wp->request;
         switch ($endpoint) {
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions-view') !== false:
-                $id = esc_html($wp->query_vars array('rm-pagbank-subscriptions-view'));
-                $title = sprintf(__('Assinatura #%d', 'pagbank-connect'), $id);
+                $id = esc_html($wp->query_vars['rm-pagbank-subscriptions-view']);
+                $title = sprintf(__('Assinatura #%d', 'pagbank-connect'),$id);
                 break;
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions-update') !== false:
-                $id = esc_html($wp->query_vars array('rm-pagbank-subscriptions-update'));
-                $title = sprintf(__('Atualizar Assinatura #%d', 'pagbank-connect'), $id);
+                $id = esc_html($wp->query_vars['rm-pagbank-subscriptions-update']);
+                $title = sprintf(__('Atualizar Assinatura #%d', 'pagbank-connect'),$id);
                 break;
             case stripos($endpoint, 'my-account/rm-pagbank-subscriptions') !== false:
                 $title = __('Minhas Assinaturas', 'pagbank-connect');
@@ -886,125 +904,130 @@ class Recurring
         return $title;
     }
     
-    public function addManageSubscriptionViewEndpoint($actions, $order)
+    public function addManageSubscriptionViewEndpoint($actions,$order)
     {
-        $actions array('view-subscription') = array('url' => wc_get_endpoint_url('rm-pagbank-subscriptions', $order->get_id()),
+        $actions['view-subscription'] = [
+                'url' => wc_get_endpoint_url('rm-pagbank-subscriptions',$order->get_id()),
                 'name' => __('Ver assinatura', 'pagbank-connect'),
-        );
+        ];
         return $actions;
     }
 
     /**
      * Returns the subscription with the given id
-     * @param $id
+     * @param int $id
      *
      * @return stdClass|null
      */
-    public function getSubscription($id): ?\stdClass
-    {
+    public function getSubscription($id) {
         global $wpdb;
-        $query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d", $id );
-        return $wpdb->get_row( $query );
+        $query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE id = %d",$id );
+        return $wpdb->get_row($query );
     }
     
     public function subscriptionDetailsTable($subscription)
     {
-        wc_get_template('recurring/subscription-details.php', array('subscription' => $subscription,
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
+        wc_get_template('recurring/subscription-details.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);;
     }
     
     public function getPaymentInfoRows($subscription)
     {
-        wc_get_template('recurring/my-account/subscription-payment-info-rows.php', array('subscription' => $subscription,
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+        wc_get_template('recurring/my-account/subscription-payment-info-rows.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
     
     public function getSubscriptionActionButtons($subscription)
     {
-        wc_get_template('recurring/my-account/subscription-action-buttons.php', array('subscription' => $subscription,
-        ), Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
+        wc_get_template('recurring/my-account/subscription-action-buttons.php', [
+            'subscription' => $subscription,
+        ], Connect::DOMAIN, WC_PAGSEGURO_CONNECT_TEMPLATES_DIR);
     }
     
     public function getSubscriptionOrderList($subscription)
     {
         global $wpdb;
-        $orders = wc_get_orders( array('parent' => $subscription->initial_order_id,
-        ));
+        $orders = wc_get_orders([
+                'parent' => $subscription->initial_order_id,
+        ]);
         $customer = new stdClass();
         $customer->orders = $orders;
         $customer->max_num_pages = 0;
         
-        wc_get_template('templates/myaccount/orders.php', array('has_orders' => count($orders) > 0,
+        wc_get_template('templates/myaccount/orders.php', [
+            'has_orders' => count($orders) > 0,
             'customer_orders' => $customer,
             'wp_button_class' => wc_wp_theme_get_element_class_name( 'button' ) ? ' ' . wc_wp_theme_get_element_class_name( 'button' ) : '',
-        ), 'woocommerce', plugin_dir_path( WC_PLUGIN_FILE ) );
+        ], 'woocommerce', plugin_dir_path( WC_PLUGIN_FILE ) );
     }
     
-    public function filterAllowedActions($actions, $subscription)
+    public function filterAllowedActions($actions,$subscription)
     {
         if ($subscription->recurring_max_cycles > 0 && !is_admin()) {
-            unset($actions array('cancel'));
-            unset($actions array('uncancel'));
-            unset($actions array('pause'));
-            unset($actions array('unpause'));
-            unset($actions array('activate'));
-            unset($actions array('edit'));
+            unset($actions['cancel']);
+            unset($actions['uncancel']);
+            unset($actions['pause']);
+            unset($actions['unpause']);
+            unset($actions['activate']);
+            unset($actions['edit']);
 
             return $actions;
         }
 
         switch ($subscription->status){
             case 'PAUSED':
-                unset($actions array('pause'));
-                unset($actions array('activate'));
-                unset($actions array('uncancel'));
+                unset($actions['pause']);
+                unset($actions['activate']);
+                unset($actions['uncancel']);
                 break;
             case 'ACTIVE':
-                unset($actions array('unpause'));
-                unset($actions array('uncancel'));
-                unset($actions array('activate'));
+                unset($actions['unpause']);
+                unset($actions['uncancel']);
+                unset($actions['activate']);
                 break;
             case 'CANCELED':
-                unset($actions array('cancel'));
-                unset($actions array('uncancel'));
-                unset($actions array('pause'));
-                unset($actions array('unpause'));
-                unset($actions array('activate'));
-                unset($actions array('edit'));
-                unset($actions array('update'));
+                unset($actions['cancel']);
+                unset($actions['uncancel']);
+                unset($actions['pause']);
+                unset($actions['unpause']);
+                unset($actions['activate']);
+                unset($actions['edit']);
+                unset($actions['update']);
                 break;
             case 'SUSPENDED':
-                unset($actions array('uncancel'));
-                unset($actions array('pause'));
-                unset($actions array('unpause'));
+                unset($actions['uncancel']);
+                unset($actions['pause']);
+                unset($actions['unpause']);
                 break;
             case 'PENDING':
-                unset($actions array('uncancel'));
-                unset($actions array('unpause'));
+                unset($actions['uncancel']);
+                unset($actions['unpause']);
                 break;
             case 'PENDING_CANCEL':
-                unset($actions array('cancel'));
-                unset($actions array('pause'));
-                unset($actions array('unpause'));
-                unset($actions array('activate'));
-                unset($actions array('update'));
+                unset($actions['cancel']);
+                unset($actions['pause']);
+                unset($actions['unpause']);
+                unset($actions['activate']);
+                unset($actions['update']);
                 break;
         }
 
         if (!is_admin() && Params::getRecurringConfig('recurring_customer_can_cancel') === 'no') {
-            unset($actions array('cancel'));
+            unset($actions['cancel']);
         }
 
         if (!is_admin() && Params::getRecurringConfig('recurring_customer_can_pause') === 'no') {
-            unset($actions array('pause'));
+            unset($actions['pause']);
         }
         
         if (!is_admin()) {
-            unset($actions array('edit'));
+            unset($actions['edit']);
         }
 
         if (is_admin()) {
-            unset($actions array('update'));
+            unset($actions['update']);
         }
         
         return $actions;
@@ -1017,10 +1040,9 @@ class Recurring
      *
      * @return array
      */
-    public function filterRecurringOrderActions($actions, $order)
-    {
-        if ($order->get_meta('_pagbank_is_recurring') && isset($actions array('pay'))) {
-            unset($actions array('pay'));
+    public function filterRecurringOrderActions($actions,$order) {
+        if ($order->get_meta('_pagbank_is_recurring') && isset($actions['pay'])) {
+            unset($actions['pay']);
         }
         
         return $actions;
@@ -1032,12 +1054,11 @@ class Recurring
      * Entry point for the subscription management edit api endpoint
      * @return void
      */
-    public function addManageSubscriptionEditAction()
-    {
+    public function addManageSubscriptionEditAction() {
         $subscriptionId = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
-        $action = htmlspecialchars($_GET array('action'), ENT_QUOTES, 'UTF-8');
+        $action = htmlspecialchars($_GET['action'], ENT_QUOTES, 'UTF-8');
         
-        $referrer = wp_get_referer() wp_get_referer() : home_url();
+        $referrer = wp_get_referer() ? wp_get_referer() : home_url();
         if (empty($subscriptionId) || empty($action)) {
             \wc_add_notice(__('Ação inválida. Verifique se o identificador da assinatura é válido.', 'pagbank-connect'), 'error');
             wp_safe_redirect($referrer);
@@ -1055,7 +1076,7 @@ class Recurring
             if ( ! is_user_logged_in() ) {
                 wp_die(
                     esc_html( __('Você precisa estar logado para acessar esta página.', 'pagbank-connect') ),
-                    esc_html( __('Acesso Negado', 'pagbank-connect', array('response' => 403)) )
+                    esc_html( __('Acesso Negado', 'pagbank-connect', ['response' => 403]) )
                 );
             }
         }
@@ -1064,11 +1085,11 @@ class Recurring
         if ( ! current_user_can('manage_options') && $order->get_customer_id() != get_current_user_id()) {
             wp_die(
                 esc_html( __('Você não tem permissão para acessar esta página.', 'pagbank-connect') ),
-                esc_html( __('Acesso Negado', 'pagbank-connect', array('response' => 403)) )
+                esc_html( __('Acesso Negado', 'pagbank-connect', ['response' => 403]) )
             );
         }
 
-        if ( ! method_exists($this, $action . 'SubscriptionAction')) {
+        if ( ! method_exists($this,$action . 'SubscriptionAction')) {
             \wc_add_notice(__('Ação não implementada.', 'pagbank-connect'), 'error');
             wp_safe_redirect($referrer);
             return;
@@ -1084,9 +1105,8 @@ class Recurring
      *
      * @return void
      */
-    public function cancelSubscriptionAction(\stdClass $subscription)
-    {
-        $fromAdmin = isset($_GET array('fromAdmin')); //phpcs:ignore WordPress.Security.NonceVerification
+    public function cancelSubscriptionAction(\stdClass $subscription) {
+        $fromAdmin = isset($_GET['fromAdmin']); //phpcs:ignore WordPress.Security.NonceVerification
         if ($fromAdmin) {
             $this->cancelSubscription($subscription, __('Cancelado pelo administrador', 'pagbank-connect'), 'ADMIN');
             return;
@@ -1098,17 +1118,18 @@ class Recurring
      * Suspends the specified subscription
      *
      * @param stdClass $subscription The subscription to be canceled (row from pagbank_recurring table)
-     * @param $reason The reason for cancellation (will be visible to the customer)
-     * @param $retryAttempts
+     * @param string $reason The reason for cancellation (will be visible to the customer)
+     * @param int $retryAttempts
      * @return void
      * @noinspection PhpUnused
      */
-    public function suspendSubscription(\stdClass $subscription, $reason, $retryAttempts)
-    {
+    public function suspendSubscription(\stdClass $subscription,$reason,$retryAttempts) {
         global $wpdb;
         $recHelper = new RecurringHelper();
 
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', array('suspended_at' => gmdate('Y/m/d H:i:s'),
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            [
+                'suspended_at' => gmdate('Y/m/d H:i:s'),
                 'status' => 'SUSPENDED',
                 'suspended_reason' => $reason,
                 'retry_attempts_remaining' => $retryAttempts,
@@ -1116,15 +1137,18 @@ class Recurring
                     'D',
                     1
                 )->format('Y-m-d H:i:s')
-            ), array('id' => $subscription->id), array('%s', '%s', '%s', '%s'), array('%d')
+            ],
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s', '%s'],
+            ['%d']
         );
 
         if ($update) {
-            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'SUSPENDED');
+            do_action('pagbank_recurring_subscription_status_changed',$subscription, 'SUSPENDED');
         }
 
         if ($update > 0) {
-            do_action('pagbank_recurring_subscription_suspended_by_payment_failure', $subscription);
+            do_action('pagbank_recurring_subscription_suspended_by_payment_failure',$subscription);
             return;
         }
     }
@@ -1140,32 +1164,35 @@ class Recurring
         $cycle = $subscription->retry_attempts_remaining > 1 ? 1 : 3; // aumenta o intervalo na última tentativa de cobrança para 3 dias
         $retryAttemptsRemaining = --$subscription->retry_attempts_remaining;
 
-        $this->updateSubscription($subscription, array('status' => 'SUSPENDED',
+        $this->updateSubscription($subscription, [
+            'status' => 'SUSPENDED',
             'next_bill_at' => $recHelper->calculateNextBillingDate(
-                'D',
-                $cycle
+                'D',$cycle
             )->format('Y-m-d H:i:s'),
             'retry_attempts_remaining' => $retryAttemptsRemaining
-        ));
+        ]);
 
-        do_action('pagbank_recurring_subscription_suspended_by_payment_failure', $subscription);
+        do_action('pagbank_recurring_subscription_suspended_by_payment_failure',$subscription);
     }
     
     /**
      * Cancels the specified subscription
      * @param stdClass $subscription The subscription to be canceled (row from pagbank_recurring table)
-     * @param $reason     The reason for cancellation (will be visible to the customer)
-     * @param $reasonType The reason type (CUSTOMER, ADMIN or FAILURE)
+     * @param string   $reason     The reason for cancellation (will be visible to the customer)
+     * @param string   $reasonType The reason type (CUSTOMER, ADMIN or FAILURE)
      *
      * @return bool
      */
-    public function cancelSubscription(\stdClass $subscription, $reason, $reasonType)
-    {
+    public function cancelSubscription(\stdClass $subscription,$reason,$reasonType) {
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         $nextBill = wp_date('U', strtotime($subscription->next_bill_at));
         $newStatus = ($nextBill < time()) ? 'CANCELED' : 'PENDING_CANCEL';
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', array('canceled_at' => gmdate('Y/m/d H:i:s'), 'status' => $newStatus, 'canceled_reason' => $reason), array('id' => $subscription->id), array('%s', '%s', '%s'), array('%d')
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['canceled_at' => gmdate('Y/m/d H:i:s'), 'status' => $newStatus, 'canceled_reason' => $reason],
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s'],
+            ['%d']
         );
 
         if ($update)
@@ -1174,23 +1201,17 @@ class Recurring
             switch ($reasonType) {
                 case 'CUSTOMER':
                     do_action(
-                        'pagbank_recurring_subscription_canceled_by_customer_notification',
-                        $subscription,
-                        $initialOrder
+                        'pagbank_recurring_subscription_canceled_by_customer_notification',$subscription,$initialOrder
                     );
                     break;
                 case 'ADMIN':
                     do_action(
-                        'pagbank_recurring_subscription_canceled_by_admin_notification',
-                        $subscription,
-                        $initialOrder
+                        'pagbank_recurring_subscription_canceled_by_admin_notification',$subscription,$initialOrder
                     );
                     break;
                 case 'FAILURE':
                     do_action(
-                        'pagbank_recurring_subscription_canceled_by_failure_notification',
-                        $subscription,
-                        $initialOrder
+                        'pagbank_recurring_subscription_canceled_by_failure_notification',$subscription,$initialOrder
                     );
             }
             
@@ -1203,55 +1224,56 @@ class Recurring
         }
         
         if ($update > 0) {
-            if (strcmp($newStatus, $subscription->status) != 0) {
-                do_action('pagbank_recurring_subscription_status_changed', $subscription, $newStatus);
+            if (strcmp($newStatus,$subscription->status) != 0) {
+                do_action('pagbank_recurring_subscription_status_changed',$subscription,$newStatus);
             }
             
             if(defined('DOING_CRON') && DOING_CRON){
-                Functions::log('Assinatura cancelada com sucesso.', 'info', array('subscription id' => $subscription->id));
+                Functions::log('Assinatura cancelada com sucesso.', 'info', ['subscription id' => $subscription->id]);
                 return;
             }
-            $this->addNotice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'), $reasonType, 'success');
+            $this->addNotice(__('Assinatura cancelada com sucesso.', 'pagbank-connect'),$reasonType, 'success');
             return;            
         }
         
         if(defined('DOING_CRON') && DOING_CRON){
-            Functions::log('Não foi possível cancelar a assinatura.', 'error', array('subscription id' => $subscription->id));
+            Functions::log('Não foi possível cancelar a assinatura.', 'error', ['subscription id' => $subscription->id]);
             return;
         }
 
-        $this->addNotice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'), $reasonType, 'error');
+        $this->addNotice(__('Não foi possível cancelar a assinatura.', 'pagbank-connect'),$reasonType, 'error');
     }
 
     /** @noinspection PhpUnused */
-    public function uncancelSubscriptionAction(\stdClass $subscription)
-    {
+    public function uncancelSubscriptionAction(\stdClass $subscription) {
         global $wpdb;
-        $fromAdmin = isset($_GET array('fromAdmin')) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         $initialOrder = wc_get_order($subscription->initial_order_id);
         if ($subscription->status != 'PENDING_CANCEL') {
             \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
         
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', array('canceled_at' => null, 'status' => 'ACTIVE', 'canceled_reason' => null), array('id' => $subscription->id), array('%s', '%s'), array('%d')
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['canceled_at' => null, 'status' => 'ACTIVE', 'canceled_reason' => null],
+            ['id' => $subscription->id],
+            ['%s', '%s'],
+            ['%d']
         );
 
         if ($update)
         {
             do_action(
-                'pagbank_recurring_subscription_canceled_suspension_notification',
-                $subscription,
-                $initialOrder
+                'pagbank_recurring_subscription_canceled_suspension_notification',$subscription,$initialOrder
             );
-            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'ACTIVE');
+            do_action('pagbank_recurring_subscription_status_changed',$subscription, 'ACTIVE');
         }
         
         if ($update > 0) {
-            $this->addNotice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'), $fromAdmin, 'success');
+            $this->addNotice(__('Cancelamento suspenso com sucesso. Sua assinatura foi resumida.', 'pagbank-connect'),$fromAdmin, 'success');
             return;
         }
-        $this->addNotice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'), $fromAdmin, 'error');
+        $this->addNotice(__('Não foi possível suspender o cancelamento da assinatura.', 'pagbank-connect'),$fromAdmin, 'error');
     }
 
     /**
@@ -1262,41 +1284,43 @@ class Recurring
      * @return void
      * @noinspection PhpUnused
      */
-    public function pauseSubscriptionAction(\stdClass $subscription)
-    {
+    public function pauseSubscriptionAction(\stdClass $subscription) {
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
-        $fromAdmin = isset($_GET array('fromAdmin')) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         if ($subscription->status != 'ACTIVE' && $subscription->status != 'PENDING') {
             \wc_add_notice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), 'error');
             return;
         }
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', array('paused_at' => gmdate('Y/m/d H:i:s'), 'status' => 'PAUSED'), array('id' => $subscription->id), array('%s', '%s'), array('%d')
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['paused_at' => gmdate('Y/m/d H:i:s'), 'status' => 'PAUSED'],
+            ['id' => $subscription->id],
+            ['%s', '%s'],
+            ['%d']
         );
 
         if ($update)
         {
             $notifAction = current_user_can('manage_options') ? 'pagbank_recurring_subscription_paused_by_admin'
                 : 'pagbank_recurring_subscription_paused_by_customer';
-            do_action($notifAction, $subscription, $initialOrder);
-            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'PAUSED');
+            do_action($notifAction,$subscription,$initialOrder);
+            do_action('pagbank_recurring_subscription_status_changed',$subscription, 'PAUSED');
         }
         if ($update > 0){
-            $this->addNotice(__('Assinatura pausada com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
+            $this->addNotice(__('Assinatura pausada com sucesso.', 'pagbank-connect'),$fromAdmin, 'success');
             return;
         }
-        $this->addNotice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'), $fromAdmin, 'error');
+        $this->addNotice(__('Não foi possível pausar a assinatura.', 'pagbank-connect'),$fromAdmin, 'error');
     }
 
     /** @noinspection PhpUnused */
-    public function unpauseSubscriptionAction(\stdClass $subscription)
-    {
+    public function unpauseSubscriptionAction(\stdClass $subscription) {
         global $wpdb;
         $initialOrder = wc_get_order($subscription->initial_order_id);
         $status = 'ACTIVE';
-        $fromAdmin = isset($_GET array('fromAdmin')) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         if ($subscription->status != 'PAUSED') {
-            $this->addNotice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'), $fromAdmin, 'error');
+            $this->addNotice(__('O status atual da assinatura não permite esta alteração.', 'pagbank-connect'),$fromAdmin, 'error');
             return;
         }
         //if next_bill_at < current date, update the next_bill_at with current time
@@ -1307,27 +1331,29 @@ class Recurring
             $status = 'PENDING';
         }
 
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', array('paused_at' => null, 'status' => $status, 'next_bill_at' => $nextBill), array('id' => $subscription->id), array('%s', '%s', '%s'), array('%d')
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
+            ['paused_at' => null, 'status' => $status, 'next_bill_at' => $nextBill],
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s'],
+            ['%d']
         );
 
         if ($update > 0)
         {
-            $this->addNotice(__('Assinatura resumida com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
+            $this->addNotice(__('Assinatura resumida com sucesso.', 'pagbank-connect'),$fromAdmin, 'success');
             do_action(
-                'pagbank_recurring_subscription_unpaused_notification',
-                $subscription,
-                $initialOrder
+                'pagbank_recurring_subscription_unpaused_notification',$subscription,$initialOrder
             );
-            do_action('pagbank_recurring_subscription_status_changed', $subscription, $status);
+            do_action('pagbank_recurring_subscription_status_changed',$subscription,$status);
             
             if ($isDueNow) {
                 $this->processRecurringPayments($subscription);
-                $this->addNotice(__('Um pagamento devido foi processado.', 'pagbank-connect'), $fromAdmin, 'success');
+                $this->addNotice(__('Um pagamento devido foi processado.', 'pagbank-connect'),$fromAdmin, 'success');
             }
             return;
         }
 
-        $this->addNotice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'), $fromAdmin, 'error');
+        $this->addNotice(__('Não foi possível resumir a assinatura.', 'pagbank-connect'),$fromAdmin, 'error');
     }
 
     /**
@@ -1340,9 +1366,9 @@ class Recurring
     {
         global $wpdb;
         $subscription->status = 'COMPLETED';
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', array('status' => $subscription->status), array('id' => $subscription->id));
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring', ['status' => $subscription->status], ['id' => $subscription->id]);
         if ($update) {
-            do_action('pagbank_recurring_subscription_status_changed', $subscription, 'COMPLETED');
+            do_action('pagbank_recurring_subscription_status_changed',$subscription, 'COMPLETED');
         }
     }
 
@@ -1353,29 +1379,28 @@ class Recurring
      *
      * @return void
      * @noinspection PhpUnused*/
-    public function editSubscriptionAction(\stdClass $subscription)
-    {
-        $recurringAmount = sanitize_text_field($_POST array('recurring_amount'));
-        $recurringAmount = preg_replace('/ array(^0-9,.)/', '', $recurringAmount);
-        $recurringAmount = str_replace( array('.', ','), array('', '.'), $recurringAmount);
+    public function editSubscriptionAction(\stdClass $subscription) {
+        $recurringAmount = sanitize_text_field($_POST['recurring_amount']);
+        $recurringAmount = preg_replace('/[^0-9,.]/', '',$recurringAmount);
+        $recurringAmount = str_replace(['.', ','], ['', '.'],$recurringAmount);
         $recurringAmount = floatval(number_format((float) $recurringAmount, 2, '.', ''));
-        $update = $this->updateSubscription($subscription, array('recurring_amount' => $recurringAmount,
-        ));
+        $update = $this->updateSubscription($subscription, [
+            'recurring_amount' => $recurringAmount,
+        ]);
         $fromAdmin = 'ADMIN'; //phpcs:ignore WordPress.Security.NonceVerification
         if ($update){
-            $this->addNotice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
+            $this->addNotice(__('Assinatura atualizada com sucesso.', 'pagbank-connect'),$fromAdmin, 'success');
             return;
         }
-        $this->addNotice('Não foi possível atualizar a assinatura.', $fromAdmin, 'error');
+        $this->addNotice('Não foi possível atualizar a assinatura.',$fromAdmin, 'error');
     }
 
-    public function changePaymentMethodSubscriptionAction(\stdClass $subscription)
-    {
-        $fromAdmin = isset($_GET array('fromAdmin')) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
+    public function changePaymentMethodSubscriptionAction(\stdClass $subscription) {
+        $fromAdmin = isset($_GET['fromAdmin']) ? 'ADMIN' : ''; //phpcs:ignore WordPress.Security.NonceVerification
         $order = wc_get_order($subscription->initial_order_id);
         $order->add_meta_data(
             '_pagbank_card_encrypted',
-            htmlspecialchars($_POST array('rm-pagbank-card-encrypted'), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars($_POST['rm-pagbank-card-encrypted'], ENT_QUOTES, 'UTF-8'),
             true
         );
         $method = new CreditCardToken($order);
@@ -1383,28 +1408,29 @@ class Recurring
 
         $api = new Api();
         try {
-            $resp = $api->post('ws/tokens/cards', $params);
-            if (isset($resp array('error_messages'))) {
-                throw new \RM_PagBank\Connect\Exception($resp array('error_messages'), 40000);
+            $resp = $api->post('ws/tokens/cards',$params);
+            if (isset($resp['error_messages'])) {
+                throw new \RM_PagBank\Connect\Exception($resp['error_messages'], 40000);
             }
-            $method->process_response($order, $resp);
+            $method->process_response($order,$resp);
         } catch (Exception $e) {
-            $message = sprintf(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'), $e->getMessage());
-            $this->addNotice($message, $fromAdmin, 'error');
+            $message = sprintf(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente. %s', 'pagbank-connect'),$e->getMessage());
+            $this->addNotice($message,$fromAdmin, 'error');
             return;
         }
-        $order->update_meta_data('pagbank_payment_method', $method->code);
+        $order->update_meta_data('pagbank_payment_method',$method->code);
         $paymentInfo = $this->getPaymentInfo($order);
-        $update = $this->updateSubscription($subscription, array('payment_info' => json_encode($paymentInfo),
-        ));
+        $update = $this->updateSubscription($subscription, [
+            'payment_info' => json_encode($paymentInfo),
+        ]);
 
         if ($update){
-            $this->addNotice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'), $fromAdmin, 'success');
-            do_action('pagbank_recurring_subscription_payment_method_changed', $subscription->id);
+            $this->addNotice(__('Método de pagamento alterado com sucesso.', 'pagbank-connect'),$fromAdmin, 'success');
+            do_action('pagbank_recurring_subscription_payment_method_changed',$subscription->id);
             return;
         }
         
-        $this->addNotice(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'), $fromAdmin, 'error');
+        $this->addNotice(__('Não foi possível salvar o cartão. Por favor, confira os dados do cartão e tente novamente.', 'pagbank-connect'),$fromAdmin, 'error');
     }
 
     // endregion
@@ -1412,27 +1438,26 @@ class Recurring
     /**
      * Updates $subscription with the new $data
      * @param stdClass $subscription
-     * @param $data
+     * @param array    $data
      *
      * @return bool
      */
-    public function updateSubscription(\stdClass $subscription, $data)
-    {
+    public function updateSubscription(\stdClass $subscription, array $data) {
         global $wpdb;
-        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',
-            $data, array('id' => $subscription->id), array('%s', '%s', '%s'), array('%d')
+        $update = $wpdb->update($wpdb->prefix . 'pagbank_recurring',$data,
+            ['id' => $subscription->id],
+            ['%s', '%s', '%s'],
+            ['%d']
         );
         
         if ($update > 0)
         {
             do_action(
-                'pagbank_recurring_subscription_updated_notification',
-                $subscription,
-                $data
+                'pagbank_recurring_subscription_updated_notification',$subscription,$data
             );
             
-            if (isset($data array('status')) && strcasecmp($data array('status'), $subscription->status) != 0) {
-                do_action('pagbank_recurring_subscription_status_changed', $subscription, $data array('status'));
+            if (isset($data['status']) && strcasecmp($data['status'],$subscription->status) != 0) {
+                do_action('pagbank_recurring_subscription_status_changed',$subscription,$data['status']);
             }
             
             return true;
@@ -1455,7 +1480,7 @@ class Recurring
         }
         $order = intval($order);
         $sql = "SELECT * FROM {$wpdb->prefix}pagbank_recurring WHERE initial_order_id = %d";
-        return $wpdb->get_row($wpdb->prepare($sql, $order));
+        return $wpdb->get_row($wpdb->prepare($sql,$order));
     }
     
     public function getThankyouInstructions($order)
@@ -1463,7 +1488,7 @@ class Recurring
         require_once dirname(__FILE__) . '/../templates/recurring-instructions.php';
     }
 
-    public function enablePaymentInTrialOrder($needs_payment, $cart)
+    public function enablePaymentInTrialOrder($needs_payment,$cart)
     {
         // Check if the cart has a trial
         $recurringHelper = new RecurringHelper();
@@ -1490,14 +1515,14 @@ class Recurring
         }
         
         // Check if the current page or category is restricted
-        $restrictedProductIds = array();
+        $restrictedProductIds = [];
         $isPageRestricted = false;
         foreach ($restrictedProducts as $product) {
             $restrictedPages = get_post_meta($product, '_recurring_restricted_pages', true);
             $restrictedCategories = get_post_meta($product, '_recurring_restricted_categories', true);
 
-            if (in_array($pageId, $restrictedPages) || array_intersect($categoryId, $restrictedCategories)) {
-                $restrictedProductIds array() = $product;
+            if (in_array($pageId,$restrictedPages) || array_intersect($categoryId,$restrictedCategories)) {
+                $restrictedProductIds[] = $product;
                 $isPageRestricted = true;
             }
         }
@@ -1511,7 +1536,7 @@ class Recurring
         }
 
         $recHelper = new RecurringHelper();
-        if ($recHelper->canAccessRestrictedContent($userId, $pageId, $categoryId)) {
+        if ($recHelper->canAccessRestrictedContent($userId,$pageId,$categoryId)) {
             return;
         }
 
@@ -1537,20 +1562,19 @@ class Recurring
         $this->updateUserRestrictions($userId);
     }
     
-    public function getPostCategories()
-    {
+    public function getPostCategories() {
         $categories = get_the_category();
-        $category_ids = array();
+        $category_ids = [];
 
-        if ( ! empty( $categories ) ) {
-            foreach ( $categories as $category ) {
-                $category_ids array() = $category->term_id;
+        if ( ! empty($categories ) ) {
+            foreach ($categories as $category ) {
+                $category_ids[] = $category->term_id;
             }
         }
         return $category_ids;
     }
     
-    public function updateUserRestrictionsAfterOrderIsPaid($order, $orderData)
+    public function updateUserRestrictionsAfterOrderIsPaid($order,$orderData)
     {
         $isRecurring = $order->get_meta('_pagbank_is_recurring');
         $userId = $order->get_customer_id();
@@ -1573,23 +1597,24 @@ class Recurring
     
     /**
      * Get all restricted products from cache or database
-     * @return int array()|mixed|\WP_Post array()
+     * @return int[]|mixed|\WP_Post[]
      */
     protected function getProductsWithRestriction()
     {
         $restrictedProducts = get_transient('recurring_restricted_products');
         if ($restrictedProducts === false) {
-            $restrictedProducts = get_posts( array('post_type'   => 'product',
+            $restrictedProducts = get_posts([
+                'post_type'   => 'product',
                 'fields'      => 'ids',
                 'meta_query'  => [
                     [
                         'key'   => '_recurring_restriction_active',
                         'value' => 1,
-                    ),
+                    ],
                 ],
                 'numberposts' => -1,
             ]);
-            set_transient('recurring_restricted_products', $restrictedProducts, HOUR_IN_SECONDS);
+            set_transient('recurring_restricted_products',$restrictedProducts, HOUR_IN_SECONDS);
         }
 
         return $restrictedProducts;
@@ -1598,21 +1623,24 @@ class Recurring
     /**
      * @param int|null $userId
      *
-     * @return stdClass|WC_Order array()
+     * @return stdClass|WC_Order[]
      */
     protected function getUserRecurringOrders($userId = null)
     {
-        $userId = $userId ?get_current_user_id();
+        if ($userId === null) {
+            $userId = get_current_user_id();
+        }
         // Check if HPOS is enabled
         if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
-            return wc_get_orders( array('customer_id' => $userId,
+            return wc_get_orders([
+                'customer_id' => $userId,
                 'limit'       => -1,
                 'meta_query' => [
                     'relation' => 'AND',
                     [
                         'key' => '_pagbank_recurring_initial',
                         'value' => '1',
-                    )
+                    ]
                 ]
             ]);
         }
@@ -1623,27 +1651,30 @@ class Recurring
             'post_status'    => 'any',
             'orderby'        => 'date',
             'order'          => 'DESC',
-            'meta_query'     => array('relation' => 'AND',
+            'meta_query'     => [
+                'relation' => 'AND',
                 [
                     'key'     => '_pagbank_recurring_initial',
                     'value'   => '1',
                     'compare' => '='
-                ), array('key'     => '_customer_user',
+                ],
+                [
+                    'key'     => '_customer_user',
                     'value'   => $userId,
                     'compare' => '='
-                )
+                ]
             ],
         );
 
         $query = new \WP_Query($args);
 
-        $recurringOrders = array();
+        $recurringOrders = [];
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
                 $order_id = get_the_ID();
                 $order = wc_get_order($order_id);
-                $recurringOrders array() = $order;
+                $recurringOrders[] = $order;
             }
             wp_reset_postdata();
         }
@@ -1663,8 +1694,8 @@ class Recurring
             return;
         }
         
-        $allowedPages = array();
-        $allowedCategories = array();
+        $allowedPages = [];
+        $allowedCategories = [];
         $recHelper = new RecurringHelper();
         foreach ($userRecurringOrders as $order) {
             $subscription = $this->getSubscriptionFromOrder($order);
@@ -1676,7 +1707,8 @@ class Recurring
                 if (!$originalItem) {
                     Functions::log(
                         'Produto original não encontrado para assinatura. Impossível atualizar restrições de conteúdo.',
-                        'error', array('subscription' => $subscription->id, 'item' => $item->get_id() ?: '')
+                        'error',
+                        ['subscription' => $subscription->id, 'item' => $item->get_id() ?: '']
                     );
                     continue;
                 }
@@ -1684,16 +1716,22 @@ class Recurring
                     continue;
                 }
                     
-                $restrictedPages = get_post_meta($originalItem->get_id(), '_recurring_restricted_pages', true) ?? array();
-                $restrictedCategories = get_post_meta($originalItem->get_id(), '_recurring_restricted_categories', true) ?? array();
-                $allowedPages = array_merge($allowedPages, $restrictedPages);
-                $allowedCategories = array_merge($allowedCategories, $restrictedCategories);
+                $restrictedPages = get_post_meta($originalItem->get_id(), '_recurring_restricted_pages', true);
+                if (!is_array($restrictedPages)) {
+                    $restrictedPages = array();
+                }
+                $restrictedCategories = get_post_meta($originalItem->get_id(), '_recurring_restricted_categories', true);
+                if (!is_array($restrictedCategories)) {
+                    $restrictedCategories = array();
+                }
+                $allowedPages = array_merge($allowedPages,$restrictedPages);
+                $allowedCategories = array_merge($allowedCategories,$restrictedCategories);
             }
         }
         
         $allowedPages = array_unique($allowedPages);
         $allowedCategories = array_unique($allowedCategories);
-        $this->updateUserRestrictionsContent($userId, $allowedPages, $allowedCategories);
+        $this->updateUserRestrictionsContent($userId,$allowedPages,$allowedCategories);
         
     }
 
@@ -1704,21 +1742,21 @@ class Recurring
      *
      * @return void
      */
-    public function updateUserRestrictionsContent($userId, $restrictedPages, $restrictedCategories)
+    public function updateUserRestrictionsContent($userId,$restrictedPages,$restrictedCategories)
     {
         // create new entry on pagbank_content_restriction if user is not listed there
         global $wpdb;
         $table = $wpdb->prefix . 'pagbank_content_restriction';
-        $query = $wpdb->prepare("SELECT * FROM $table WHERE user_id = %d", $userId);
+        $query = $wpdb->prepare("SELECT * FROM $table WHERE user_id = %d",$userId);
         $user = $wpdb->get_row($query);
-        $restrictedPages = $restrictedPages implode(',', $restrictedPages) : null;
-        $restrictedCategories = $restrictedCategories implode(',', $restrictedCategories) : null;
+        $restrictedPages = $restrictedPages ? implode(',',$restrictedPages) : null;
+        $restrictedCategories = $restrictedCategories ? implode(',',$restrictedCategories) : null;
         if (is_null($user)) {
-            $wpdb->insert($table, array('user_id' => $userId, 'pages' => $restrictedPages, 'categories' => $restrictedCategories));
+            $wpdb->insert($table, ['user_id' => $userId, 'pages' => $restrictedPages, 'categories' => $restrictedCategories]);
             return;
         }
         //or update the existing entry
-        $wpdb->update($table, array('pages' => $restrictedPages, 'categories' => $restrictedCategories), array('user_id' => $userId));
+        $wpdb->update($table, ['pages' => $restrictedPages, 'categories' => $restrictedCategories], ['user_id' => $userId]);
     }
     
     public function updateAllUsersRestrictedAccess()
@@ -1731,20 +1769,21 @@ class Recurring
         if (empty($subscriptions)) {
             return;
         }
-        $usersNeedUpdate = array();
+        $usersNeedUpdate = [];
         foreach ($subscriptions as $subscription) {
             $order = wc_get_order($subscription->initial_order_id);
             if (!$order) {
                 Functions::log(
                     'Pedido inicial não encontrado para assinatura. Impossível atualizar restrição de conteúdo 
                     para esta assinatura.',
-                    'error', array('subscription' => $subscription->id)
+                    'error',
+                    ['subscription' => $subscription->id]
                 );
                 continue;
             }
             $userId = $order->get_customer_id();
-            if (!in_array($userId, $usersNeedUpdate)) {
-                $usersNeedUpdate array() = $userId;
+            if (!in_array($userId,$usersNeedUpdate)) {
+                $usersNeedUpdate[] = $userId;
             }
         }
         foreach ($usersNeedUpdate as $userId) {
@@ -1765,14 +1804,14 @@ class Recurring
         }
     }
 
-    public function addNotice($message, $reasonType, $class = null){
+    public function addNotice($message,$reasonType,$class = null){
 
-        if( $reasonType == 'ADMIN' ){
-            set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+        if($reasonType == 'ADMIN' ){
+            set_transient('pagbank_recurring_message',$message, 30); // 30 seconds
             return;
         }
 
-        \wc_add_notice($message, $class);
+        \wc_add_notice($message,$class);
     }
     /**
      * @return bool Returns true on success, false on failure.
@@ -1783,20 +1822,20 @@ class Recurring
         $orders = self::getSandboxInitialOrders();
 
         $exists = count($orders) > 0;     
-        $force_clear = isset($_GET array('remove_sandbox_recurring'));
+        $force_clear = isset($_GET['remove_sandbox_recurring']);
         // Force refresh if requested via URL
         if ($force_clear && $exists) {
             try {
                 $removed = self::removeSubscriptionSandbox($orders);
                 if ($removed) {
-                    $message = sprintf(__('Assinaturas sandbox removidas com sucesso: %d', 'pagbank-connect'), $removed);
-                    set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+                    $message = sprintf(__('Assinaturas sandbox removidas com sucesso: %d', 'pagbank-connect'),$removed);
+                    set_transient('pagbank_recurring_message',$message, 30); // 30 seconds
                 }
             } catch (\Throwable $th) {
                 $message = __('Nenhuma assinatura sandbox foi removida.', 'pagbank-connect');
-                set_transient('pagbank_recurring_message', $message, 30); // 30 seconds
+                set_transient('pagbank_recurring_message',$message, 30); // 30 seconds
             }
-            $redirect_url = remove_query_arg('remove_sandbox_recurring', $_SERVER array('REQUEST_URI'));
+            $redirect_url = remove_query_arg('remove_sandbox_recurring',$_SERVER['REQUEST_URI']);
             wp_safe_redirect($redirect_url);
             exit;
         }
@@ -1825,8 +1864,9 @@ class Recurring
             $order->save();
 
             // Delete subscription from pagbank_recurring table
-            $deleted = $wpdb->delete(
-            $wpdb->prefix . 'pagbank_recurring', array('initial_order_id' => $order->get_id()), array('%d')
+            $deleted = $wpdb->delete($wpdb->prefix . 'pagbank_recurring',
+            ['initial_order_id' => $order->get_id()],
+            ['%d']
             );
             if($deleted) $count++;
             
@@ -1836,23 +1876,28 @@ class Recurring
 
     /**
      * get orders that are marked as sandbox initial orders
-     * @return array|stdClass|WC_Order array()
+     * @return array|stdClass|WC_Order[]
      * @throws ContainerException
      */
     public static function getSandboxInitialOrders()
     {
         if (wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()) {
-            return wc_get_orders( array('limit'        => -1,
+            return wc_get_orders([
+            'limit'        => -1,
             'relation' => 'AND',
             'meta_query'   => [
                 [
                     'key'     => '_pagbank_recurring_initial',
                     'value'   => '1',
-                ), array('key'     => 'pagbank_is_sandbox',
+                ],
+                [
+                    'key'     => 'pagbank_is_sandbox',
                     'value'   => '1',
-                ), array('key'     => '_pagbank_recurring_removed',
+                ],
+                [
+                    'key'     => '_pagbank_recurring_removed',
                     'compare' => 'NOT EXISTS',
-                ),
+                ],
             ]
             ]);
         }
@@ -1865,29 +1910,34 @@ class Recurring
             'post_status'    => 'any',
             'orderby'        => 'date',
             'order'          => 'DESC',
-            'meta_query'     => array('relation' => 'AND',
+            'meta_query'     => [
+                'relation' => 'AND',
                 [
                     'key'     => '_pagbank_recurring_initial',
                     'value'   => '1',
                     'compare' => '='
-                ), array('key'     => 'pagbank_is_sandbox',
+                ],
+                [
+                    'key'     => 'pagbank_is_sandbox',
                     'value'   => '1',
                     'compare' => '=' // ou 'LIKE' se não funcionar
-                ), array('key'     => '_pagbank_recurring_removed',
+                ],
+                [
+                    'key'     => '_pagbank_recurring_removed',
                     'compare' => 'NOT EXISTS',
-                ),
+                ],
             ],
         );
 
         $query = new \WP_Query($args);
 
-        $recurringOrders = array();
+        $recurringOrders = [];
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
                 $order_id = get_the_ID();
                 $order = wc_get_order($order_id);
-                $recurringOrders array() = $order;
+                $recurringOrders[] = $order;
             }
             wp_reset_postdata();
         }
