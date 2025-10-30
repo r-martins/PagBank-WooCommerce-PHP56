@@ -568,7 +568,7 @@ jQuery(document).ready(function ($) {
         //if success, update the installments select with the response
         //if error, show error message
         let ccBin = typeof window.ps_cc_bin === 'undefined' || window.ps_cc_bin.replace(/[^0-9]/g, '').length < 6 ? '555566' : window.ps_cc_bin;
-        let total = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value').last().html();
+        let total = jQuery('.order-total bdi, .product-total bdi, .wc-block-components-totals-item__value, .woocommerce-Price-amount').last().html();
         //extract amount from total, removing html elements
         total = total.replace(/<[^>]*>?/gm, '');
         //remove ,
@@ -638,8 +638,9 @@ jQuery(document).ready(function ($) {
     });
 
 jQuery(document.body).on('checkout_error', function(event, error_data) {
+    const errorMessage = Array.isArray(error_data) ? error_data.join(' ') : String(error_data || '');
     let method = jQuery('input[name="payment_method"]:checked').val();
-    if (error_data.includes('Vamos tentar com validação 3DS') && method === 'rm-pagbank-cc') {
+    if (errorMessage.includes('Vamos tentar com validação 3DS') && method === 'rm-pagbank-cc') {
         const retry3dsInput = '<div class="rm-pagbank-retry-select">' +
             '<input type="checkbox" id="rm-pagbank-card-retry-with-3ds" class="rm-pagbank-checkbox" name="rm-pagbank-card-retry-with-3ds" value="1" checked>' +
             '<label for="rm-pagbank-card-retry-with-3ds">Tentar novamente com Validação 3DS</label>' +

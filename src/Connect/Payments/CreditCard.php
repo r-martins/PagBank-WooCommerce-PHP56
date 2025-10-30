@@ -57,16 +57,18 @@ class CreditCard extends Common
         $paymentMethod->setType('CREDIT_CARD');
         $paymentMethod->setCapture(true);
         $paymentMethod->setInstallments(intval($this->order->get_meta('pagbank_card_installments')));
-        $paymentMethod->setSoftDescriptor(Params::getCcConfig('cc_soft_descriptor'));
+        $paymentMethod->setSoftDescriptor(
+            Params::getCcConfig('cc_soft_descriptor', 'CompraViaPagBank')
+        );
         $card = $this->getCardDetails();
         $paymentMethod->setCard($card);
 
         //3ds
-        if ($this->order->get_meta('_pagbank_card_3ds_id')
-            && (wc_string_to_bool(Params::getCcConfig('cc_3ds')) || wc_string_to_bool(Params::getCcConfig('cc_3ds_retry')))) {
+        $threeDsId = $this->getThreeDsId();
+        if ($threeDsId && ($this->isThreeDsConfigEnabled('cc_3ds') || $this->isThreeDsConfigEnabled('cc_3ds_retry'))) {
             $authMethod = new AuthenticationMethod();
             $authMethod->setType('THREEDS');
-            $authMethod->setId($this->order->get_meta('_pagbank_card_3ds_id'));
+            $authMethod->setId($threeDsId);
             $paymentMethod->setAuthenticationMethod($authMethod);
         }
         
@@ -224,6 +226,61 @@ class CreditCard extends Common
         $card->setEncrypted($this->order->get_meta('_pagbank_card_encrypted'));
 
         return $card;
+    }
+
+    /**
+     * Normalizes the stored 3DS identifier.
+     *
+     * @return string
+     */
+    protected function getThreeDsId() {
+        $threeDsId = $this->order->get_meta('_pagbank_card_3ds_id');
+
+        if (is_scalar($threeDsId)) {
+            $threeDsId = trim((string)$threeDsId);
+        } else {
+            $threeDsId = '';
+        }
+
+        if ($threeDsId === '' || strtolower($threeDsId) === 'false') {
+            return '';
+        }
+
+        return $threeDsId;
+    }
+
+    /**
+     * Checks if a given 3DS configuration flag is enabled.
+     *
+     * @param string $configKey
+     *
+     * @return bool
+     */
+    protected function isThreeDsConfigEnabled($configKey) {
+        $defaults = [
+            'cc_3ds' => 'yes',
+            'cc_3ds_retry' => 'yes',
+            'cc_3ds_allow_continue' => 'no',
+        ];
+
+        $default = isset($defaults[$configKey]) ? $defaults[$configKey] : 'no';
+        $configValue = Params::getCcConfig($configKey, $default);
+
+        if (is_string($configValue)) {
+            $configValue = trim($configValue);
+            if ($configValue === '') {
+                $configValue = $default;
+            }
+            if (strtolower($configValue) === 'on') {
+                $configValue = 'yes';
+            }
+        }
+
+        if ($configValue === null) {
+            $configValue = $default;
+        }
+
+        return wc_string_to_bool($configValue);
     }
 
     /**

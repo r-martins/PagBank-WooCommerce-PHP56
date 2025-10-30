@@ -283,13 +283,13 @@ class CreditCard extends WC_Payment_Gateway_CC
                     '_pagbank_card_holder_name',$holderName,
                     true
                 );
-                $order->add_meta_data(
+                $order->update_meta_data(
                     '_pagbank_card_3ds_id',
                     isset($_POST['rm-pagbank-card-3d'])
                         ? htmlspecialchars($_POST['rm-pagbank-card-3d'], ENT_QUOTES, 'UTF-8')
                         : false
                 );
-                $order->add_meta_data(
+                $order->update_meta_data(
                     '_pagbank_card_retry_with_3ds',
                     isset($_POST['rm-pagbank-card-retry-with-3ds'])
                         ? htmlspecialchars($_POST['rm-pagbank-card-retry-with-3ds'], ENT_QUOTES, 'UTF-8')

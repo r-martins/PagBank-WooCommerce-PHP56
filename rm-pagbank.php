@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name:       PagBank Connect PHP 5.6
  * Plugin URI:        https://pbintegracoes.com
- * Description:       Integra seu WooCommerce com as APIs PagSeguro v4 através da aplicação de Ricardo Martins (com descontos nas taxas oficiais), com suporte a PIX transparente e muito mais.
+ * Description:       PagBank Connect com suporte para PHP 5.6. Este plugin não será frequentemente atualizado.
  * Version:           4.45.2
  * Requires at least: 4.9
  * Tested up to:      6.2

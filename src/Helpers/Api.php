@@ -3,6 +3,7 @@
 namespace RM_PagBank\Helpers;
 
 use Exception;
+use JsonSerializable;
 use RM_PagBank\Connect;
 use RM_PagBank\Object\Amount;
 use WC_Order;
@@ -155,20 +156,22 @@ class Api
             }
         }
 
-		Functions::log('POST Request to '.$endpoint . $isSandbox .' with params: '.wp_json_encode($params, JSON_PRETTY_PRINT), 'debug');
+        $payload = $this->sanitizePayload($params);
 
-		$response = wp_remote_post($url, [
-			'headers' => $headers,
-			'body' => wp_json_encode($params),
+        Functions::log('POST Request to '.$endpoint . $isSandbox .' with params: '.wp_json_encode($payload, JSON_PRETTY_PRINT), 'debug');
+
+        $response = wp_remote_post($url, [
+            'headers' => $headers,
+            'body' => wp_json_encode($payload),
             'timeout' => 60,
-		]);
+        ]);
 
 
 		if (is_wp_error($response)){
             Functions::log(
                 'Erro na requisição: ' . $response->get_error_message(),
                 'error',
-                ['request' => $params, 'endpoint' => $endpoint]
+                ['request' => $payload, 'endpoint' => $endpoint]
             );
             throw new Exception('Erro na requisição: ' . $response->get_error_message());
         }
@@ -181,7 +184,7 @@ class Api
             Functions::log(
                 'Resposta inválida da API: '.$responseCode . ' - ' . $responseMessage,
                 'error',
-                ['request' => $params, 'endpoint' => $endpoint]
+                ['request' => $payload, 'endpoint' => $endpoint]
             );
             throw new Exception('Resposta inválida da API: ' . $responseCode . ' - ' . $responseMessage);
         }
@@ -193,7 +196,7 @@ class Api
             Functions::log(
                 'Resposta inválida da API: '.$response,
                 'error',
-                ['request' => $params, 'endpoint' => $endpoint]
+                ['request' => $payload, 'endpoint' => $endpoint]
             );
             throw new Exception('Resposta inválida da API: ' . esc_attr($response));
         }
@@ -225,7 +228,9 @@ class Api
             'Referer' => get_site_url(),
         ];
 
-        $transientKey = 'cache_' . md5($url . serialize($params) . serialize($headers));
+        $payload = $this->sanitizePayload($params);
+
+        $transientKey = 'cache_' . md5($url . serialize($payload) . serialize($headers));
         if ($cacheMin > 0) {
             $cached = get_transient($transientKey);
             if ($cached !== false) {
@@ -234,18 +239,18 @@ class Api
             }
         }
 
-        Functions::log('[EnvioFácil][Api] POST ' . $endpoint . ' payload: ' . wp_json_encode($params, JSON_PRETTY_PRINT), 'debug');
+        Functions::log('[EnvioFácil][Api] POST ' . $endpoint . ' payload: ' . wp_json_encode($payload, JSON_PRETTY_PRINT), 'debug');
 
         $response = wp_remote_post($url, [
             'headers' => $headers,
-            'body' => wp_json_encode($params),
+            'body' => wp_json_encode($payload),
             'timeout' => 60,
         ]);
 
         if (is_wp_error($response)) {
             Functions::log('[EnvioFácil][Api] Erro na requisição EF: ' . $response->get_error_message(), 'error', [
                 'endpoint' => $endpoint,
-                'payload' => $params,
+                'payload' => $payload,
             ]);
             throw new Exception('Erro na requisição EF: ' . $response->get_error_message());
         }
@@ -277,6 +282,42 @@ class Api
         }
         
         return $decoded;
+    }
+
+    /**
+     * Remove null/empty values and convert JsonSerializable objects to arrays recursively.
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    private function sanitizePayload($data) {
+        if ($data instanceof JsonSerializable) {
+            $data = $data->jsonSerialize();
+        } elseif (is_object($data)) {
+            $data = get_object_vars($data);
+        }
+
+        if (is_array($data)) {
+            $sanitized = [];
+            foreach ($data as $key => $value) {
+                $value = $this->sanitizePayload($value);
+                if ($value === null) {
+                    continue;
+                }
+                if (is_array($value) && $value === []) {
+                    continue;
+                }
+                $sanitized[$key] = $value;
+            }
+            return $sanitized;
+        }
+
+        if (is_string($data)) {
+            $trimmed = trim($data);
+            return $trimmed === '' ? null : $trimmed;
+        }
+
+        return $data;
     }
 
     public function getConnectInfo() {
