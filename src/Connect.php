@@ -199,6 +199,10 @@ class Connect
      */
     public static function configInfo()
     {
+        if (!function_exists('is_plugin_active')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
         $api = new Api();
         $settings = [
             'platform' => 'Wordpress',
@@ -258,8 +262,8 @@ class Connect
             ],
             'extra' => [
                 'hpos_enabled' => Functions::isHposEnabled() ? 'yes' : 'no',
-                'litespeed_cache' => is_plugin_active('litespeed-cache/litespeed-cache.php') ? 'yes' : 'no',
-                'wordfence_active' => is_plugin_active('wordfence/wordfence.php') ? 'yes' : 'no',
+                'litespeed_cache' => \is_plugin_active('litespeed-cache/litespeed-cache.php') ? 'yes' : 'no',
+                'wordfence_active' => \is_plugin_active('wordfence/wordfence.php') ? 'yes' : 'no',
             ],
         ];
 

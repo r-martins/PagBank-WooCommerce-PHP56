@@ -11,7 +11,7 @@
  * Plugin Name:       PagBank Connect PHP 5.6
  * Plugin URI:        https://pbintegracoes.com/woocommerce
  * Description:       PagBank Connect com suporte para PHP 5.6. Este plugin não será frequentemente atualizado.
- * Version:           4.45.2
+ * Version:           4.45.2-php56.1
  * Requires at least: 4.9
  * Tested up to:      6.2.7
  * Requires PHP:      5.6
@@ -34,7 +34,7 @@ use RM_PagBank\EnvioFacil;
 defined( 'ABSPATH' ) || die( 'No direct script access allowed!' );
 
 // Plugin constants.
-define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.45.2-php56' );
+define( 'WC_PAGSEGURO_CONNECT_VERSION', '4.45.2-php56.1' );
 define( 'WC_PAGSEGURO_CONNECT_PLUGIN_FILE', __FILE__ );
 define( 'WC_PAGSEGURO_CONNECT_BASE_DIR', __DIR__ );
 define( 'WC_PAGSEGURO_CONNECT_TEMPLATES_DIR', WC_PAGSEGURO_CONNECT_BASE_DIR . '/src/templates/' );
@@ -114,7 +114,7 @@ function rm_pagbank_connect_php56_activation_handler() {
 
     foreach ($conflicting_plugins as $conflict) {
         $plugin_path = WP_PLUGIN_DIR . '/' . $conflict;
-        if ((function_exists('is_plugin_active') && is_plugin_active($conflict)) || file_exists($plugin_path)) {
+        if ((function_exists('is_plugin_active') && \is_plugin_active($conflict)) || file_exists($plugin_path)) {
             deactivate_plugins(plugin_basename(__FILE__));
             wp_die(
                 __('Não é possível ativar o PagBank Connect PHP 5.6 enquanto o PagBank Connect padrão estiver instalado. Desative ou remova o plugin pagbank-connect antes de continuar.', 'pagbank-connect-php56'),
