@@ -186,9 +186,9 @@ class Connect
     public static function addPluginActionLinks($links )
     {
         $plugin_links   = array();
-        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', 'pagbank-connect' ) . '</a>';
-        $plugin_links[] = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br' ) . '" target="_blank">' . __( 'Documentação', 'pagbank-connect' ) . '</a>';
-        $plugin_links[] = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br/requests/new' ) . '" target="_blank">' . __( 'Suporte', 'pagbank-connect' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=' . self::DOMAIN ) ) . '">' . __( 'Configurações', 'pagbank-connect-php56' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br' ) . '" target="_blank">' . __( 'Documentação', 'pagbank-connect-php56' ) . '</a>';
+        $plugin_links[] = '<a href="' . esc_url( 'https://ajuda.pbintegracoes.com/hc/pt-br/requests/new' ) . '" target="_blank">' . __( 'Suporte', 'pagbank-connect-php56' ) . '</a>';
 
         return array_merge($plugin_links,$links );
     }
@@ -290,7 +290,7 @@ class Connect
     public static function loadTextDomain()
     {
         $dir = __DIR__ . '/../languages/';
-        load_plugin_textdomain('pagbank-connect', false,$dir);
+        load_plugin_textdomain('pagbank-connect-php56', false,$dir);
     }
 
     public static function getMethodTitle($title,$id){
@@ -563,7 +563,7 @@ class Connect
                 [
                     'error' => __(
                         'Chave de formulário inválida. '.'Recarregue a página e tente novamente.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     ),
                 ],
                 400
@@ -737,7 +737,7 @@ class Connect
                 <p><?php echo sprintf(
                         __(
                             'O último código <a href="%s">código PIX</a> gerado no pedido <a href="%s">%s</a> parece inválido. Isso ocorre porque você provavelmente não possui chaves PIX aleatórias cadastradas no PagBank. <a href="%s">Clique aqui</a> para saber mais.',
-                            'pagbank-connect'
+                            'pagbank-connect-php56'
                         ),$qrCodeImg,$orderLink,$orderId,$helpUrl
                     ); ?></p>
             </div>
@@ -801,12 +801,12 @@ class Connect
     {
         $orderId = isset($_GET['order_id']) ? $_GET['order_id'] : null;
         if (!$orderId) {
-            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect-php56'));
         }
 
         $order = wc_get_order((int)$orderId);
         if (!$order) {
-            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect-php56'));
         }
 
         $status = $order->get_status();
@@ -849,21 +849,21 @@ class Connect
     public static function forceOrderUpdate()
     {
         if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(__('Você não tem permissão para acessar esta página.', 'pagbank-connect'));
+            wp_send_json_error(__('Você não tem permissão para acessar esta página.', 'pagbank-connect-php56'));
         }
 
         $order_id = filter_input(INPUT_GET, 'order_id', FILTER_SANITIZE_NUMBER_INT);
         $pagbank_order_id = isset($_GET['pagbank_order_id']) ? sanitize_text_field($_GET['pagbank_order_id']) : '';
 
         if (empty($pagbank_order_id) || empty($order_id)) {
-            wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect'));
+            wp_send_json_error(__('Faltando order_id ou pagbank_order_id', 'pagbank-connect-php56'));
         }
 
         // Obter o pedido com base no pagbank_order_id e id
         $order = wc_get_order($order_id);
 
         if (!$order || $order->get_meta('pagbank_order_id') !== $pagbank_order_id) {
-            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect'));
+            wp_send_json_error(__('Pedido não encontrado', 'pagbank-connect-php56'));
         }
 
 
@@ -873,7 +873,7 @@ class Connect
         $md5 = md5(serialize($orderData));
         if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
             $order->add_order_note(
-                __('Pedido atualizado manualmente mas nada mudou desde o último update.', 'pagbank-connect'),
+                __('Pedido atualizado manualmente mas nada mudou desde o último update.', 'pagbank-connect-php56'),
                 false,
                 true
             );
@@ -881,7 +881,7 @@ class Connect
         }
 
         $order->add_order_note(
-            __('Pedido atualizado manualmente.', 'pagbank-connect'),
+            __('Pedido atualizado manualmente.', 'pagbank-connect-php56'),
             false,
             true
         );
@@ -890,7 +890,7 @@ class Connect
             $orderProcessor->updateTransaction($order,$orderData);
         } catch (\Exception $e) {
             $order->add_order_note(
-                __('Erro ao atualizar o pedido: ', 'pagbank-connect') . $e->getMessage(),
+                __('Erro ao atualizar o pedido: ', 'pagbank-connect-php56') . $e->getMessage(),
                 false,
                 true
             );

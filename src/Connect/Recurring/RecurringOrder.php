@@ -146,7 +146,7 @@ class RecurringOrder
         $recurring = new \RM_PagBank\Connect\Recurring();
         if (json_last_error() !== JSON_ERROR_NONE) {
             $recurring->cancelSubscription($subscription->id,
-                __('Erro ao decodificar informações de pagamento para processar assinatura.', 'pagbank-connect'),
+                __('Erro ao decodificar informações de pagamento para processar assinatura.', 'pagbank-connect-php56'),
                 'FAILURE'
             );
             throw new Exception('Erro ao decodificar informações de pagamento para subscription ' . esc_attr($subscription->id));
@@ -154,7 +154,7 @@ class RecurringOrder
         
         if(!isset($paymentInfo->method)){
             $recurring->cancelSubscription($subscription->id,
-                __('Método de pagamento não encontrado.', 'pagbank-connect'),
+                __('Método de pagamento não encontrado.', 'pagbank-connect-php56'),
                 'FAILURE'
             );
             throw new Exception('Método de pagamento não encontrado para subscription ' . esc_attr($subscription->id));
@@ -230,14 +230,14 @@ class RecurringOrder
                 $canRetry = wc_string_to_bool(Params::getRecurringConfig('recurring_retry_charge', 'yes'));
                 if (!$canRetry) {
                     $recurring->cancelSubscription($subscription->id,
-                        __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect'),
+                        __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect-php56'),
                         'FAILURE'
                     );
                 }
 
                 $retryAttemptsRemaining = (int) Params::getRecurringConfig('recurring_retry_attempts', '3') - 1;
                 $recurring->suspendSubscription($subscription,
-                    __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect'),$retryAttemptsRemaining
+                    __('Pagamento recusado durante a renovação da assinatura.', 'pagbank-connect-php56'),$retryAttemptsRemaining
                 );
             }
 
@@ -245,7 +245,7 @@ class RecurringOrder
                 $retryAttemptsRemaining = $subscription->retry_attempts_remaining;
                 if (!$retryAttemptsRemaining) {
                     $recurring->cancelSubscription($subscription,
-                        __('Pagamento recusado durante a renovação da assinatura. Número de tentativas de cobrança esgotado.', 'pagbank-connect'),
+                        __('Pagamento recusado durante a renovação da assinatura. Número de tentativas de cobrança esgotado.', 'pagbank-connect-php56'),
                         'FAILURE'
                     );
                     return 0;

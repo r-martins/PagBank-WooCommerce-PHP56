@@ -38,7 +38,7 @@ class CancelExpiredPix
 
             //send cancelled order email to customer
             $order->add_order_note(
-                __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect'),
+                __('PagBank: O código PIX expirou e o pagamento não foi identificado. O pedido foi cancelado.', 'pagbank-connect-php56'),
                 true
             );
         }

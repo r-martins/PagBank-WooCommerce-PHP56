@@ -138,7 +138,7 @@ class CreditCard extends Common
                     'error' => __(
                         'Não foi possível obter as parcelas. Chave de formulário inválida. '
                         .'Recarregue a página e tente novamente.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     ),
                 ],
                 400

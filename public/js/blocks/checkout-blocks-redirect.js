@@ -9,7 +9,7 @@ import PaymentUnavailable from './components/PaymentUnavailable';
 import CustomerDocumentField from './components/CustomerDocumentField';
 
 const settings = getSetting('rm-pagbank-redirect_data', {});
-const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'Checkout PagBank', 'pagbank-connect' );
+const label = decodeEntities( settings.title ) || window.wp.i18n.__( 'Checkout PagBank', 'pagbank-connect-php56' );
 
 /**
  * Icon component

@@ -15,7 +15,7 @@ const InstallmentsOptions = ({ installments, ...props }) => {
                     {...props}
                 >
                     {installments === undefined || installments === null ? (
-                        <option value="">{__('Informe um número de cartão', 'pagbank-connect')}</option>
+                        <option value="">{__('Informe um número de cartão', 'pagbank-connect-php56')}</option>
                     ) : (
                         Object.keys(installments).map((key, index) => {
                             const installment = installments[key];

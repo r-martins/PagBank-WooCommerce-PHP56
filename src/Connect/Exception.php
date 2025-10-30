@@ -67,29 +67,29 @@ class Exception extends \Exception
      */
     public function getFriendlyParameterName($parameterName) {
         if ($parameterName === 'customer.tax_id') {
-            return $parameterName . ' - ' . esc_html(__('CPF/CNPJ', 'pagbank-connect'));
+            return $parameterName . ' - ' . esc_html(__('CPF/CNPJ', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'charges[0].payment_method.boleto.due_date') {
-            return $parameterName . ' - ' . esc_html(__('Data de vencimento do boleto', 'pagbank-connect'));
+            return $parameterName . ' - ' . esc_html(__('Data de vencimento do boleto', 'pagbank-connect-php56'));
         } elseif (strpos($parameterName, 'locality') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Bairro', 'pagbank-connect'));
+            return $parameterName . ' - ' . esc_html(__('Bairro', 'pagbank-connect-php56'));
         } elseif (strpos($parameterName, 'address.number') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Número do Endereço', 'pagbank-connect'));
+            return $parameterName . ' - ' . esc_html(__('Número do Endereço', 'pagbank-connect-php56'));
         } elseif (strpos($parameterName, 'address.city') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Cidade do Endereço', 'pagbank-connect'));
+            return $parameterName . ' - ' . esc_html(__('Cidade do Endereço', 'pagbank-connect-php56'));
         } elseif (strpos($parameterName, 'address.region') !== false) {
-            return $parameterName . ' - ' . esc_html(__('Estado do Endereço', 'pagbank-connect'));
+            return $parameterName . ' - ' . esc_html(__('Estado do Endereço', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'charges[0].payment_method.authentication_method.id') {
-            return esc_html(__('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect'));
+            return esc_html(__('Autenticação 3D - Recarregue e tente novamente', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'charges[0].payment_method.card.encrypted') {
-            return esc_html(__('Criptografia do cartão', 'pagbank-connect'));
+            return esc_html(__('Criptografia do cartão', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'customer.name') {
-            return esc_html(__('Nome do Cliente', 'pagbank-connect'));
+            return esc_html(__('Nome do Cliente', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'customer.phones[0].number') {
-            return esc_html(__('Telefone', 'pagbank-connect'));
+            return esc_html(__('Telefone', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'customer.email') {
-            return esc_html(__('E-mail do Cliente', 'pagbank-connect'));
+            return esc_html(__('E-mail do Cliente', 'pagbank-connect-php56'));
         } elseif ($parameterName === 'customer.phone.number') {
-            return esc_html(__('Telefone do Cliente', 'pagbank-connect'));
+            return esc_html(__('Telefone do Cliente', 'pagbank-connect-php56'));
         }
         
         return $parameterName;
@@ -119,14 +119,14 @@ class Exception extends \Exception
                 return __(
                     'Cartão não pode ser armazenado. Tente novamente com outro cartão ou verifique se as informações '
                     .'digitadas estão corretas.',
-                    'pagbank-connect'
+                    'pagbank-connect-php56'
                 );
                 break;
             case 'encrypted_is_invalid':
                 return __(
                     'Cripografia do cartão inválida. Tente novamente com outro cartão ou verifique se as informações '
                     .'digitadas estão corretas.',
-                    'pagbank-connect'
+                    'pagbank-connect-php56'
                 );
                 break;
             default:
@@ -142,93 +142,93 @@ class Exception extends \Exception
                     return __(
                         'Cartão não pode ser armazenado. Tente novamente com outro cartão ou verifique se as informações '
                         .'digitadas estão corretas.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'buyer email must not be equals to merchant email':
                     return __(
                         'O e-mail do comprador não pode ser igual ao e-mail do lojista.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'must not be blank':
                     return __(
                         'Valor obrigatório.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'invalid_parameter':
                     return __(
                         'Valor inválido.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'must be a valid region code by ISO 3166-2:BR':
                     return __(
                         'Valor de estado inválido.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'must not contains any of the characters [!, @, #, $, %, ¨, *, (, ), ", ”, \, |, {, }, [, ], <, >, ;]':
                     return __(
                         'Valor não pode conter caracteres especiais.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'must be a valid CPF or CNPJ':
                     return __(
                         'CPF ou CNPJ inválido.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'Parameter value has an invalid value, see documentation.':
                     return __(
                         'Valor inválido. Veja documentação.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'must be between 10000000 and 999999999':
                     return __(
                         'Valor deve estar entre 10000000 e 999999999.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                     break;
                 case 'Field has an invalid value. Please check the documentation.':
                     return __('
                         Campo com valor inválido. Por favor, verifique a documentação.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                 case 'Field cannot be empty.':
                     return __(
                         'O campo não pode estar vazio.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                 case 'The option field or value field are invalids. Please check the documentation.':
                     return __(
                         'Os campos de opção ou valor são inválidos. Por favor, verifique a documentação.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                 case 'The payment method is not valid to be configured.':
                     return __(
                         'O método de pagamento não é válido para ser configurado.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                 case 'Field shipping has an invalid configuration. Please check the documentation.':
                     return __(
                         'O campo de frete possui uma configuração inválida. Por favor, verifique a documentação.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                 case 'There are some syntax errors in the request payload. Please check the documentation.':
                     return __(
                         'Há alguns erros de sintaxe na solicitação. Por favor, verifique a documentação e os logs.',
-                        'pagbank-connect'
+                        'pagbank-connect-php56'
                     );
                 default:
                     return isset($this->errors[$error['code']]) ? $this->errors[$error['code']] : $error['description'];
             }
             return __(
                 'Erro desconhecido.',
-                'pagbank-connect'
+                'pagbank-connect-php56'
             );
         }
     }

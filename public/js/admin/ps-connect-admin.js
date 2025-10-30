@@ -113,10 +113,10 @@ jQuery(document).ready(function($) {
 		//create p element
 		var e_div = document.createElement('div');
 		e_div.innerHTML = connect_key_status;
-        e_div.setAttribute('id', 'pagbank-connect-key-info')
+        e_div.setAttribute('id', 'pagbank-connect-php56-key-info')
 		jQuery(e_div).insertAfter('#woocommerce_rm-pagbank_connect_key');
 
-        const infoIcon = document.querySelector('#pagbank-connect-key-info .dashicons-info');
+        const infoIcon = document.querySelector('#pagbank-connect-php56-key-info .dashicons-info');
         if (infoIcon) {
             // Get tooltip content from data-tip attribute
             const tooltipContent = infoIcon.getAttribute("data-tip")

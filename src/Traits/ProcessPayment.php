@@ -24,10 +24,10 @@ trait ProcessPayment
      * @throws Exception|\Exception
      */
     public static function updateTransaction(WC_Order $order, array $order_data) {
-        $cronMsg = wp_doing_cron() ? __(' (Atualizado via Cron)', 'pagbank-connect') : '';
+        $cronMsg = wp_doing_cron() ? __(' (Atualizado via Cron)', 'pagbank-connect-php56') : '';
         $md5 = md5(serialize($order_data));
         if ($order->get_meta('_pagbank_last_update_md5') == $md5) {
-            Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect'),$order->get_id()), 'debug');
+            Functions::log(sprintf(__('Notificação de atualização ignorada para o pedido %s pois o conteúdo é o mesmo da última atualização.' . $cronMsg, 'pagbank-connect-php56'),$order->get_id()), 'debug');
             return; // Do not update if the data is the same
         }
         $order->update_meta_data('_pagbank_last_update_md5',$md5);

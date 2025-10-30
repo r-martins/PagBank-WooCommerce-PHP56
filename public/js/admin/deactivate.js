@@ -25,7 +25,7 @@ jQuery(document).ready(function($) {
         }
     });
     
-    jQuery('#the-list').on('click', '#deactivate-pagbank-connect', function(e) {
+    jQuery('#the-list').on('click', '#deactivate-pagbank-connect-php56', function(e) {
         window.pagbank_deactivate_event = e;
         e.preventDefault();
         window.pagbank_deactivate_url = jQuery(this).attr('href');

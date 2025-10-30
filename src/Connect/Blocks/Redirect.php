@@ -49,7 +49,7 @@ final class Redirect extends AbstractPaymentMethodType
             return [];
         }
 
-        $scriptPath = 'pagbank-connect/build/js/frontend/redirect.js';
+        $scriptPath = 'pagbank-connect-php56/build/js/frontend/redirect.js';
 
         wp_register_script(
             'rm-pagbank-redirect-blocks-integration',

@@ -138,17 +138,17 @@ trait StaticResources
         if ($hook == 'plugins.php') {
             $feedbackModal = file_get_contents(WC_PAGSEGURO_CONNECT_BASE_DIR . '/admin/views/feedback-modal.php');
             wp_enqueue_script(
-                'pagbank-connect-deactivate',
+                'pagbank-connect-php56-deactivate',
                 plugins_url('public/js/admin/deactivate.js', WC_PAGSEGURO_CONNECT_PLUGIN_FILE),
                 ['jquery', 'jquery-ui-dialog'],
                 WC_PAGSEGURO_CONNECT_VERSION
             );
             wp_add_inline_script(
-                'pagbank-connect-deactivate',
+                'pagbank-connect-php56-deactivate',
                 'var pagbankFeedbackFormNonce = "' . wp_create_nonce('pagbank_connect_send_feedback') . '";'
             );
             wp_localize_script(
-                'pagbank-connect-deactivate',
+                'pagbank-connect-php56-deactivate',
                 'pagbankConnect',
                 ['feedbackModalHtml' => $feedbackModal]
             );

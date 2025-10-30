@@ -33,10 +33,10 @@ class Gateway extends WC_Payment_Gateway_CC
 			'wc_pagseguro_connect_icon',
 			plugins_url('public/images/pagbank.svg', WC_PAGSEGURO_CONNECT_PLUGIN_FILE)
 		);
-        $this->method_title = __('PagBank Connect por Ricardo Martins', 'pagbank-connect');
+        $this->method_title = __('PagBank Connect por Ricardo Martins', 'pagbank-connect-php56');
 		$this->method_description = __(
 			'Aceite PIX, Cartão e Boleto de forma transparente com PagBank (PagSeguro).',
-			'pagbank-connect'
+			'pagbank-connect-php56'
 		);
 		$this->title = $this->get_option('title', __('PagBank (PagSeguro UOL)', 'pagbank-connect'));
 		$this->description = $this->get_option('description');

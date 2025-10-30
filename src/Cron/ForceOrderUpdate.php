@@ -54,7 +54,7 @@ class ForceOrderUpdate
                 }
             } catch (Exception $e) {
                 Functions::log(
-                    'Cron: ' . __('Erro ao atualizar pedido', 'pagbank-connect') . ' ' . $order->get_id() . ' ' . __('no PagBank:', 'pagbank-connect') . ' ' . $e->getMessage(),
+                    'Cron: ' . __('Erro ao atualizar pedido', 'pagbank-connect-php56') . ' ' . $order->get_id() . ' ' . __('no PagBank:', 'pagbank-connect-php56') . ' ' . $e->getMessage(),
                     'error',$e->getTrace()
                 );
             }

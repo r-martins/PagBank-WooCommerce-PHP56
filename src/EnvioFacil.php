@@ -28,8 +28,8 @@ class EnvioFacil extends WC_Shipping_Method
 	 * @noinspection PhpUnusedParameterInspection*/
 	public function __construct($instance_id = 0 ) {
 		$this->id                 = self::CODE;
-		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect' );  // Title shown in admin
-		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect' ); // Description shown in admin
+		$this->method_title       = __( 'PagBank Envio Fácil', 'pagbank-connect-php56' );  // Title shown in admin
+		$this->method_description = __( 'Use taxas diferenciadas com Correios e transportadoras em pedidos feitos com PagBank', 'pagbank-connect-php56' ); // Description shown in admin
 
 		$this->enabled            = $this->get_option('enabled');
 		$this->title              = "PagBank Envio Fácil";
@@ -284,7 +284,7 @@ class EnvioFacil extends WC_Shipping_Method
 			$days = $aggr['estimateDays'] + $addDays;
 			$cost = Functions::applyPriceAdjustment($aggr['contractValue'],$adjustment);
 			if ($cost <= 0) { continue; }
-			$label = sprintf('%s - %s - %d %s',$aggr['provider'],$aggr['method'],$days, _n('dia útil', 'dias úteis',$days, 'pagbank-connect'));
+			$label = sprintf('%s - %s - %d %s',$aggr['provider'],$aggr['method'],$days, _n('dia útil', 'dias úteis',$days, 'pagbank-connect-php56'));
 
 			$recommendedBoxes = '';
 			if ( ! empty($boxReferences ) ) {
@@ -302,11 +302,11 @@ class EnvioFacil extends WC_Shipping_Method
 				'cost' => $cost,
 				'calc_tax' => 'per_order',
 				'meta_data' => [
-					__('Transportadora', 'pagbank-connect') => $aggr['provider'],
-					__('Método de envio', 'pagbank-connect') => $aggr['method'],
-					__('Entrega estimada (dias)', 'pagbank-connect') => $days,
-					__('Quantidade de caixas', 'pagbank-connect') => $boxCount,
-					__('Caixas recomendadas', 'pagbank-connect') => $recommendedBoxes,
+					__('Transportadora', 'pagbank-connect-php56') => $aggr['provider'],
+					__('Método de envio', 'pagbank-connect-php56') => $aggr['method'],
+					__('Entrega estimada (dias)', 'pagbank-connect-php56') => $days,
+					__('Quantidade de caixas', 'pagbank-connect-php56') => $boxCount,
+					__('Caixas recomendadas', 'pagbank-connect-php56') => $recommendedBoxes,
 				]
 			]);
 		}
@@ -405,7 +405,7 @@ class EnvioFacil extends WC_Shipping_Method
 			}
 			
 			$label = sprintf('%s - %s - %d %s',$provider['provider'],$provider['providerMethod'],$estimateDays, 
-				_n('dia útil', 'dias úteis',$estimateDays, 'pagbank-connect')
+				_n('dia útil', 'dias úteis',$estimateDays, 'pagbank-connect-php56')
 			);
 
 			$this->add_rate([
@@ -414,10 +414,10 @@ class EnvioFacil extends WC_Shipping_Method
 				'cost' => $cost,
 				'calc_tax' => 'per_order',
 				'meta_data' => [
-					__('Transportadora', 'pagbank-connect') => $provider['provider'],
-					__('Método de envio', 'pagbank-connect') => $provider['providerMethod'],
-					__('Entrega estimada (dias)', 'pagbank-connect') => $estimateDays,
-					__('Modo de cálculo', 'pagbank-connect') => __('API Legacy (sem caixas)', 'pagbank-connect'),
+					__('Transportadora', 'pagbank-connect-php56') => $provider['provider'],
+					__('Método de envio', 'pagbank-connect-php56') => $provider['providerMethod'],
+					__('Entrega estimada (dias)', 'pagbank-connect-php56') => $estimateDays,
+					__('Modo de cálculo', 'pagbank-connect-php56') => __('API Legacy (sem caixas)', 'pagbank-connect-php56'),
 				]
 			]);
 		}
@@ -508,9 +508,9 @@ class EnvioFacil extends WC_Shipping_Method
     {
         $this->form_fields = [
             'enabled'         => [
-                'title'   => __('Habilitar', 'pagbank-connect'),
+                'title'   => __('Habilitar', 'pagbank-connect-php56'),
                 'type'    => 'checkbox',
-                'label'   => __('Habilitar', 'pagbank-connect'),
+                'label'   => __('Habilitar', 'pagbank-connect-php56'),
                 'default' => 'no',
             ],
             'boxes_info' => [

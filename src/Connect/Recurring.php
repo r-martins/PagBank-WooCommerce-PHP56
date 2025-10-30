@@ -159,7 +159,7 @@ class Recurring
 
         // Adicione a taxa extra ao carrinho se for maior que zero
         if($extra_fee > 0) {
-            $cart->add_fee(__('Taxa Inicial', 'pagbank-connect'),$extra_fee);
+            $cart->add_fee(__('Taxa Inicial', 'pagbank-connect-php56'),$extra_fee);
         }
     }
 
@@ -198,7 +198,7 @@ class Recurring
     public function addProductRecurringTab($productTabs)
     {
         $productTabs['recurring_pagbank'] = [
-            'label' => __('Assinatura PagBank', 'pagbank-connect'),
+            'label' => __('Assinatura PagBank', 'pagbank-connect-php56'),
             'target' => 'recurring_pagbank',
             'class' => ['show_if_simple', 'show_if_variable'],
             'priority' => 90,
@@ -216,7 +216,7 @@ class Recurring
             <?php
             woocommerce_wp_checkbox( array(
                 'id'            => '_recurring_enabled',
-                'label'         => __( 'Habilitar recorrência', 'pagbank-connect' ),
+                'label'         => __( 'Habilitar recorrência', 'pagbank-connect-php56' ),
                 'description'   => __( 'Habilitar', 'pagbank-connect'),
                 'default'  		=> '0',
                 'desc_tip'    	=> false,

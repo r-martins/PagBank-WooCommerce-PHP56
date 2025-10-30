@@ -53,7 +53,7 @@ final class CreditCard extends AbstractPaymentMethodType
             return [];
         }
 
-        $scriptPath = 'pagbank-connect/build/js/frontend/cc.js';
+        $scriptPath = 'pagbank-connect-php56/build/js/frontend/cc.js';
 
         wp_register_script(
             'rm-pagbank-cc-blocks-integration',

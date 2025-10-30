@@ -9,17 +9,18 @@
  *
  * @wordpress-plugin
  * Plugin Name:       PagBank Connect PHP 5.6
- * Plugin URI:        https://pbintegracoes.com
+ * Plugin URI:        https://pbintegracoes.com/woocommerce
  * Description:       PagBank Connect com suporte para PHP 5.6. Este plugin não será frequentemente atualizado.
  * Version:           4.45.2
  * Requires at least: 4.9
- * Tested up to:      6.2
+ * Tested up to:      6.2.7
  * Requires PHP:      5.6
  * Author:            PagBank Integrações (Ricardo Martins)
  * Author URI:        https://pbintegracoes.com
  * License:           GPL-3.0
  * License URI:       https://opensource.org/license/gpl-3/
- * Text Domain:       pagbank-connect
+ * Update URI:        https://github.com/r-martins/PagBank-WooCommerce-PHP56/
+ * Text Domain:       pagbank-connect-php56
  * Domain Path:       /languages
  */
 
@@ -79,7 +80,7 @@ add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStyles'], 99999, 1
 add_filter('woocommerce_enqueue_styles', [Gateway::class, 'addStylesWoo'], 99999, 1);
 
 //not needed so far...
-register_activation_hook(__FILE__, [Connect::class, 'activate']);
+register_activation_hook(__FILE__, 'rm_pagbank_connect_php56_activation_handler');
 register_deactivation_hook(__FILE__, [Connect::class, 'deactivate']);
 register_uninstall_hook(__FILE__, [Connect::class, 'uninstall']);
 
@@ -100,3 +101,28 @@ add_action(
         }
     }
 );
+
+function rm_pagbank_connect_php56_activation_handler() {
+    if (!function_exists('is_plugin_active')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    $conflicting_plugins = array(
+        'pagbank-connect/rm-pagbank.php',
+        'pagbank-connect/pagbank-connect.php',
+    );
+
+    foreach ($conflicting_plugins as $conflict) {
+        $plugin_path = WP_PLUGIN_DIR . '/' . $conflict;
+        if ((function_exists('is_plugin_active') && is_plugin_active($conflict)) || file_exists($plugin_path)) {
+            deactivate_plugins(plugin_basename(__FILE__));
+            wp_die(
+                __('Não é possível ativar o PagBank Connect PHP 5.6 enquanto o PagBank Connect padrão estiver instalado. Desative ou remova o plugin pagbank-connect antes de continuar.', 'pagbank-connect-php56'),
+                __('Conflito de plugins PagBank', 'pagbank-connect-php56'),
+                array('back_link' => true)
+            );
+        }
+    }
+
+    Connect::activate();
+}

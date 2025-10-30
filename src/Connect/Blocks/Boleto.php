@@ -50,7 +50,7 @@ final class Boleto extends AbstractPaymentMethodType
             return [];
         }
 
-        $scriptPath = 'pagbank-connect/build/js/frontend/boleto.js';
+        $scriptPath = 'pagbank-connect-php56/build/js/frontend/boleto.js';
 
         wp_register_script(
             'rm-pagbank-boleto-blocks-integration',

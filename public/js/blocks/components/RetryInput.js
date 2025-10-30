@@ -19,7 +19,7 @@ const RetryInput = () => {
                 onChange={handleCheckboxChange}
             />
             <label htmlFor="rm-pagbank-card-retry-with-3ds">
-                {__('Tentar novamente com Validação 3DS', 'pagbank-connect')}
+                {__('Tentar novamente com Validação 3DS', 'pagbank-connect-php56')}
             </label>
         </div>
     );

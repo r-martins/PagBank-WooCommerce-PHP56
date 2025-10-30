@@ -6,7 +6,7 @@ const RecurringInfo = () => {
 
     return (
         <div>
-            <p><strong>{__('Pagamento Recorrente', 'pagbank-connect')}</strong></p>
+            <p><strong>{__('Pagamento Recorrente', 'pagbank-connect-php56')}</strong></p>
             <p dangerouslySetInnerHTML={{ __html: settings.recurringTerms }}></p>
         </div>
     );

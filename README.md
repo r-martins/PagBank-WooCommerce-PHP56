@@ -1,13 +1,17 @@
-# PagBank Connect (PagSeguro) - Nova Geração
+# Plugin Compatível com PHP 5.6
+## ⚠️ Use com WordPress 6.2.x e WooCommerce 3.8.x somente!
+### Baseado na versão 4.45.2 do PagBank Connect oficial, este plugin _NÃO_ será atualizado regularmente.
+## Atualize seu ambiente para PHP 7.4+ o mais rápido possível e use o plugin [PagBank Connect](https://pbintegracoes.com/woocommerce/) mais recente!
+
+---
+
+# PagBank Connect (PagSeguro) - _Versão Compatível_
 ## Com Descontos nas Taxas Oficiais
 *Por Ricardo Martins - Parceiro Oficial PagBank desde 2015.*
 
-[![Versão mínima do PHP](https://img.shields.io/badge/php-%3E%3D%207.4-8892BF.svg?style=flat-square)](https://php.net/)
-[![Última versão](https://img.shields.io/github/v/release/r-martins/PagBank-WooCommerce)](https://github.com/r-martins/PagBank-WooCommerce)
+[![Versão mínima do PHP](https://img.shields.io/badge/php-%3E%3D%205.6-8892BF.svg?style=flat-square)](https://php.net/)
+[![Última versão](https://img.shields.io/github/v/release/r-martins/PagBank-WooCommerce-PHP56)](https://github.com/r-martins/PagBank-WooCommerce)
 ![Último commit (develop)](https://img.shields.io/github/last-commit/r-martins/PagBank-WooCommerce/develop)
-![WordPress Plugin: Tested WP Version](https://img.shields.io/wordpress/plugin/tested/pagbank-connect)
-![Downloads por mês](https://img.shields.io/wordpress/plugin/dm/pagbank-connect)
-![Avaliação dos clientes no WordPress](https://img.shields.io/wordpress/plugin/stars/pagbank-connect?color=yellow)
 
 
 Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
@@ -30,7 +34,6 @@ Conheça a Nova Geração das nossas integrações com PagBank (v. 4.0+).
 
 # Descrição
 
-<a href="https://www.youtube.com/watch?v=L9Oans5dZ7M"><img src="https://i.imgur.com/nyrybNq.jpg"/></a>
 
 Esta é a forma mais fácil de integrar sua loja com PagBank (PagSeguro).
 Ao instalar e configurar nossa integração, você pode aceitar Pix, Boleto e Cartão de Crédito com o meio de pagamento mais confiado pelos brasileiros.
@@ -41,21 +44,21 @@ Criado por Ricardo Martins, esta é a 4ª geração das integrações PagSeguro,
 
 ## WP-CLI (mais fácil e rápido)
 Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
-* Basta rodar o comando `wp plugin install pagbank-connect --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
-* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --activate` caso ainda não tenha ele instalado.
+* Basta rodar o comando `wp plugin install https://github.com/r-martins/PagBank-WooCommerce-PHP56/archive/refs/heads/master.zip --activate`. Adicione `--allow-root` se estiver rodando o comando como root.
+* Repita o processo para instalar o plugin [Brazilian Market on WooCommerce 10.3 (antigo)](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) com o comando `wp plugin install woocommerce-extra-checkout-fields-for-brazil --version=3.10.0 --activate` caso ainda não tenha ele instalado.
 
 ## Instalação manual
 * Baixe o [arquivo zip](https://github.com/r-martins/PagBank-WooCommerce/archive/refs/heads/master.zip)
 * Crie um diretorio em wp-content/plugins chamado rm-pagbank
 * Descompacte o conteúdo do arquivo no diretório criado
 * Navegue até Plugins > Plugins instalados, e ative o plugin PagBank Connect
-* Ative o Checkout em Blocos *ou* Instale o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Ative o Checkout em Blocos *ou* Instale o plugin [Brazilian Market on WooCommerce versão 10.3](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/advanced/#plugin-download-history-stats) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 * Rode o comando `npm install` e `npm run build` na raiz do plugin para compilar os arquivos frontend.
 
 ## Instalação automática
 * Navegue até Plugins > Adicionar Novo e procure por \"PagBank Ricardo Martins\"
 * Clique no botão para instalar e ative o plugin
-* Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Repita o processo buscando e instalando o plugin [Brazilian Market on WooCommerce 10.3](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/advanced/#plugin-download-history-stats) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 # Configuração
 * Ative o meio de pagamento navegando até WooCommerce > Configurações > Pagamentos, e ativando o PagBank Connect
@@ -69,11 +72,11 @@ Você pode instalar o plugin usando o [WP-CLI](https://wp-cli.org/).
 
 # Pré-requisitos
 
-* Ter WooCommerce 4.0 ou superior
-* PHP 7.4 ou superior
+* Ter WooCommerce inferior ao 4.0
+* PHP inferior ao 7.4 (testado com 5.6)
 * Ter uma conta Vendedor ou Empresarial no PagSeguro/PagBank (e obter a sua Connect Key)
 * [Autorizar nossa integração](https://pbintegracoes.com/connect/autorizar/?utm_source=github&utm_medium=readme&utm_content=pre-requisitos) em sua conta PagBank.
-* Usar checkout em Blocos do WooCommerce **ou** Ter instalado o plugin [Brazilian Market on WooCommerce](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
+* Usar checkout em Blocos do WooCommerce **ou** Ter instalado o plugin [Brazilian Market on WooCommerce 10.3](https://br.wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/advanced/#plugin-download-history-stats) a fim de habilitar campos adicionais de endereço e CPF, que são obrigatórios no PagBank.
 
 # Perguntas Frequentes (FAQ)
 
@@ -143,9 +146,6 @@ Este não é um produto oficial do PagBank.
 
 Ao usar este plugin você concorda com os [Termos de Uso e Política de Privacidade](https://pbintegracoes.com/terms/?utm_source=github&utm_medium=readme&utm_content=terms).
 
-# Nota aos desenvolvedores
-
-Para compilar os arquivos frontend digite `npm run build` no terminal, na raiz do plugin. Se desejar automatizar este processo, copie o arquivo `./git-hooks/post-checkout` para `.git/hooks/` e torne-o executável (`chmod +x .git/hooks/post-checkout`).
 
 ---
 ¹ A Integração com Envio Fácil está disponível apenas para lojas com integração 14 ou 30 dias. Embora utilizemos as APIs do PagSeguro para isso, eles não encorajam o uso dessas APIs. Use com cautela. O PagSeguro não oferece suporte para esta integração.

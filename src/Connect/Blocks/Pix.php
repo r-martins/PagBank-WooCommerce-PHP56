@@ -50,7 +50,7 @@ final class Pix extends AbstractPaymentMethodType
             return [];
         }
 
-        $scriptPath = 'pagbank-connect/build/js/frontend/pix.js';
+        $scriptPath = 'pagbank-connect-php56/build/js/frontend/pix.js';
 
         wp_register_script(
             'rm-pagbank-pix-blocks-integration',

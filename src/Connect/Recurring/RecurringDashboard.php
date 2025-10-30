@@ -59,12 +59,12 @@ class RecurringDashboard
         return apply_filters(
             'rm_pagbank_recurring_dashboard_columns',
             [
-                'recurring-id' => __('Identificador', 'pagbank-connect'),
-                'status' => __('Status', 'pagbank-connect'),
-                'created_at' => __('Data Inicial', 'pagbank-connect'),
-                'recurring_type' => __('Tipo', 'pagbank-connect'),
-                'recurring_amount' => __('Valor', 'pagbank-connect'),
-                'subscription-actions' => __('Ações', 'pagbank-connect'),
+                'recurring-id' => __('Identificador', 'pagbank-connect-php56'),
+                'status' => __('Status', 'pagbank-connect-php56'),
+                'created_at' => __('Data Inicial', 'pagbank-connect-php56'),
+                'recurring_type' => __('Tipo', 'pagbank-connect-php56'),
+                'recurring_amount' => __('Valor', 'pagbank-connect-php56'),
+                'subscription-actions' => __('Ações', 'pagbank-connect-php56'),
             ]
         );
     }
@@ -86,13 +86,13 @@ class RecurringDashboard
         switch ($subscription->status) {
             case 'PAUSED':
                 $actions['unpause'] = [
-                    'name' => __('Resumir', 'pagbank-connect'),
+                    'name' => __('Resumir', 'pagbank-connect-php56'),
                     'url' => \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('unpause',$subscription)
                 ];
                 break;
             case 'PENDING_CANCEL':
                 $actions['cancel'] = [
-                    'name' => __('Suspender Cancelamento', 'pagbank-connect'),
+                    'name' => __('Suspender Cancelamento', 'pagbank-connect-php56'),
                     'url' =>  \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('uncancel',$subscription)
                 ];
                 break;
@@ -100,7 +100,7 @@ class RecurringDashboard
             case 'PENDING':
                 // coming soon
 //                $actions['pay'] = [
-//                    'name' => __('Pagar', 'pagbank-connect'),
+//                    'name' => __('Pagar', 'pagbank-connect-php56'),
 //                    'url' => \RM_PagBank\Helpers\Recurring::subscriptionActionUrl('pay',$subscription)
 //                ];
                 break;
@@ -109,7 +109,7 @@ class RecurringDashboard
                 break;
         }
         $actions['view'] = [
-            'name' => __('Ver detalhes', 'pagbank-connect'),
+            'name' => __('Ver detalhes', 'pagbank-connect-php56'),
             'url' => $this->getViewSubscriptionUrl($subscription)
         ];
         
